@@ -287,7 +287,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .tag.hot { background: #f2c66d; color: var(--ink); }
 
 /* A concept card is a fixed template, the same for every card: header, band, tabs, the tab's panel, footer. The band is as tall as its
-   taller text (180 to 240px) and the panel takes what is left; nothing scrolls on a wide screen. The card is --card-max wide at most,
+   taller text (180 to 340px; more for "With your agent", which is never cut) and the panel takes what is left; nothing scrolls on a wide screen. The card is --card-max wide at most,
    left-aligned in the page. --accent is the book's colour, darkened to 4.5:1 on the "With your agent" box, which is
    a light tint of the accent, not grey (src/lib/accent.ts). */
 .card { --accent: var(--gold); --accent-tint: #efe6d4; width: 100%; max-width: var(--card-max); flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s2); }
@@ -325,15 +325,16 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .theme.mini.on .k { background: var(--gold); color: #fff; }
 .wip { font: 400 var(--t-body)/1.4 var(--sans); color: var(--muted); padding: var(--s1) 12px; border: 1px dashed rgba(43, 38, 32, 0.2); border-radius: 6px; margin: 0; }
 
-/* The band: Idea on the left, With your agent on the right. It is as tall as the taller of the two, between 180 and 240px. Text that
-   does not fit in 240px is faded, and the card carries data-band-overflow (scripts/card-audit.ts lists them) so the data can be
-   shortened. The "With your agent" box is as tall as its own text, within the band. */
-.band { flex: none; min-height: 180px; max-height: 240px; margin: var(--s1) 0; display: grid; grid-template-columns: 58fr 42fr; grid-template-rows: minmax(0, 1fr); column-gap: var(--s4); }
-.b-idea, .b-apply { min-width: 0; min-height: 0; overflow: hidden; }
+/* The band: Idea on the left, With your agent on the right, half the width each. Its height is set in CardView (bandHeight): the taller
+   of the two texts, 180px at least and 340px at most, except that "With your agent" is never cut, so the band grows to hold it. The Idea
+   side is faded at the band's bottom when it needs more, and the card carries data-band-overflow="idea" (scripts/card-audit.ts lists
+   them). The "With your agent" box is as tall as its own text. */
+.band { flex: none; min-height: 180px; margin: var(--s1) 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); column-gap: var(--s4); }
+.b-idea { min-width: 0; min-height: 0; overflow: hidden; }
+.b-apply { min-width: 0; align-self: start; background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: var(--s2); }
 .b-idea p, .b-apply p { margin: 0; max-width: var(--measure); font: 400 var(--t-read)/var(--lh-read) var(--sans); }
-.b-apply { align-self: start; max-height: 100%; background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: var(--s2); }
 .b-apply .label { color: var(--accent); }
-.card[data-band-idea] .b-idea, .card[data-band-apply] .b-apply { -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
+.card[data-band-overflow='idea'] .b-idea { -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
 
 /* Tabs: words only. The open one is in the accent with a 2px underline. A paged tab has ‹ 1/2 › at the right end of the row. */
 .c-tabs { flex: none; display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s2); border-bottom: 1px solid var(--line); }
@@ -356,7 +357,8 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .mc p { margin: 0 0 var(--s2); max-width: var(--measure); font: 400 var(--t-read)/var(--lh-read) var(--sans); }
 .mc .label { break-after: avoid; }
 .mc .label:not(:first-child) { margin-top: var(--s2); }
-.mc .story + .story { margin-top: var(--s3); }
+/* A page starts after this: empty space, set in CardView's FlowTab, fills the rest of the page so that what follows starts the next one. */
+.mc .pgfill { margin: 0; }
 .method { display: flex; flex-direction: column; gap: var(--s2); }
 .m-head { display: flow-root; }
 .m-head .m-intro { max-width: var(--measure); }
@@ -392,8 +394,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 @media (max-width: 899px) {
   .book-panel { left: 0; padding: var(--s3) var(--s2); overflow-y: auto; box-shadow: none; }
   .card { flex: none; }
-  .band { min-height: 0; max-height: none; grid-template-columns: 1fr; grid-template-rows: auto; row-gap: var(--s2); }
-  .b-apply { max-height: none; }
+  .band { min-height: 0; grid-template-columns: 1fr; grid-template-rows: auto; row-gap: var(--s2); }
   .c-thumb { display: block; }
   .c-panel { flex: none; }
   .tb { overflow: visible; }

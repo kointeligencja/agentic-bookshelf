@@ -2,22 +2,29 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   band,
+  BAND_MAX,
+  BAND_MIN,
+  bandHeight,
   columnCount,
   defaultTab,
   limitsContent,
+  nextBreak,
   packColumn,
   packSteps,
   pagesOf,
   paragraphs,
   quotesContent,
+  splitSentences,
   splitSteps,
   stackHeight,
   stepTab,
+  subtitleOf,
   TAB_LABELS,
   TABS,
   tabsOf,
   whyContent,
 } from '../src/lib/card.ts';
+import type { PieceFit, PageBreak } from '../src/lib/card.ts';
 import type { Agentic, AgenticCard } from '../src/types.ts';
 
 const card: AgenticCard = {
@@ -199,6 +206,143 @@ describe('columnCount', () => {
   });
   it('comes to pages of two columns', () => {
     expect([1, 2, 3, 4, 5].map(pagesOf)).toEqual([1, 1, 2, 2, 3]);
+  });
+});
+
+describe('subtitleOf', () => {
+  it("is the card's subtitle when it has one", () => {
+    expect(subtitleOf({ ...card, subtitle: ' A sharper line. ' }, 'The summary.')).toBe('A sharper line.');
+  });
+  it('is the concept summary when the card has none, or an empty one', () => {
+    expect(subtitleOf(card, 'The summary.')).toBe('The summary.');
+    expect(subtitleOf({ ...card, subtitle: '  ' }, 'The summary.')).toBe('The summary.');
+    expect(subtitleOf(undefined, 'The summary.')).toBe('The summary.');
+  });
+});
+
+describe('bandHeight', () => {
+  it('is the taller side, at least the minimum', () => {
+    expect(bandHeight(100, 120)).toBe(BAND_MIN);
+    expect(bandHeight(250, 200)).toBe(250);
+    expect(bandHeight(200, 300)).toBe(300);
+  });
+  it('stops at the maximum for Idea, which is cut there', () => {
+    expect(bandHeight(500, 200)).toBe(BAND_MAX);
+    expect(bandHeight(BAND_MAX, BAND_MAX)).toBe(BAND_MAX);
+  });
+  it('grows past the maximum for "With your agent", which is never cut', () => {
+    expect(bandHeight(200, 400)).toBe(400);
+    expect(bandHeight(900, 400)).toBe(400);
+    expect(bandHeight(0, 1000)).toBe(1000);
+  });
+  it('is cut short on a short window so the panel keeps its room, but never below "With your agent"', () => {
+    expect(bandHeight(340, 200, 260)).toBe(260);
+    expect(bandHeight(340, 200, 100)).toBe(200);
+    expect(bandHeight(340, 100, 100)).toBe(BAND_MIN);
+    expect(bandHeight(340, 300, 260)).toBe(300);
+    expect(bandHeight(200, 150, 260)).toBe(200);
+  });
+});
+
+describe('splitSentences', () => {
+  const join = (t: string) => splitSentences(t).join(' ');
+  it('cuts after . ! and ?, before a capital', () => {
+    expect(splitSentences('One is here. Two is there! Is three? Yes.')).toEqual(['One is here.', 'Two is there!', 'Is three?', 'Yes.']);
+  });
+  it('keeps a closing quote or bracket with its sentence', () => {
+    expect(splitSentences('He said, "Go." Then he left. (It rained.) Nobody cared.')).toEqual(['He said, "Go."', 'Then he left.', '(It rained.)', 'Nobody cared.']);
+    expect(splitSentences('“Why?” She asked. “Because.” He shrugged.')).toEqual(['“Why?”', 'She asked.', '“Because.”', 'He shrugged.']);
+  });
+  it('does not cut after e.g., i.e., Dr., Mr., Mrs., Prof., St., vs. or etc.', () => {
+    for (const t of [
+      'Use a prompt, e.g. Socrates did, and wait.',
+      'It is a rule, i.e. Always ask first.',
+      'Dr. Smith agreed with Mr. Jones and Mrs. Lee.',
+      'Prof. Kahneman met St. Paul vs. Napoleon.',
+      'He packed pens, paper, etc. Then he left.',
+    ]) {
+      expect(splitSentences(t), t).toHaveLength(1);
+    }
+  });
+  it('does not cut after U.S. or initials', () => {
+    expect(splitSentences('The U.S. Army chose J. K. Rowling and J.R.R. Tolkien.')).toHaveLength(1);
+    expect(splitSentences('Born in the U.S.A. Later he moved.')).toHaveLength(1);
+  });
+  it('does not cut inside a decimal or after a short number', () => {
+    expect(splitSentences('Pi is 3.14 and e is 2.72 roughly. Next.')).toEqual(['Pi is 3.14 and e is 2.72 roughly.', 'Next.']);
+    expect(splitSentences('See No. 5 and step 2. Do it.')).toHaveLength(1);
+  });
+  it('cuts after a year or a long number', () => {
+    expect(splitSentences('It happened in 1999. The war ended.')).toEqual(['It happened in 1999.', 'The war ended.']);
+  });
+  it('does not cut before a lower-case word', () => {
+    expect(splitSentences('He paused... then went on. She did not.')).toEqual(['He paused... then went on.', 'She did not.']);
+    expect(splitSentences('"Why?" he asked.')).toHaveLength(1);
+  });
+  it('cuts after an ellipsis before a capital', () => {
+    expect(splitSentences('He paused… Then he went on.')).toEqual(['He paused…', 'Then he went on.']);
+  });
+  it('keeps every word and the order: the sentences joined are the paragraph', () => {
+    const t = 'First, e.g. this one. Second one! Third? "Fourth," said Dr. Who. Fifth.';
+    expect(join(t)).toBe(t);
+    expect(join('  One.   Two.  ')).toBe('One. Two.');
+  });
+  it('makes one sentence of text with no stop, and none of nothing', () => {
+    expect(splitSentences('no stop here')).toEqual(['no stop here']);
+    expect(splitSentences('')).toEqual([]);
+  });
+  it('cuts every sentence of every real card without losing a word', () => {
+    const cards = JSON.parse(readFileSync('public/data/agentic-cards.json', 'utf8')) as Record<string, AgenticCard>;
+    const words = (t: string) => t.split(/\s+/).filter(Boolean).join(' ');
+    for (const [id, c] of Object.entries(cards)) {
+      const texts = [...(c.idea ?? []), ...(c.why ?? []), ...(c.limits ?? []), c.tension ?? '', ...(c.stories ?? []).flatMap((s) => paragraphs(s.text))];
+      for (const t of texts) expect(words(join(t)), id).toBe(words(t));
+    }
+  });
+});
+
+describe('nextBreak', () => {
+  const sent = (start: number, end: number) => ({ start, end });
+  const piece = (block: number, start: number, end: number, extra: Partial<PieceFit> = {}): PieceFit => ({
+    block, first: 0, label: false, start, end, sentences: [], ...extra,
+  });
+  it('has nothing to do when every paragraph is on one page', () => {
+    expect(nextBreak([piece(0, 0, 0), piece(1, 0, 0), piece(2, 1, 1)])).toEqual({ at: null, stuck: 0 });
+  });
+  it('moves a paragraph that runs over to the next page whole, to the start of the paragraph', () => {
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1)]);
+    expect(r.at).toEqual({ block: 1, sentence: 0 });
+  });
+  it('takes the heading over the paragraph with it', () => {
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 0, { label: true }), piece(2, 0, 1)]);
+    expect(r.at).toEqual({ block: 1, sentence: 0 });
+  });
+  it('cuts a paragraph that is too long for one page before the sentence that crosses the page', () => {
+    // On its own page already (the one before ended earlier), 4 sentences: the third crosses into page 1.
+    const long = piece(1, 1, 2, { sentences: [sent(1, 1), sent(1, 1), sent(1, 2), sent(2, 2)] });
+    const r = nextBreak([piece(0, 0, 0), long]);
+    expect(r.at).toEqual({ block: 1, sentence: 2 });
+  });
+  it('cuts the second piece of a paragraph by its sentence number in the paragraph', () => {
+    const second = piece(1, 2, 3, { first: 3, sentences: [sent(2, 2), sent(2, 3)] });
+    const r = nextBreak([piece(0, 1, 1), second]);
+    expect(r.at).toEqual({ block: 1, sentence: 4 });
+  });
+  it('leaves a long paragraph whose pages meet between two sentences', () => {
+    const long = piece(0, 0, 1, { sentences: [sent(0, 0), sent(0, 0), sent(1, 1), sent(1, 1)] });
+    expect(nextBreak([long])).toEqual({ at: null, stuck: 0 });
+  });
+  it('counts a sentence longer than a page as stuck, and goes on to the next fault', () => {
+    const huge = piece(0, 0, 2, { sentences: [sent(0, 2)] });
+    const run = piece(1, 2, 3);
+    const r = nextBreak([huge, run]);
+    expect(r.stuck).toBe(1);
+    expect(r.at).toEqual({ block: 1, sentence: 0 });
+  });
+  it('does not ask for a break it has already', () => {
+    const have: PageBreak[] = [{ block: 1, sentence: 0, space: 10 }];
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1)], have);
+    expect(r).toEqual({ at: null, stuck: 1 });
   });
 });
 

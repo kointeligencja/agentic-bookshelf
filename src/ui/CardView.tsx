@@ -2,20 +2,28 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentTy
 import { PAPER, readableOn, tintOf } from '../lib/accent.ts';
 import {
   band,
+  bandHeight,
   columnCount,
   defaultTab,
   limitsContent,
+  nextBreak,
   packColumn,
   packSteps,
   pagesOf,
+  PANEL_MIN,
   paragraphs,
   quotesContent,
+  splitSentences,
   splitSteps,
   stepTab,
   STATUS,
+  subtitleOf,
   TAB_LABELS,
   tabsOf,
   whyContent,
+  type PageBreak,
+  type PieceFit,
+  type SentenceFit,
   type StepPage,
   type TabId,
 } from '../lib/card.ts';
@@ -64,6 +72,17 @@ function useBox(ref: RefObject<HTMLElement | null>): { w: number; h: number } {
   return box;
 }
 
+/** The window's inner height, kept current. */
+function useViewportHeight(): number {
+  const [h, setH] = useState(() => window.innerHeight);
+  useEffect(() => {
+    const on = () => setH(window.innerHeight);
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
+  return h;
+}
+
 /** Counts up when the web fonts arrive, since the text moves a little then and has to be measured again. */
 function useFonts(): number {
   const [tick, setTick] = useState(0);
@@ -97,13 +116,36 @@ interface PanelProps {
   onSeek: (seconds: number) => void;
 }
 
-/** Two balanced columns of running text (Why it works, Story, Limits). Too long for the region: columns fill in turn, a page at a time. */
-function FlowTab({ narrow, page, onPages, children }: { narrow: boolean; page: number; onPages: (n: number) => void; children: ReactNode }) {
+/** A heading or a paragraph of running text in a flow tab. */
+type FlowBlock = { kind: 'label'; key: string; content: ReactNode } | { kind: 'p'; key: string; text: string };
+
+/** Where (in the columns of the measured copy) an element starts and ends: the column of its first and last box, from 0. */
+function columnsOf(el: Element, left: number, col: number, gap: number): { first: number; last: number } {
+  const rects = el.getClientRects();
+  const at = (r: DOMRect | undefined) => (r ? Math.max(0, Math.floor((r.left - left + 1) / (col + gap))) : 0);
+  return { first: at(rects[0]), last: at(rects[rects.length - 1]) };
+}
+
+/** Pages (two columns to a page) from the columns of an element's first and last box. */
+const pagesFit = (c: { first: number; last: number }): SentenceFit => ({ start: Math.floor(c.first / 2), end: Math.floor(c.last / 2) });
+
+/**
+ * Two balanced columns of running text (Why it works, Story, Limits). Too long for the region: the columns fill one after the other
+ * and the text is paged, two columns to a page. A page never ends inside a sentence: a paragraph that would run over to the next page
+ * moves whole to it, and one too long for a page is cut before the sentence that crosses (see nextBreak). The cuts are found by
+ * measuring the hidden copy, then putting empty space in front of the first fault that fills the rest of its page, and measuring again,
+ * until nothing is left to fix.
+ */
+function FlowTab({ narrow, page, onPages, blocks }: { narrow: boolean; page: number; onPages: (n: number) => void; blocks: FlowBlock[] }) {
   const region = useRef<HTMLDivElement>(null);
   const meas = useRef<HTMLDivElement>(null);
   const box = useBox(region);
   const tick = useFonts();
+  const sentences = useMemo(() => blocks.map((b) => (b.kind === 'p' ? splitSentences(b.text) : [])), [blocks]);
   const [layout, setLayout] = useState({ paged: false, pages: 1 });
+  // The breaks found so far; they belong to one content at one size, and are dropped when either changes.
+  const [plan, setPlan] = useState<{ blocks: FlowBlock[]; w: number; h: number; tick: number; breaks: PageBreak[] }>({ blocks, w: 0, h: 0, tick: 0, breaks: NO_BREAKS });
+  const breaks = plan.blocks === blocks && plan.w === box.w && plan.h === box.h && plan.tick === tick ? plan.breaks : NO_BREAKS;
 
   useLayoutEffect(() => {
     const m = meas.current;
@@ -111,91 +153,141 @@ function FlowTab({ narrow, page, onPages, children }: { narrow: boolean; page: n
     m.style.width = `${box.w}px`;
     m.style.height = `${box.h}px`;
     const col = (box.w - GAP) / 2;
-    // Balanced columns: it fits when they stay two. Otherwise they fill one after the other and the rest is on the next pages.
-    m.style.columnFill = 'balance';
-    let n = columnCount(m.scrollWidth, col, GAP);
-    if (n > 2) {
-      m.style.columnFill = 'auto';
-      n = columnCount(m.scrollWidth, col, GAP);
+    const done = (paged: boolean, n: number) => setLayout((l) => (l.paged === paged && l.pages === pagesOf(n) ? l : { paged, pages: pagesOf(n) }));
+    // Balanced columns: it fits when they stay two, and there is nothing to cut.
+    if (!breaks.length) {
+      m.style.columnFill = 'balance';
+      const n = columnCount(m.scrollWidth, col, GAP);
+      if (n <= 2) return done(false, n);
     }
-    setLayout((l) => (l.paged === n > 2 && l.pages === pagesOf(n) ? l : { paged: n > 2, pages: pagesOf(n) }));
-  }, [narrow, box.w, box.h, tick]);
+    // Otherwise the columns fill one after the other.
+    m.style.columnFill = 'auto';
+    const mBox = m.getBoundingClientRect();
+    const colAt = (r: DOMRect) => Math.max(0, Math.floor((r.left - mBox.left + 1) / (col + GAP)));
+    const els = Array.from(m.querySelectorAll<HTMLElement>('[data-piece]'));
+    const lastBox = (el: Element) => Array.from(el.getClientRects()).pop()!;
+    const pieces: PieceFit[] = els.map((el) => {
+      const mine = pagesFit(columnsOf(el, mBox.left, col, GAP));
+      return {
+        ...mine,
+        block: Number(el.dataset.block),
+        first: Number(el.dataset.first),
+        label: el.dataset.piece === 'label',
+        sentences: mine.start === mine.end ? [] : Array.from(el.querySelectorAll('[data-s]')).map((s) => pagesFit(columnsOf(s, mBox.left, col, GAP))),
+      };
+    });
+    const { at } = nextBreak(pieces, breaks);
+    if (at && breaks.length < 200) {
+      // The empty space that fills the rest of the page the text starts on: from the end of what is before it (and the gap) to the
+      // top of the first column of the next page, a little short so that the text does not fit in what is left and moves on.
+      let j = pieces.length - 1;
+      while (j > 0 && !(pieces[j]!.block === at.block && pieces[j]!.first <= at.sentence)) j--;
+      const el = els[j]!;
+      const spans = Array.from(el.querySelectorAll('[data-s]'));
+      const k = at.sentence - pieces[j]!.first;
+      const from = k > 0 ? spans[k] : el;
+      const before = k > 0 ? spans[k - 1] : els[j - 1];
+      const start = from?.getClientRects()[0];
+      const prev = before ? lastBox(before) : undefined;
+      if (start && prev) {
+        const target = 2 * (Math.floor(colAt(start) / 2) + 1);
+        const space = Math.max(0, box.h - (prev.bottom - mBox.top + ITEM_GAP) + (target - colAt(prev) - 1) * box.h - 3);
+        return setPlan({ blocks, w: box.w, h: box.h, tick, breaks: [...breaks, { ...at, space }] });
+      }
+    }
+    done(true, columnCount(m.scrollWidth, col, GAP));
+  }, [narrow, box.w, box.h, tick, blocks, breaks]);
 
   useEffect(() => onPages(narrow ? 1 : layout.pages), [narrow, layout.pages, onPages]);
   const at = Math.min(page, layout.pages - 1);
   const style: CSSProperties | undefined = narrow ? undefined : { height: box.h, columnFill: layout.paged ? 'auto' : 'balance', transform: at ? `translateX(${-at * (box.w + GAP)}px)` : undefined };
+  const content = flowContent(blocks, sentences, breaks);
   return (
     <div className="tb" ref={region}>
       <div className="mc" style={style}>
-        {children}
+        {content}
       </div>
       {!narrow && (
         <div className="mc tb-measure" ref={meas} aria-hidden="true">
-          {children}
+          {flowContent(blocks, sentences, breaks, true)}
         </div>
       )}
     </div>
   );
 }
 
+const NO_BREAKS: PageBreak[] = [];
+
+/** The blocks as elements, cut at `breaks`: a paragraph with a break inside is several elements, each a run of its sentences. */
+function flowContent(blocks: FlowBlock[], sentences: string[][], breaks: PageBreak[], measure = false): ReactNode[] {
+  const out: ReactNode[] = [];
+  blocks.forEach((b, i) => {
+    const sents = sentences[i] ?? [];
+    const mine = breaks.filter((x) => x.block === i);
+    // Where its pieces start: the block's start, and every break inside a paragraph.
+    const starts = b.kind === 'p' ? [...new Set([0, ...mine.map((x) => x.sentence)])].sort((x, y) => x - y) : [0];
+    starts.forEach((from, k) => {
+      const brk = mine.find((x) => x.sentence === from);
+      const attrs = measure ? { 'data-piece': b.kind, 'data-block': i, 'data-first': from } : undefined;
+      // A break is empty space in front of the piece, to the end of its page.
+      if (brk) out.push(<div key={`f${b.key}.${from}`} className="pgfill" style={{ height: brk.space ?? 0 }} aria-hidden="true" />);
+      if (b.kind === 'label') {
+        out.push(
+          <div key={`${b.key}.${from}`} className="label" {...attrs}>
+            {b.content}
+          </div>,
+        );
+      } else {
+        out.push(
+          <p key={`${b.key}.${from}`} {...attrs}>
+            {sents.slice(from, starts[k + 1] ?? sents.length).map((t, n) => (
+              <span key={n} data-s={measure ? '' : undefined}>
+                {n ? ' ' : ''}
+                {t}
+              </span>
+            ))}
+          </p>,
+        );
+      }
+    });
+  });
+  return out;
+}
+
 function WhyTab({ card, narrow, page, onPages }: PanelProps) {
-  const { more, why } = whyContent(card);
-  return (
-    <FlowTab narrow={narrow} page={page} onPages={onPages}>
-      {more.length > 0 && (
-        <>
-          <div className="label">More on the idea</div>
-          {more.map((p, i) => (
-            <p key={`m${i}`}>{p}</p>
-          ))}
-        </>
-      )}
-      {why.length > 0 && (
-        <>
-          {more.length > 0 && <div className="label">Why it works</div>}
-          {why.map((p, i) => (
-            <p key={`w${i}`}>{p}</p>
-          ))}
-        </>
-      )}
-    </FlowTab>
-  );
+  const blocks = useMemo(() => {
+    const { more, why } = whyContent(card);
+    const out: FlowBlock[] = [];
+    if (more.length) out.push({ kind: 'label', key: 'lm', content: 'More on the idea' }, ...more.map((text, i): FlowBlock => ({ kind: 'p', key: `m${i}`, text })));
+    if (why.length) {
+      if (more.length) out.push({ kind: 'label', key: 'lw', content: 'Why it works' });
+      out.push(...why.map((text, i): FlowBlock => ({ kind: 'p', key: `w${i}`, text })));
+    }
+    return out;
+  }, [card]);
+  return <FlowTab narrow={narrow} page={page} onPages={onPages} blocks={blocks} />;
 }
 
 function StoryTab({ card, narrow, page, onPages }: PanelProps) {
-  return (
-    <FlowTab narrow={narrow} page={page} onPages={onPages}>
-      {(card.stories ?? []).map((s, i) => (
-        <section className="story" key={i}>
-          <div className="label">
-            From <em>{s.source}</em>
-          </div>
-          {paragraphs(s.text).map((p, j) => (
-            <p key={j}>{p}</p>
-          ))}
-        </section>
-      ))}
-    </FlowTab>
+  const blocks = useMemo(
+    () =>
+      (card.stories ?? []).flatMap((s, i): FlowBlock[] => [
+        { kind: 'label', key: `l${i}`, content: <>From <em>{s.source}</em></> },
+        ...paragraphs(s.text).map((text, j): FlowBlock => ({ kind: 'p', key: `s${i}.${j}`, text })),
+      ]),
+    [card],
   );
+  return <FlowTab narrow={narrow} page={page} onPages={onPages} blocks={blocks} />;
 }
 
 function LimitsTab({ card, narrow, page, onPages }: PanelProps) {
-  const { limits, tension } = limitsContent(card);
-  return (
-    <FlowTab narrow={narrow} page={page} onPages={onPages}>
-      {limits.map((p, i) => (
-        <p key={i}>{p}</p>
-      ))}
-      {tension && (
-        <>
-          <div className="label">Tension</div>
-          {paragraphs(tension).map((p, i) => (
-            <p key={`t${i}`}>{p}</p>
-          ))}
-        </>
-      )}
-    </FlowTab>
-  );
+  const blocks = useMemo(() => {
+    const { limits, tension } = limitsContent(card);
+    const out: FlowBlock[] = limits.map((text, i) => ({ kind: 'p', key: `p${i}`, text }));
+    if (tension) out.push({ kind: 'label', key: 'lt', content: 'Tension' }, ...paragraphs(tension).map((text, i): FlowBlock => ({ kind: 'p', key: `t${i}`, text })));
+    return out;
+  }, [card]);
+  return <FlowTab narrow={narrow} page={page} onPages={onPages} blocks={blocks} />;
 }
 
 /** One step: a large numeral in the accent and the text. */
@@ -362,27 +454,49 @@ const PANELS: Record<TabId, ComponentType<PanelProps>> = {
 // ---------------------------------------------------------------------------------------------------------------
 // The band
 
+/** The height a band side's content needs, px: from its top to the bottom of its last child and its own bottom padding. */
+function needOf(el: Element | null): number {
+  const last = el?.lastElementChild;
+  if (!el || !last) return 0;
+  return Math.ceil(last.getBoundingClientRect().bottom - el.getBoundingClientRect().top + parseFloat(getComputedStyle(el).paddingBottom));
+}
+
 /**
- * Idea (the first paragraph) on the left, "With your agent" on the right, in a band of one fixed height. Text that does not fit is
- * cut, faded and reported: the card gets `data-band-overflow` for the audit, and the data is shortened.
+ * Idea (the first paragraph) on the left, "With your agent" on the right, half the width each. The band is as tall as the taller of
+ * the two (180px at least, 340px at most; see bandHeight), and "With your agent" is never cut: if it needs more than 340px the
+ * band grows to hold it. The Idea side, if it needs more than the band has, is cut and faded, and the card gets
+ * `data-band-overflow="idea"` for the audit.
  */
-function Band({ card, narrow, onOverflow }: { card: AgenticCard; narrow: boolean; onOverflow: (o: { idea: boolean; apply: boolean }) => void }) {
+function Band({ card, narrow, onOverflow }: { card: AgenticCard; narrow: boolean; onOverflow: (idea: boolean) => void }) {
   const { idea, apply } = band(card);
   const root = useRef<HTMLDivElement>(null);
   const tick = useFonts();
-  const box = useBox(root);
+  const { w } = useBox(root);
+  const vh = useViewportHeight();
+  const [height, setHeight] = useState<number | undefined>(undefined);
   useLayoutEffect(() => {
     const el = root.current;
-    if (!el || narrow) return onOverflow({ idea: false, apply: false });
-    const over = (s: string) => {
-      const e = el.querySelector(s);
-      return !!e && e.scrollHeight > e.clientHeight + 1;
-    };
-    onOverflow({ idea: over('.b-idea'), apply: over('.b-apply') });
-  }, [narrow, box.w, box.h, tick, idea, apply?.text, onOverflow]);
+    if (!el || narrow) {
+      setHeight(undefined);
+      return onOverflow(false);
+    }
+    const need = { idea: needOf(el.querySelector('.b-idea')), apply: needOf(el.querySelector('.b-apply')) };
+    // What the band can have while the tab panel keeps PANEL_MIN: the card's height less its other parts and the gaps between them.
+    const card = el.closest('.card');
+    let room = Infinity;
+    if (card) {
+      const gap = parseFloat(getComputedStyle(card).rowGap) || 0;
+      const rest = Array.from(card.children).filter((c) => c !== el && !c.classList.contains('c-panel'));
+      const used = rest.reduce((sum, c) => sum + c.getBoundingClientRect().height, 0) + gap * (rest.length + 1) + 2 * 8;
+      room = card.clientHeight - used - PANEL_MIN;
+    }
+    const h = bandHeight(need.idea, need.apply, room);
+    setHeight(h);
+    onOverflow(need.idea > h + 1);
+  }, [narrow, w, vh, tick, idea, apply?.text, onOverflow]);
   if (!idea && !apply) return null;
   return (
-    <section className="band" ref={root}>
+    <section className="band" ref={root} style={height ? { height } : undefined}>
       {idea && (
         <div className="b-idea">
           <div className="label">Idea</div>
@@ -445,7 +559,7 @@ export function CardView({
   const tab = picked && tabs.includes(picked) ? picked : defaultTab(tabs);
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(1);
-  const [over, setOver] = useState({ idea: false, apply: false });
+  const [overIdea, setOverIdea] = useState(false);
   // The "With your agent" box is a light tint of the accent; the accent is darkened until it reads on that tint (and so on the paper).
   const tint = useMemo(() => tintOf(book.accent), [book.accent]);
   const accent = useMemo(() => readableOn(readableOn(book.accent, tint), PAPER), [book.accent, tint]);
@@ -457,7 +571,7 @@ export function CardView({
     setPages(1);
   };
   const onPages = useRef((n: number) => setPages((p) => (p === n ? p : n))).current;
-  const onOverflow = useRef((o: { idea: boolean; apply: boolean }) => setOver((p) => (p.idea === o.idea && p.apply === o.apply ? p : o))).current;
+  const onOverflow = useRef((idea: boolean) => setOverIdea(idea)).current;
   const last = Math.max(0, pages - 1);
   const at = Math.min(page, last);
 
@@ -483,9 +597,8 @@ export function CardView({
 
   const Panel = tab ? PANELS[tab] : undefined;
   const style = { '--accent': accent, '--accent-tint': tint } as CSSProperties;
-  const overflow = [over.idea && 'idea', over.apply && 'apply'].filter(Boolean).join(' ');
   return (
-    <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined} data-band-overflow={overflow || undefined} data-band-idea={over.idea ? '' : undefined} data-band-apply={over.apply ? '' : undefined}>
+    <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined} data-band-overflow={overIdea ? 'idea' : undefined}>
       <header className="c-head">
         <div className="c-titles">
           <div className="c-by">
@@ -495,7 +608,7 @@ export function CardView({
             </span>
           </div>
           <h3 className="c-name">{concept.name}</h3>
-          <p className="c-sum">{concept.summary}</p>
+          <p className="c-sum">{subtitleOf(card, concept.summary)}</p>
           <div className="c-chips">
             {concept.theses.map((k) => {
               const t = themes.find((x) => x.key === k);

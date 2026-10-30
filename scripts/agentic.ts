@@ -5,13 +5,14 @@
 // Usage: npm run data:agentic
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { mapIds, type SourceConcept } from '../src/lib/agentic.ts';
-import type { Agentic, AgenticThesis } from '../src/types.ts';
+import type { Agentic, AgenticCard, AgenticThesis } from '../src/types.ts';
 
 interface Source {
   video: { id: string; url: string; duration_s: number };
   theses: AgenticThesis[];
   books: { id: string; title: string; author: string }[];
-  concepts: (SourceConcept & { card: unknown })[];
+  /** Each concept's card goes out as it is, so the card's optional `subtitle` (the line under the concept name) passes through. */
+  concepts: (SourceConcept & { card: AgenticCard })[];
 }
 
 const read = async <T>(file: string) => JSON.parse(await readFile(file, 'utf8')) as T;

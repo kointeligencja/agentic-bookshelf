@@ -24,6 +24,12 @@ export const STATUS: Record<string, string> = {
   '?': 'Not yet checked',
 };
 
+/** The line under the concept name: the card's own subtitle when it has one, else the concept's one-line summary. */
+export function subtitleOf(card: AgenticCard | undefined, summary: string): string {
+  const own = card?.subtitle?.trim();
+  return own || summary;
+}
+
 const some = (a: readonly unknown[] | undefined): boolean => !!a && a.length > 0;
 
 /** The text of a card's Idea and apply boxes, or nothing. */
@@ -154,3 +160,132 @@ export function columnCount(scrollWidth: number, col: number, gap: number): numb
 
 /** Pages of two columns that `columns` columns come to. */
 export const pagesOf = (columns: number): number => Math.max(1, Math.ceil(columns / 2));
+
+// ---------------------------------------------------------------------------------------------------------------
+// The band
+
+/** The band "Idea | With your agent" is at least this tall, px. */
+export const BAND_MIN = 180;
+/** The Idea side is cut (and faded) at this height; "With your agent" never is. */
+export const BAND_MAX = 340;
+
+/** The tab panel keeps at least this much height, px: room for a heading and a quote with its source. */
+export const PANEL_MIN = 150;
+
+/**
+ * The band's height from the height each side needs: the taller of the two, at least BAND_MIN, and at most BAND_MAX unless the
+ * "With your agent" side needs more, since that is never cut: then the band grows to fit it. Idea text taller than the band is cut.
+ * `room` is the height the band can have while the tab panel keeps PANEL_MIN (on a short window): Idea is cut there, "With your agent" is not.
+ */
+export function bandHeight(idea: number, apply: number, room = Infinity): number {
+  return Math.max(BAND_MIN, apply, Math.min(BAND_MAX, idea, room));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Sentences
+
+/** Words that end in a full stop without ending the sentence (lower case, no stop). */
+const ABBREVIATIONS = new Set([
+  'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'mt', 'vs', 'etc', 'cf', 'e.g', 'i.e', 'viz', 'approx', 'ca', 'no', 'nos', 'fig', 'figs', 'vol', 'ch', 'p', 'pp',
+  'inc', 'ltd', 'co', 'corp', 'gen', 'col', 'capt', 'lt', 'sgt', 'rev', 'hon', 'al',
+]);
+
+/** True when the full stop after `word` (the text up to and including it) does not end a sentence. */
+function isAbbreviation(word: string): boolean {
+  const w = word.replace(/^[("'“‘[]+/, '').replace(/\.+$/, '');
+  const lower = w.toLowerCase();
+  return (
+    ABBREVIATIONS.has(lower) ||
+    /^[a-z]$/i.test(w) || // an initial: J. K. Rowling
+    /^(?:[a-z]\.)+[a-z]$/i.test(w) || // U.S. and e.g.
+    /^\d{1,2}$/.test(w) // a list number or "No. 5"
+  );
+}
+
+/**
+ * Cuts a paragraph into sentences, for paging at a sentence boundary. A boundary is . ! ? or … (with any closing quote or bracket) followed
+ * by a space and then a capital, a digit or an opening quote. It errs on the side of not cutting: a stop after Mr., Dr., St., e.g., i.e.,
+ * U.S., an initial or a short number, or before a lower-case word, is not a boundary, and a decimal has no space after its stop. The
+ * sentences joined by single spaces are the paragraph (whitespace aside).
+ */
+export function splitSentences(text: string): string[] {
+  const out: string[] = [];
+  const re = /([.!?…]+)(["'”’)\]]*)(\s+)/g;
+  let from = 0;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    const stop = m.index + m[1]!.length;
+    const next = text.slice(m.index + m[0].length, m.index + m[0].length + 1);
+    if (!/[A-Z0-9"'“‘([]/.test(next) && !/\p{Lu}/u.test(next)) continue;
+    if (!/[!?…]/.test(m[1]!) && isAbbreviation(text.slice(from, stop).split(/\s+/).pop() ?? '')) continue;
+    out.push(text.slice(from, stop + m[2]!.length).trim());
+    from = m.index + m[0].length;
+  }
+  const last = text.slice(from).trim();
+  if (last) out.push(last);
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Paging running text
+
+/** A place where a page of running text starts: before sentence `sentence` of block `block` (0 is the block's start). */
+export interface PageBreak {
+  block: number;
+  sentence: number;
+  /**
+   * Height in px of the empty space put in front of the text to fill the rest of its page (set when the break is made, from the measure;
+   * a column break would not do: it does nothing at the top of a column, and cannot skip the first column of a page).
+   */
+  space?: number;
+}
+
+/** Where a sentence sits in the flow of columns: its first and last page, from 0. */
+export interface SentenceFit {
+  start: number;
+  end: number;
+}
+
+/** A paragraph (or a piece of one) or a heading in the flow of columns: its pages, and its sentences' pages. */
+export interface PieceFit extends SentenceFit {
+  block: number;
+  /** Index of the piece's first sentence in its paragraph. */
+  first: number;
+  label: boolean;
+  sentences: SentenceFit[];
+}
+
+/**
+ * Of running text laid out in columns, two to a page, finds the next place to start a page so that no page ends inside a
+ * sentence. Only the first fault is looked at (the text after it moves when it is fixed), and the layout is measured again:
+ * - a paragraph that begins on one page and ends on another moves whole to the next page (with a heading that stands over it);
+ * - one that does not fit a page of its own is cut before the first sentence that crosses a page;
+ * - a sentence longer than a page cannot be helped; those are counted in `stuck`.
+ * Nothing to fix: `at` is null.
+ */
+export function nextBreak(pieces: readonly PieceFit[], have: readonly PageBreak[] = []): { at: { block: number; sentence: number } | null; stuck: number } {
+  let stuck = 0;
+  const known = (b: { block: number; sentence: number }) => have.some((h) => h.block === b.block && h.sentence === b.sentence);
+  for (let j = 0; j < pieces.length; j++) {
+    const p = pieces[j]!;
+    if (p.start === p.end) continue;
+    let g = j;
+    while (g > 0 && pieces[g - 1]!.label) g--;
+    const top = g === 0 || pieces[g - 1]!.end < pieces[g]!.start;
+    if (!top) {
+      const q = pieces[g]!;
+      const at = { block: q.block, sentence: q.first };
+      if (!known(at)) return { at, stuck };
+      stuck++;
+    } else if (!p.label) {
+      // On a page of its own already: cut it before the first sentence that crosses a page (none: it breaks between two sentences).
+      const i = p.sentences.findIndex((x) => x.start !== x.end);
+      if (i === 0) stuck++;
+      else if (i > 0) {
+        const at = { block: p.block, sentence: p.first + i };
+        if (!known(at)) return { at, stuck };
+        stuck++;
+      }
+    }
+  }
+  return { at: null, stuck };
+}

@@ -25,16 +25,32 @@ const WALNUT_GLOW = '#5b3a22';
 /** The dim of the room while a book is pulled out and there is no reading mode (a narrow screen). */
 const DIM_COLOR = '#1d1813';
 
+/** Draw order of the backdrop and of the held book: after the room and the case (order 0), the book after the backdrop. */
+const BACKDROP_ORDER = 5;
+const BOOK_ORDER = 6;
+
 /**
  * The plane in front of the case. Out of reading mode it is the dim (a flat colour, mostly transparent). In reading mode it fades
  * to opaque walnut, lighter round the book (a glow in screen space, `uCentre` and `uRadius` in drawing-buffer pixels), so no shelf
  * shows behind the left quarter of the screen. Colours are linear, as the composer expects.
+ *
+ * The plane stands at DIM_Z in the world, but the room reaches in front of it (the floor runs 6000mm out): with a low book, seen
+ * from above, the floor was drawn over the bottom of the walnut. So the backdrop ignores the depth of the room: it is drawn in the
+ * opaque pass after the room and before the book (BACKDROP_ORDER, BOOK_ORDER), with no depth test, blended by hand because it fades.
+ * In reading mode it also writes a depth just behind the book (`uDepth`), so what is drawn after it (the case's glow layers) is
+ * hidden and the depth of field sees a flat backdrop. Out of reading mode it writes no depth.
  */
 function backdropMaterial() {
   return new THREE.ShaderMaterial({
-    transparent: true,
+    transparent: false,
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.SrcAlphaFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    // The test stays on but always passes: with the test off, nothing is written to the depth buffer either.
+    depthFunc: THREE.AlwaysDepth,
     depthWrite: false,
     uniforms: {
+      uDepth: { value: 1 },
       uOpacity: { value: 0 },
       uRead: { value: 0 },
       uDim: { value: new THREE.Color(DIM_COLOR) },
@@ -45,10 +61,11 @@ function backdropMaterial() {
     },
     vertexShader: 'void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `
-      uniform float uOpacity; uniform float uRead; uniform vec3 uDim; uniform vec3 uEdge; uniform vec3 uGlow; uniform vec2 uCentre; uniform float uRadius;
+      uniform float uDepth; uniform float uOpacity; uniform float uRead; uniform vec3 uDim; uniform vec3 uEdge; uniform vec3 uGlow; uniform vec2 uCentre; uniform float uRadius;
       void main() {
         float k = 1.0 - smoothstep(0.0, uRadius, distance(gl_FragCoord.xy, uCentre));
         gl_FragColor = vec4(mix(uDim, mix(uEdge, uGlow, k), uRead), uOpacity);
+        gl_FragDepth = uDepth;
       }`,
   });
 }
@@ -182,6 +199,7 @@ function Focused({
       q: new THREE.Quaternion(),
       turn: new THREE.Quaternion(),
       out: new THREE.Vector3(),
+      rel: new THREE.Vector3(),
     }),
     [],
   );
@@ -225,10 +243,19 @@ function Focused({
     g.position.lerpVectors(tmp.out, tmp.target, smooth(0.3, 1, p));
     g.quaternion.slerpQuaternions(home.quaternion, tmp.q, smooth(0.32, 0.9, p));
     if (cover.current) cover.current.rotation.y = OPEN_ANGLE * o;
+    // The book is drawn after the backdrop.
+    g.traverse((o) => {
+      if (o.renderOrder !== BOOK_ORDER) o.renderOrder = BOOK_ORDER;
+    });
     // The room dims, and in reading mode becomes walnut, centred where the book is held (middle of the strip, middle of the height).
-    const u = dim.uniforms as { uOpacity: { value: number }; uRead: { value: number }; uCentre: { value: THREE.Vector2 }; uRadius: { value: number } };
+    const u = dim.uniforms as { uDepth: { value: number }; uOpacity: { value: number }; uRead: { value: number }; uCentre: { value: THREE.Vector2 }; uRadius: { value: number } };
+    // The backdrop's depth in reading mode: behind every point of the book, however it turns (its half-diagonal and a margin).
+    const behind = tmp.rel.copy(g.position).sub(camera.position).dot(tmp.dir) + Math.hypot(book.dims.w, book.dims.h, book.dims.t) / 2 + 40;
+    const ndc = tmp.rel.set(0, 0, -behind).applyMatrix4(camera.projectionMatrix).z;
+    u.uDepth.value = THREE.MathUtils.clamp(ndc * 0.5 + 0.5, 0, 1);
     u.uOpacity.value = THREE.MathUtils.lerp(0.16, 1, st.read) * THREE.MathUtils.clamp(p, 0, 1);
     u.uRead.value = st.read;
+    dim.depthWrite = st.read > 0.5;
     gl.getDrawingBufferSize(buffer);
     const px = buffer.x / size.width;
     u.uCentre.value.set(readingPanel(size.width).bookCentre * px, buffer.y / 2);
@@ -254,7 +281,7 @@ function Focused({
   return (
     <>
       {/* Dims the shelf behind the book and catches "click outside to close". */}
-      <mesh position={[home.position.x, 1300, DIM_Z]} onClick={onOutside} renderOrder={5}>
+      <mesh position={[home.position.x, 1300, DIM_Z]} onClick={onOutside} renderOrder={BACKDROP_ORDER}>
         <planeGeometry args={[20000, 8000]} />
         <primitive object={dim} attach="material" />
       </mesh>

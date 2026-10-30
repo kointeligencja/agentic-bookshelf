@@ -141,6 +141,8 @@ export interface AgenticConversationLine {
 /** The card for a concept (public/data/agentic-cards.json, keyed by concept id). */
 export interface AgenticCard {
   title: string;
+  /** The line under the concept name on the card; without it the concept's summary is shown. */
+  subtitle?: string;
   sources: { book: string; authors: string }[];
   idea?: string[];
   why?: string[];
