@@ -5,11 +5,12 @@ import type { AgenticCard, AgenticConcept } from '../types.ts';
 // the card steps down a fixed ladder of clamp levels until they do. See CardView.tsx for the measuring.
 
 /** The sections a "more ›" link can open: each is shown whole in its own view. */
-export const SECTIONS = ['stories', 'method', 'limits', 'tension', 'quotes', 'conversation'] as const;
+export const SECTIONS = ['why', 'stories', 'method', 'limits', 'tension', 'quotes', 'conversation'] as const;
 export type SectionId = (typeof SECTIONS)[number];
 
 /** The heading shown over each section's expanded view. */
 export const SECTION_TITLES: Record<SectionId, string> = {
+  why: 'Why it works',
   stories: 'Stories',
   method: 'Method',
   limits: 'Limits',
@@ -43,7 +44,7 @@ export type Block = {
   zone: Zone;
   /** The section the block belongs to, or the part of the skeleton. */
   sec: SectionId | 'idea' | 'why' | 'apply' | 'first-line' | 'note';
-  /** Part of the skeleton (Idea, Why it works, With your agent): never clamped. */
+  /** Part of the skeleton (Idea, With your agent; Why it works up to level 7): never clamped. */
   skeleton?: boolean;
   /** Cut short by the ladder; carries a link to the whole. */
   clamped?: boolean;
@@ -147,11 +148,12 @@ export function splitText(text: string, max = MAX_RUN): string[] {
 
 /**
  * The ladder's levels. 0 shows everything; each level after it cuts more, and the card takes the first one that fits.
- * 0..6 are the ladder as specified. 7 is a last step used only when level 6 still does not fit while the skeleton
- * does: the first conversation line, which is not part of the skeleton, becomes a link too.
+ * 0..6 are the ladder as specified. 7 is used only when level 6 still does not fit: the first conversation line
+ * becomes a link too. 8 and 9 are used only when 7 still does not fit: Why it works is cut to its first paragraph
+ * with a link (8), then to the link alone (9). Idea, With your agent and the lead are never clamped.
  */
-export const LEVELS = [0, 1, 2, 3, 4, 5, 6, 7] as const;
-export const MAX_LEVEL = 7;
+export const LEVELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const MAX_LEVEL = 9;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -254,23 +256,38 @@ function lineBlocks(card: AgenticCard, from: number): Block[] {
   }));
 }
 
+/** Why it works on the card: whole up to level 7, then the first paragraph with a link (8), then the link alone (9). */
+function whyBlocks(card: AgenticCard, level: number): Block[] {
+  const paras = card.why ?? [];
+  const head: Head = { label: 'Why it works' };
+  if (level < 8) return paras.flatMap((t, i) => runs(`why-${i}`, 'why', 'left', t, { head: i === 0 ? head : undefined, skeleton: true }));
+  if (!paras.length) return [];
+  if (level === 8) {
+    const more = paras.length > 1;
+    return runs('why-0', 'why', 'left', paras[0]!, { head, more: more ? { sec: 'why', label: 'Why it works ›' } : undefined, clamped: more });
+  }
+  return [{ id: 'why-link', zone: 'left', sec: 'why', kind: 'more', more: { sec: 'why', label: 'Why it works ›' }, clamped: true }];
+}
+
 /**
- * The card as blocks at a clamp level (0 = everything). The skeleton, Idea and Why it works on the left and With your
- * agent on the right, is the same at every level. Levels are cumulative:
+ * The card as blocks at a clamp level (0 = everything). Idea on the left and With your agent on the
+ * right are the same at every level; Why it works is whole up to level 7. Levels are cumulative:
  * 1 Limits to the first paragraph's first 2 sentences, Tension to its first 2;
  * 2 Stories to each story's first 2 sentences;
  * 3 Method without its intro, 3 steps at most, each step's first sentence;
  * 4 further quotes and conversation lines become a link;
  * 5 Stories to the first sentence, Method to 2 steps;
  * 6 Stories, Method, Limits and Tension each become a single link;
- * 7 the first conversation line becomes a link too.
+ * 7 the first conversation line becomes a link too;
+ * 8 Why it works is cut to its first paragraph, whole, ending with a link (when there is more than one paragraph);
+ * 9 Why it works is the link alone.
  * Every cut block ends with a link to the whole.
  */
 export function cardBlocks(card: AgenticCard | undefined, level: number): Block[] {
   if (!card) return [{ id: 'note', zone: 'left', sec: 'note', kind: 'text', text: 'Card in progress.', skeleton: true }];
   const out: Block[] = [];
   (card.idea ?? []).forEach((t, i) => out.push(...runs(`idea-${i}`, 'idea', 'left', t, { head: i === 0 ? { label: 'Idea' } : undefined, skeleton: true })));
-  (card.why ?? []).forEach((t, i) => out.push(...runs(`why-${i}`, 'why', 'left', t, { head: i === 0 ? { label: 'Why it works' } : undefined, skeleton: true })));
+  out.push(...whyBlocks(card, level));
   if (card.apply) out.push({ id: 'apply', zone: 'right', sec: 'apply', kind: 'apply', head: { label: 'With your agent', em: card.apply.label }, text: card.apply.text, skeleton: true });
   if (level < 7) out.push(...lineBlocks(card, 0).slice(0, 1));
 
@@ -302,13 +319,15 @@ export function cardBlocks(card: AgenticCard | undefined, level: number): Block[
 }
 
 /** Labels the heading of an expanded view already says. */
-const REDUNDANT = new Set(['Limits', 'Tension', 'More quotes', 'In the conversation', 'More from the conversation']);
+const REDUNDANT = new Set(['Why it works', 'Limits', 'Tension', 'More quotes', 'In the conversation', 'More from the conversation']);
 
 /** The blocks of one section, whole, for its expanded view. The conversation starts at line 2 unless line 1 is cut from the card. */
 export function sectionBlocks(card: AgenticCard | undefined, sec: SectionId, wholeConversation = false): Block[] {
   if (!card) return [];
   const blocks = (() => {
     switch (sec) {
+      case 'why':
+        return whyBlocks(card, 0).map(({ skeleton: _s, ...b }) => b as Block);
       case 'stories':
         return storyBlocks(card, 0);
       case 'method':
@@ -418,26 +437,43 @@ export interface Choice {
   /** The level shown. */
   level: number;
   flow: Flow;
-  /** The skeleton alone does not fit: shown at level 6, for someone to shorten the text. */
+  /** Not even the last level (9) fits: shown at level 9, for someone to shorten the text. */
   overflow: boolean;
 }
 
 /**
- * The first level whose blocks fit in the columns. Past level 6 the last step (7) is tried; if even that does not
- * fit, the skeleton is too long for the screen and the card is shown at level 6, marked as overflowing.
- * `levels[k]` is level k's blocks, measured.
+ * The first level whose blocks fit in the columns. Levels 7, 8 and 9 are the last steps, in that order; if even the
+ * last does not fit, Idea, With your agent and the lead are too long for the screen and the card is shown at the
+ * last level, marked as overflowing. `levels[k]` is level k's blocks, measured.
  */
 export function chooseLevel(levels: Measured[], height: number, columns: Columns): Choice {
   let last: Flow | null = null;
+  let lastLevel = -1;
   for (let level = 0; level < levels.length; level++) {
     const m = levels[level];
     if (!m) continue;
     const flow = flowBlocks(m.zones, m.metrics, height, columns);
     if (flow.fits) return { level, flow, overflow: false };
-    if (level === 6) last = flow;
+    last = flow;
+    lastLevel = level;
   }
-  const six = levels[6];
-  return { level: 6, flow: last ?? (six ? flowBlocks(six.zones, six.metrics, height, columns) : { left: [], right: [], third: [], usedLeft: 0, usedRight: 0, usedThird: 0, fits: false }), overflow: true };
+  return { level: Math.max(0, lastLevel), flow: last ?? { left: [], right: [], third: [], usedLeft: 0, usedRight: 0, usedThird: 0, fits: false }, overflow: true };
+}
+
+/**
+ * How many columns a card on a desktop screen uses: two or three, never one. The fewest at which the card fits with nothing
+ * clamped (level 0), so that a short card is not spread over a third column that stays empty. If it fits in neither, three
+ * columns and the clamp ladder, as before. `max` is the most columns the box has room for; with room for two only, it is two.
+ * `l0[n]` is level 0 measured at the width of one of n columns.
+ */
+export function chooseColumns(l0: Partial<Record<2 | 3, Measured>>, height: number, max: Columns): 2 | 3 {
+  const most = max >= 3 ? 3 : 2;
+  for (const n of [2, 3] as const) {
+    if (n > most) break;
+    const m = l0[n];
+    if (m && flowBlocks(m.zones, m.metrics, height, n).fits) return n;
+  }
+  return most;
 }
 
 export interface ColumnPage {

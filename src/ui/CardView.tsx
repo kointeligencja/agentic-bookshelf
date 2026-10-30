@@ -12,6 +12,7 @@ import {
   sectionBlocks,
   STATUS,
   type Block,
+  chooseColumns,
   type ColumnPage,
   type Lead,
   type Measured,
@@ -83,7 +84,7 @@ function useFonts(): number {
  * text, three at most, otherwise fewer; never wider than 70. The probe holds a sample of text to measure a character with, since the
  * font is narrow and the `ch` unit would be too wide.
  */
-function useColumns(width: number, narrow: boolean, probe: RefObject<HTMLElement | null>, tick: number): { cols: Columns; colW: number } {
+function useColumns(width: number, narrow: boolean, probe: RefObject<HTMLElement | null>, tick: number): { cols: Columns; colW: number; widthFor: (n: number) => number } {
   const [limits, setLimits] = useState(LIMITS);
   useLayoutEffect(() => {
     const w = probe.current?.firstElementChild?.getBoundingClientRect().width;
@@ -92,9 +93,10 @@ function useColumns(width: number, narrow: boolean, probe: RefObject<HTMLElement
     const next = { min: Math.ceil(MIN_CHARS * ch), max: Math.floor(MAX_CHARS * ch) };
     setLimits((l) => (l.min === next.min && l.max === next.max ? l : next));
   }, [probe, tick, narrow]);
-  const cols = (narrow ? 1 : Math.max(1, Math.min(3, Math.floor((width + GAP) / (limits.min + GAP))))) as Columns;
-  const colW = Math.max(1, Math.floor(Math.min(limits.max, (width - GAP * (cols - 1)) / cols)));
-  return { cols, colW };
+  // On a desktop screen a card has two columns at least, even when the box is narrower than 40 characters each.
+  const cols = (narrow ? 1 : Math.max(2, Math.min(3, Math.floor((width + GAP) / (limits.min + GAP))))) as Columns;
+  const widthFor = (n: number) => Math.max(1, Math.floor(Math.min(limits.max, (width - GAP * (n - 1)) / n)));
+  return { cols, colW: widthFor(cols), widthFor };
 }
 
 /** Heights of an element's children, and the padding each has on top. */
@@ -240,6 +242,8 @@ interface Plan {
   level: number;
   overflow: boolean;
   cols: Columns;
+  /** Width of one column, px. */
+  colW: number;
   left: Block[];
   right: Block[];
   third: Block[];
@@ -279,8 +283,10 @@ function CardBody({
   const box = useBox(body);
   const narrow = useNarrow();
   const tick = useFonts();
-  const { cols, colW } = useColumns(box.w, narrow, probe, tick);
+  const { cols, colW, widthFor } = useColumns(box.w, narrow, probe, tick);
   const [plan, setPlan] = useState<Plan | null>(null);
+  // Column counts to try: two, and three if the box has room for them.
+  const tries = ([2, 3] as const).filter((n) => n <= cols);
 
   const levels = useMemo(() => LEVELS.map((l) => cardBlocks(card, l)), [card]);
   // Levels that come out the same share one measured copy.
@@ -304,12 +310,20 @@ function CardBody({
   useLayoutEffect(() => {
     const root = wrap.current;
     if (narrow || !root || !box.w || !box.h) return;
-    const [cl, ld, nx] = [root.querySelector('.m-cols'), root.querySelector('.m-lead'), root.querySelector('.m-next')];
+    const [ld, nx] = [root.querySelector('.m-lead'), root.querySelector('.m-next')];
     const leadH = ld?.firstElementChild?.getBoundingClientRect().height ?? 0;
-    const measured: Measured[] = levels.map((blocks, l) => ({ zones: blocks.map((b) => b.zone), metrics: metricsOf(cl?.children[which[l] ?? 0]) }));
+    // Every level, laid out at the width of one column of each count.
+    const measuredAt = (n: number): Measured[] => {
+      const cl = root.querySelector(`.m-cols[data-n="${n}"]`);
+      return levels.map((blocks, l) => ({ zones: blocks.map((b) => b.zone), metrics: metricsOf(cl?.children[which[l] ?? 0]) }));
+    };
+    const at: Partial<Record<2 | 3, Measured[]>> = {};
+    for (const n of tries) at[n] = measuredAt(n);
     // A pixel of room against rounding.
     const avail = box.h - leadH - 1;
-    const choice = chooseLevel(measured, avail, cols);
+    // Two columns or three: the fewest in which the whole card (nothing clamped) fits; else three and the clamp ladder.
+    const n = chooseColumns({ 2: at[2]?.[0], 3: at[3]?.[0] }, avail, cols);
+    const choice = chooseLevel(at[n] ?? [], avail, n);
     const blocks = levels[choice.level] ?? [];
     // "Read next" takes what is left under both columns, one row at least.
     const free = avail - Math.max(choice.flow.usedLeft, choice.flow.usedRight, choice.flow.usedThird);
@@ -318,13 +332,13 @@ function CardBody({
     heights.forEach((h, i) => {
       if (h <= free) next = i + 1;
     });
-    setPlan({ level: choice.level, overflow: choice.overflow, cols, left: choice.flow.left.flatMap((i) => blocks[i] ?? []), right: choice.flow.right.flatMap((i) => blocks[i] ?? []), third: choice.flow.third.flatMap((i) => blocks[i] ?? []), next });
+    setPlan({ level: choice.level, overflow: choice.overflow, cols: n, colW: widthFor(n), left: choice.flow.left.flatMap((i) => blocks[i] ?? []), right: choice.flow.right.flatMap((i) => blocks[i] ?? []), third: choice.flow.third.flatMap((i) => blocks[i] ?? []), next });
   }, [narrow, box, cols, colW, levels, which, tick, related.length]);
 
   // Narrow: all of it, in one column, in reading order.
   const all = useMemo<Plan>(() => {
     const blocks = levels[0] ?? [];
-    return { level: 0, overflow: false, cols: 1, left: flowBlocks(blocks.map((b) => b.zone), [], 0, 1).left.flatMap((i) => blocks[i] ?? []), right: [], third: [], next: related.length };
+    return { level: 0, overflow: false, cols: 1, colW: 0, left: flowBlocks(blocks.map((b) => b.zone), [], 0, 1).left.flatMap((i) => blocks[i] ?? []), right: [], third: [], next: related.length };
   }, [levels, related.length]);
   const shown = narrow ? all : plan;
 
@@ -339,7 +353,7 @@ function CardBody({
     onRestored();
   }, [restore, shown, onRestored]);
 
-  const style = { '--n': shown?.cols ?? cols, '--colw': `${colW}px` } as CSSProperties;
+  const style = { '--n': shown?.cols ?? cols, '--colw': `${shown?.colW || colW}px` } as CSSProperties;
   const column = (blocks: Block[]) => blocks.map((b) => <BlockView key={b.id} b={b} onSeek={onSeek} onMore={onMore} />);
   return (
     <div className={`c-body${narrow ? ' scroll' : ''}`} ref={body} tabIndex={-1}>
@@ -360,15 +374,17 @@ function CardBody({
           <div className="c-measure m-lead" style={{ width: box.w }}>
             <LeadView lead={lead} />
           </div>
-          <div className="c-measure m-cols" style={{ width: colW }}>
-            {distinct.map((blocks, d) => (
-              <div key={d}>
-                {blocks.map((b) => (
-                  <BlockView key={b.id} b={b} onSeek={onSeek} onMore={onMore} measure />
-                ))}
-              </div>
-            ))}
-          </div>
+          {tries.map((n) => (
+            <div key={n} className="c-measure m-cols" data-n={n} style={{ width: widthFor(n) }}>
+              {distinct.map((blocks, d) => (
+                <div key={d}>
+                  {blocks.map((b) => (
+                    <BlockView key={b.id} b={b} onSeek={onSeek} onMore={onMore} measure />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
           <div className="c-measure m-next" style={{ width: box.w }}>
             {[1, 2, 3]
               .filter((n) => n <= related.length)
@@ -552,7 +568,7 @@ export function CardView({
           const t = themes.find((x) => x.key === k);
           return (
             <button key={k} className={`theme mini${k === activeTheme ? ' on' : ''}`} onClick={() => onTheme(k)} title={t?.title}>
-              <span className="k">{k}</span>
+              {/^\d+$/.test(k) && <span className="k">{k}</span>}
               <span className="t">{t?.title}</span>
             </button>
           );

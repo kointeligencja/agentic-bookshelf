@@ -1,10 +1,11 @@
 // Opens every concept card at each viewport and checks that it is exactly one screen: the page does not scroll, the
-// card's body does not overflow, the skeleton (lead, Idea, Why it works, With your agent) is never clamped. Records the
+// card's body does not overflow, Idea, With your agent and the lead are never clamped (Why it works is cut only at levels 8 and 9). Records the
 // clamp level each card ends up at. Then opens each of a card's "more" views once and checks those too (paging is
 // allowed there). Writes /tmp/card-audit.json and prints a summary.
 // Usage: npx tsx scripts/card-audit.ts [baseUrl] [WxH,WxH,...]   (needs `npx vite --port 5181` running)
 // Env: CHROME_BIN = a Chromium executable to use instead of Playwright's own; CARD_W = a panel width in px to try
-// in place of the one the app computes (what-if only, the camera does not follow); OUT = the JSON file.
+// in place of the one the app computes (what-if only, the camera does not follow); OUT = the JSON file;
+// ONLY = comma-separated concept ids to audit (default all); MORE=0 skips the section views.
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium, type Page } from 'playwright';
 import { sectionBlocks, sectionsOf, type SectionId } from '../src/lib/card.ts';
@@ -15,6 +16,7 @@ const sizes = (process.argv[3] ?? '1280x800,1440x900').split(',').map((s) => s.s
 const out = process.env.OUT ?? '/tmp/card-audit.json';
 const MORE_AT = '1280x800';
 const doMore = process.env.MORE !== '0';
+const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
 
 const data = JSON.parse(await readFile('public/data/agentic.json', 'utf8')) as Agentic;
 const cards = JSON.parse(await readFile('public/data/agentic-cards.json', 'utf8')) as Record<string, AgenticCard>;
@@ -107,7 +109,7 @@ for (const [w, h] of sizes) {
   const more: MoreRow[] = [];
   const clicks: { id: string; failures: string[] }[] = [];
 
-  for (const c of data.concepts) {
+  for (const c of data.concepts.filter((x) => !only || only.has(x.id))) {
     const failures: string[] = [];
     const bookId = c.bookIds[0]!;
     try {
@@ -128,7 +130,7 @@ for (const [w, h] of sizes) {
     if (!r.lead || !r.leadText) failures.push('no lead');
     if (!r.skeletonBlocks) failures.push('no skeleton blocks');
     if (r.chips.some((ok: boolean) => !ok)) failures.push('a theme chip is truncated');
-    if (r.overflow && r.level !== '6') failures.push(`overflow at level ${r.level}, not 6`);
+    if (r.overflow && r.level !== '9') failures.push(`overflow at level ${r.level}, not 9`);
     rows.push({ id: c.id, name: c.name, level: Number(r.level), overflow: r.overflow, cols: Number(r.cols), lead: r.lead, next: r.next, free: r.free, over: r.overflow ? Math.max(r.over.col, r.over.cols) : 0, failures });
 
     if (vp !== MORE_AT || !doMore) continue;

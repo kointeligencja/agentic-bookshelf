@@ -1,6 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { setCaseCx } from '../lib/caseAxis.ts';
+import { EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameBetween } from '../lib/framing.ts';
 import { cardWidth, isReading, panelWidth, readingPanel } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
@@ -10,15 +12,54 @@ export const EYE_HEIGHT = 1250;
 let lookHeight = 1100;
 export const MIN_DISTANCE = 1100;
 export const MAX_DISTANCE = 6000;
-export const DEFAULT_DISTANCE = 3500;
+export const DEFAULT_DISTANCE = EYE_REF_DISTANCE;
 export const FOV = 35;
 
 /** Camera position and look-at point for a dolly position x and wall distance d. */
 export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Vector3; look: THREE.Vector3 }) {
   // The eye sits a little above what it looks at, as a standing person's would.
-  out.eye.set(x, y + 150 + (d - DEFAULT_DISTANCE) * 0.04, d);
+  out.eye.set(x, y + EYE_LIFT + (d - EYE_REF_DISTANCE) * EYE_SLOPE, d);
   out.look.set(x, y, 0);
   return out;
+}
+
+/**
+ * The opening view: the case from its left edge, as much as fits in the space right of the panel. With `wall` (the rows of
+ * the search pill's top and the theme card's bottom, in a window `viewHeight` high) the case's top and bottom edges are put on
+ * those two rows, so the bookcase lines up with the left column; without it the case is framed in the window with some margin.
+ */
+export function homeView(
+  layout: Layout,
+  aspect: number,
+  wall?: { top: number; bottom: number; viewHeight: number },
+): { x: number; d: number; look: number } {
+  const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+  const H = caseHeight(layout.bookcase);
+  // The opening view starts just left of the case.
+  const left = -300;
+  const right = caseWidth(layout.bookcase) + 250;
+  let look = H / 2 + 40;
+  let d: number;
+  if (wall && wall.bottom - wall.top > 100) {
+    ({ d, look } = frameBetween({
+      top: H,
+      bottom: 0,
+      z: layout.bookcase.depth,
+      topRow: wall.top,
+      bottomRow: wall.bottom,
+      height: wall.viewHeight,
+      fovDeg: FOV,
+      min: MIN_DISTANCE,
+      max: MAX_DISTANCE,
+    }));
+  } else {
+    const dHeight = (H / 2 + 260) / tan;
+    const dWidth = (right - left) / 2 / (tan * aspect);
+    d = THREE.MathUtils.clamp(Math.min(Math.max(dHeight, dWidth), dHeight * 1.25), MIN_DISTANCE, MAX_DISTANCE);
+  }
+  const halfW = d * tan * aspect;
+  const x = right - left <= halfW * 2 ? (left + right) / 2 : left + halfW;
+  return { x, d, look };
 }
 
 /**
@@ -26,22 +67,6 @@ export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Ve
  * the camera eases towards it. The pointer nudges the eye a little for parallax.
  * Input is ignored while a book is pulled out.
  */
-/** The opening view: the case from its left edge, as much as fits in the space right of the panel, its full height in frame. */
-export function homeView(layout: Layout, aspect: number): { x: number; d: number; look: number } {
-  const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-  const H = caseHeight(layout.bookcase);
-  // The opening view starts just left of the case.
-  const left = -300;
-  const right = caseWidth(layout.bookcase) + 250;
-  const look = H / 2 + 40;
-  const dHeight = (H / 2 + 260) / tan;
-  const dWidth = (right - left) / 2 / (tan * aspect);
-  const d = THREE.MathUtils.clamp(Math.min(Math.max(dHeight, dWidth), dHeight * 1.25), MIN_DISTANCE, MAX_DISTANCE);
-  const halfW = d * tan * aspect;
-  const x = right - left <= halfW * 2 ? (left + right) / 2 : left + halfW;
-  return { x, d, look };
-}
-
 export function CameraRig({ layout }: { layout: Layout }) {
   const { minX, maxX } = layout;
   // From the middle of the bottom compartments to the middle of the top ones.
@@ -50,6 +75,10 @@ export function CameraRig({ layout }: { layout: Layout }) {
     return [c.plinth + c.panel + c.compH / 2, caseHeight(c) - c.panel - c.compH / 2];
   }, [layout]);
   const homeD = useRef(DEFAULT_DISTANCE);
+  const caseW = caseWidth(layout.bookcase);
+  const caseH = caseHeight(layout.bookcase);
+  const depth = layout.bookcase.depth;
+  const caseMid = useMemo(() => new THREE.Vector3(), []);
   const { camera, gl, invalidate, size } = useThree();
   const pointer = useRef(new THREE.Vector2());
   const current = useRef<{ x: number; d: number; y: number; px: number; py: number; cx: number } | null>(null);
@@ -159,22 +188,32 @@ export function CameraRig({ layout }: { layout: Layout }) {
     };
   }, [gl, invalidate, minX, maxX, yRange]);
 
-  // Frame the room for this layout on first load and after switching views; otherwise keep the target in range.
+  // Frame the room for this layout on first load and after switching views or resizing; otherwise keep the target in range.
+  // The case is framed between the left column's search pill and theme card (the store's `wallBox`). The framing is only
+  // redone while the visitor has not moved the camera, so that late font loads or a resize do not undo what they did.
+  const wallBox = useStore((st) => st.wallBox);
+  const lastHome = useRef<{ x: number; d: number } | null>(null);
   useEffect(() => {
     const s = useStore.getState();
     const aspect = camera instanceof THREE.PerspectiveCamera ? (size.width - panelWidth(size.width)) / size.height : 1.6;
-    const home = homeView(layout, aspect);
+    // Until the column is measured: its top is the title block's height down, its bottom above the footer.
+    const wall = wallBox ?? { top: 112, bottom: size.height - 48 };
+    const home = homeView(layout, aspect, { ...wall, viewHeight: size.height });
     lookHeight = home.look;
     homeD.current = home.d;
-    if (s.targetX === 0) {
+    const last = lastHome.current;
+    const untouched = s.targetX === 0 || (last !== null && s.targetY === null && Math.abs(s.targetX - last.x) < 1 && Math.abs(s.distance - last.d) < 1);
+    if (untouched && !s.focused) {
+      const first = s.targetX === 0;
       s.setTargetX(home.x);
       s.setDistance(home.d);
-      current.current = null;
+      if (first) current.current = null;
     } else {
       s.setTargetX(Math.min(maxX, Math.max(minX, s.targetX)));
     }
+    lastHome.current = { x: home.x, d: home.d };
     invalidate();
-  }, [camera, size, layout, minX, maxX, invalidate]);
+  }, [camera, size, layout, minX, maxX, invalidate, wallBox]);
 
   // The view offset (see the frame loop) is cleared when the rig goes.
   useEffect(() => {
@@ -199,7 +238,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
     // so the scene is centred in the space between them. In reading mode the left column is gone and the book is
     // held in a strip at the left edge, so the middle of the picture goes there.
     const out = !!s.focused && !s.focused.closing;
-    const cxTarget = out && isReading(width) ? readingPanel(width).centre : (panelWidth(width) + width - (out ? cardWidth(width) : 0)) / 2;
+    const cxTarget = out && isReading(width) ? readingPanel(width).bookCentre : (panelWidth(width) + width - (out ? cardWidth(width) : 0)) / 2;
     c.cx += (cxTarget - c.cx) * k;
     if (camera instanceof THREE.PerspectiveCamera) camera.setViewOffset(width, height, width / 2 - c.cx, 0, width, height);
     const still = s.focused ? 0.25 : 1;
@@ -210,6 +249,10 @@ export function CameraRig({ layout }: { layout: Layout }) {
     const { eye, look } = cameraPose(c.x, c.d, c.y, pose.current);
     camera.position.set(eye.x + c.px, eye.y + c.py, eye.z);
     camera.lookAt(look);
+    // Where the bookcase's middle line is on screen: the category nav centres itself on it.
+    camera.updateMatrixWorld();
+    caseMid.set(caseW / 2, caseH / 2, depth).project(camera);
+    setCaseCx(((caseMid.x + 1) / 2) * width);
     const moving =
       Math.abs(s.targetX - c.x) > 0.3 || Math.abs(s.distance - c.d) > 0.3 || Math.abs(ty - c.y) > 0.3 || Math.abs(px - c.px) > 0.2 || Math.abs(py - c.py) > 0.2 || Math.abs(cxTarget - c.cx) > 0.5;
     if (moving) invalidate();

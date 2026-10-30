@@ -20,7 +20,7 @@ export function BoardButton({ data }: { data: Agentic }) {
   const setOpen = useStore((s) => s.setBoardOpen);
   const n = usePinned(data).length;
   return (
-    <button className="pill board-btn" onClick={() => setOpen(true)}>
+    <button className="board-btn" onClick={() => setOpen(true)}>
       Your board · {n}
     </button>
   );

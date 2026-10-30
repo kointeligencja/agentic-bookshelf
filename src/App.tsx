@@ -39,6 +39,8 @@ export function App() {
   const [wide, setWide] = useState(() => isReading(window.innerWidth));
   // Reading mode: a book is pulled out on a screen wide enough for the card beside it. The left column fades out.
   const reading = useStore((s) => !!s.focused && !s.focused.closing) && wide;
+  // With books lit the room is dark, and the footer (which has no pill behind it) turns light.
+  const dim = useStore((s) => !s.focused && Object.keys(s.lit).length > 0);
   const [ready, setReady] = useState(false);
   const layout = useMemo(
     () => (library ? computeLayout(library.books, library.categories, sort, view) : null),
@@ -107,7 +109,7 @@ export function App() {
   }, [ready, library, layout]);
 
   return (
-    <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}`}>
+    <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}${dim ? ' dim' : ''}`}>
       {library && layout && <Scene library={library} layout={layout} onReady={onReady} />}
       {library && layout && <CategoryNav layout={layout} library={library} />}
       {agentic && <ThemePanel data={agentic} />}

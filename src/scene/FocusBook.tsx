@@ -16,7 +16,7 @@ export const focusFx = { amount: 0, position: new THREE.Vector3() };
 const FOCUS_DISTANCE = 2300;
 const HOLD = 880; // mm in front of the camera
 /** In reading mode the book is held this far away at most, so it fits the strip at the left edge. */
-const MAX_HOLD = 2400;
+const MAX_HOLD = 3000;
 /** The dimming plane in front of the case. */
 const DIM_Z = 720;
 const OPEN_ANGLE = THREE.MathUtils.degToRad(-160);
@@ -158,11 +158,11 @@ function Focused({
     const f = useStore.getState().focused;
     const st = state.current;
     const opening = f?.phase === 'open' && !f.closing;
-    // Reading mode: the book steps back until it is as wide as the strip it is held in, and the room dims behind it.
+    // Reading mode: the book steps back until it is as wide as `readingPanel(...).book` (a fifth smaller than the strip), against the card, and the room dims behind it.
     const reading = !!f && !f.closing && isReading(size.width);
     st.read += ((reading ? 1 : 0) - st.read) * (1 - Math.exp(-dt * 7));
     const fovTan = Math.tan(THREE.MathUtils.degToRad(((camera as THREE.PerspectiveCamera).fov ?? 35) / 2));
-    const fit = (book.dims.w * size.height) / (2 * fovTan * Math.max(60, readingPanel(size.width).strip - 24));
+    const fit = (book.dims.w * size.height) / (2 * fovTan * readingPanel(size.width).book);
     const hold = THREE.MathUtils.lerp(HOLD, THREE.MathUtils.clamp(fit, HOLD * 0.8, MAX_HOLD), st.read);
     spring(st.p, f && !f.closing ? 1 : 0, dt);
     spring(st.o, opening ? 1 : 0, dt, 120, 21);

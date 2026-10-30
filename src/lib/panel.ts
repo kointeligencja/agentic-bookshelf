@@ -30,12 +30,18 @@ export function stripWidth(viewport: number): number {
   return Math.round(Math.min(220, Math.max(180, viewport * 0.15)));
 }
 
+/** The pulled-out book is held this much smaller than the strip it is held in (a fifth). */
+export const BOOK_SCALE = 0.8;
+
 /**
  * Reading mode's geometry: the book strip runs from the margin to `left - READING_GAP`, its middle is `centre`; the card
- * starts at `left` and runs `width` px to the right margin.
+ * starts at `left` and runs `width` px to the right margin. The pulled-out book is `book` px wide on screen (a fifth less
+ * than the strip, less its 24px of air) and sits against the card: its right edge is READING_GAP from the card's left edge,
+ * so its middle is `bookCentre`.
  */
-export function readingPanel(viewport: number): { strip: number; centre: number; left: number; width: number } {
+export function readingPanel(viewport: number): { strip: number; centre: number; left: number; width: number; book: number; bookCentre: number } {
   const strip = stripWidth(viewport);
   const left = READING_MARGIN + strip + READING_GAP;
-  return { strip, centre: READING_MARGIN + strip / 2, left, width: viewport - READING_MARGIN - left };
+  const book = Math.round(Math.max(60, strip - 24) * BOOK_SCALE);
+  return { strip, centre: READING_MARGIN + strip / 2, left, width: viewport - READING_MARGIN - left, book, bookCentre: left - READING_GAP - book / 2 };
 }

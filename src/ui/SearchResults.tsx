@@ -1,18 +1,35 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { SearchState } from './useSearch.ts';
 import { useStore } from '../store.ts';
 import type { Agentic } from '../types.ts';
 
-/** How many results fit under the box, by the height of the window (each takes about 54px, under the video and its timeline). */
-const slots = (height: number) => Math.max(3, Math.min(8, Math.floor((height - 560) / 54)));
+/** Height of one result row and of the note above the rows, px (see `.res` and `.results .qnote` in styles.css). */
+const ROW = 56;
+const NOTE = 24;
 
-/** The ideas a search found, in the place of the theme chips. Click one to read its card in its first book. */
+/**
+ * The ideas a search found, in the theme card's frame in place of the themes. As many rows as the card has room for, at least
+ * one. Click one to read its card in its first book.
+ */
 export function SearchResults({ data, state }: { data: Agentic; state: SearchState }) {
   const openConcept = useStore((s) => s.openConcept);
+  const box = useRef<HTMLDivElement>(null);
+  const [room, setRoom] = useState(0);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const measure = () => setRoom(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const byId = new Map(data.concepts.map((c) => [c.id, c]));
   const books = new Map(data.books.map((b) => [b.id, b.title]));
-  const shown = state.results.filter((r) => byId.has(r.id)).slice(0, slots(window.innerHeight));
+  const rows = Math.max(1, Math.min(8, Math.floor((room - (state.note ? NOTE : 0)) / ROW)));
+  const shown = state.results.filter((r) => byId.has(r.id)).slice(0, rows);
   return (
-    <div className="results" aria-live="polite">
+    <div className="results" ref={box} aria-live="polite">
       {state.note && <div className="qnote">{state.note}</div>}
       {shown.map((r) => {
         const c = byId.get(r.id)!;

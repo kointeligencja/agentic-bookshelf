@@ -129,6 +129,16 @@ describe('reading mode', () => {
     expect(r.left + r.width).toBe(1280 - 24);
     expect(r.centre).toBe(24 + 96);
   });
+  it('holds the book a fifth smaller than the strip, 32px from the card', () => {
+    for (const w of [900, 1280, 1440, 1920]) {
+      const r = readingPanel(w);
+      expect(r.book, `${w}`).toBe(Math.round((r.strip - 24) * 0.8));
+      // Its right edge is the grid's --s4 (32px) left of the card.
+      expect(r.bookCentre + r.book / 2, `${w}`).toBe(r.left - 32);
+      // It stays inside the strip, right of the margin.
+      expect(r.bookCentre - r.book / 2, `${w}`).toBeGreaterThanOrEqual(24);
+    }
+  });
   it('gives the card more room than the 2D layout on laptop screens', () => {
     expect(readingPanel(1280).width).toBeGreaterThan(cardWidth(1280) + 350);
     expect(readingPanel(1440).width).toBeGreaterThan(cardWidth(1440) + 450);

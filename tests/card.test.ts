@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   cardBlocks,
+  chooseColumns,
   chooseLevel,
   columnHeight,
   firstSentences,
@@ -259,15 +260,45 @@ describe('cardBlocks: the ladder', () => {
   it('never touches the skeleton, at any level', () => {
     const skeleton = (l: number) => cardBlocks(card, l).filter((b) => b.skeleton);
     expect(skeleton(0).map((b) => b.sec)).toEqual(['idea', 'idea', 'why', 'why', 'apply']);
-    for (const l of LEVELS) {
+    for (let l = 0; l <= 7; l++) {
       expect(skeleton(l), `level ${l}`).toEqual(skeleton(0));
       expect(skeleton(l).some((b) => b.clamped)).toBe(false);
     }
+  });
+  it('never clamps Idea or With your agent, at any level', () => {
+    const keep = (l: number) => cardBlocks(card, l).filter((b) => b.sec === 'idea' || b.sec === 'apply');
+    expect(keep(0).map((b) => b.sec)).toEqual(['idea', 'idea', 'apply']);
+    for (const l of LEVELS) {
+      expect(keep(l), `level ${l}`).toEqual(keep(0));
+      expect(keep(l).some((b) => b.clamped || !b.skeleton)).toBe(false);
+    }
+  });
+  it('level 8 cuts Why it works to its first paragraph, whole, ending with a link to the rest', () => {
+    const b = cardBlocks(card, 8);
+    const why = where(b, 'why');
+    expect(joined(why)).toBe(card.why![0]);
+    expect(links(why)).toEqual(['Why it works ›']);
+    expect(why.at(-1)).toMatchObject({ kind: 'text', more: { sec: 'why' } });
+    expect(why.every((x) => x.clamped && !x.skeleton)).toBe(true);
+    // Everything else is level 7.
+    expect(b.filter((x) => x.sec !== 'why')).toEqual(cardBlocks(card, 7).filter((x) => x.sec !== 'why'));
+  });
+  it('level 8 has no link when Why it works is a single paragraph', () => {
+    const one: AgenticCard = { ...card, why: [card.why![0]!] };
+    expect(links(where(cardBlocks(one, 8), 'why'))).toEqual([]);
+    expect(joined(where(cardBlocks(one, 8), 'why'))).toBe(one.why![0]);
+  });
+  it('level 9 reduces Why it works to the link alone', () => {
+    const why = where(cardBlocks(card, 9), 'why');
+    expect(why).toHaveLength(1);
+    expect(why[0]).toMatchObject({ kind: 'more', zone: 'left', more: { sec: 'why', label: 'Why it works ›' }, clamped: true });
+    expect(where(cardBlocks({ ...card, why: undefined }, 9), 'why')).toEqual([]);
   });
   it('never adds text: each level has no more words than the one before', () => {
     const words = (l: number) => cardBlocks(card, l).filter((b) => b.kind !== 'links' && b.kind !== 'more').map(textOf).join(' ').split(/\s+/).filter(Boolean).length;
     for (let l = 1; l <= MAX_LEVEL; l++) expect(words(l), `level ${l}`).toBeLessThanOrEqual(words(l - 1));
     expect(words(6)).toBeLessThan(words(0));
+    expect(words(9)).toBeLessThan(words(7));
   });
   it('leaves out empty sections and their links', () => {
     const bare: AgenticCard = { title: 'T', sources: [], idea: ['Only an idea.'], apply: { label: 'Our adaptation', text: 'Try.' } };
@@ -295,12 +326,19 @@ describe('sectionBlocks', () => {
     expect(sectionBlocks(card, 'conversation').every((b) => !('head' in b && b.head))).toBe(true);
     expect(sectionBlocks(card, 'stories')[0]).toMatchObject({ head: { label: 'Story', em: 'Book One' } });
   });
+  it('has the whole of Why it works, without its heading', () => {
+    const w = sectionBlocks(card, 'why');
+    expect(w.map(textOf)).toEqual(card.why!.flatMap((t) => splitText(t)));
+    expect(w.every((b) => !('head' in b && b.head) && !b.skeleton)).toBe(true);
+    expect(sectionBlocks({ ...card, why: undefined }, 'why')).toEqual([]);
+  });
   it('flows everything', () => {
     for (const sec of SECTIONS) expect(sectionBlocks(card, sec).every((b) => b.zone === 'rest' && !b.clamped), sec).toBe(true);
   });
   it('lists the sections that have something', () => {
     expect(sectionsOf(card)).toEqual([...SECTIONS]);
-    expect(sectionsOf({ ...card, stories: [], tension: undefined, quotes: [card.quotes![0]!], conversation: [card.conversation![0]!] })).toEqual(['method', 'limits']);
+    expect(SECTIONS[0]).toBe('why');
+    expect(sectionsOf({ ...card, stories: [], tension: undefined, quotes: [card.quotes![0]!], conversation: [card.conversation![0]!] })).toEqual(['why', 'method', 'limits']);
     expect(sectionsOf(undefined)).toEqual([]);
   });
 });
@@ -389,11 +427,10 @@ describe('flowBlocks', () => {
 });
 
 describe('chooseLevel', () => {
-  // Level k has the skeleton (2 left, 1 right) and 8 - k rest blocks, 20px each.
-  const levels: Measured[] = Array.from({ length: 8 }, (_, k) => ({ zones: zones(`LLR${'r'.repeat(Math.max(0, 8 - k))}`), metrics: flat(3 + Math.max(0, 8 - k)) }));
+  // Level k has the skeleton (2 left, 1 right) and 8 - k rest blocks, 20px each (none from level 8 on).
+  const levels: Measured[] = Array.from({ length: 10 }, (_, k) => ({ zones: zones(`LLR${'r'.repeat(Math.max(0, 8 - k))}`), metrics: flat(3 + Math.max(0, 8 - k)) }));
   it('takes the first level that fits', () => {
     expect(chooseLevel(levels, 1000, 2)).toMatchObject({ level: 0, overflow: false });
-    // Level 0: 8 rest blocks, 2 + 8 over two columns: left 2+..; try a height only a later level meets.
     const c = chooseLevel(levels, 60, 2);
     expect(c.overflow).toBe(false);
     expect(c.level).toBeGreaterThan(0);
@@ -407,15 +444,19 @@ describe('chooseLevel', () => {
       for (let l = 0; l < c.level; l++) expect(flowBlocks(levels[l]!.zones, levels[l]!.metrics, h, 2).fits, `h=${h} l=${l}`).toBe(false);
     }
   });
+  // Levels below `from` are too tall; `from` and later are a skeleton that fits.
+  const from = (n: number): Measured[] => levels.map((_, k) => (k < n ? { zones: zones('LLRR'), metrics: [...flat(3), { h: 70, top: 4 }] } : { zones: zones('LLR'), metrics: flat(3) }));
   it('uses level 7 only when level 6 does not fit', () => {
-    const l7: Measured[] = levels.map((m, k) => (k < 7 ? { zones: zones('LLRR'), metrics: [...flat(3), { h: 70, top: 4 }] } : { zones: zones('LLR'), metrics: flat(3) }));
-    const c = chooseLevel(l7, 60, 2);
-    expect(c).toMatchObject({ level: 7, overflow: false });
+    expect(chooseLevel(from(7), 60, 2)).toMatchObject({ level: 7, overflow: false });
   });
-  it('shows level 6 and says overflow when even level 7 does not fit', () => {
+  it('uses level 8 only when level 7 does not fit, and level 9 only when 8 does not fit', () => {
+    expect(chooseLevel(from(8), 60, 2)).toMatchObject({ level: 8, overflow: false });
+    expect(chooseLevel(from(9), 60, 2)).toMatchObject({ level: 9, overflow: false });
+  });
+  it('shows level 9 and says overflow when even that does not fit', () => {
     const tall: Measured[] = levels.map(() => ({ zones: zones('LLR'), metrics: flat(3, 100) }));
     const c = chooseLevel(tall, 150, 2);
-    expect(c).toMatchObject({ level: 6, overflow: true });
+    expect(c).toMatchObject({ level: 9, overflow: true });
     expect(c.flow.fits).toBe(false);
   });
 });
@@ -515,7 +556,9 @@ describe('the real cards', () => {
       const full = cardBlocks(c, 0);
       for (const l of LEVELS) {
         const b = cardBlocks(c, l);
-        expect(b.filter((x) => x.skeleton), `${concept.id} L${l}`).toEqual(full.filter((x) => x.skeleton));
+        const keep = (x: Block) => x.sec === 'idea' || x.sec === 'apply';
+        expect(b.filter(keep), `${concept.id} L${l}`).toEqual(full.filter(keep));
+        if (l < 8) expect(b.filter((x) => x.skeleton), `${concept.id} L${l}`).toEqual(full.filter((x) => x.skeleton));
         // Each cut section is a prefix, in whole sentences, of its full text.
         for (const sec of ['stories', 'limits', 'tension'] as const) {
           const cut = joined(where(b, sec));
@@ -543,6 +586,7 @@ describe('the real cards', () => {
       const c = cards[concept.id]!;
       const have = new Set(sectionsOf(c));
       for (const l of LEVELS) for (const b of cardBlocks(c, l)) for (const label of links([b])) expect(label.length).toBeGreaterThan(0);
+      for (const l of [8, 9]) for (const b of where(cardBlocks(c, l), 'why')) for (const m of [b.kind === 'more' ? b.more : undefined, b.kind === 'text' ? b.more : undefined]) if (m) expect(have.has(m.sec), `${concept.id} ${m.sec}`).toBe(true);
       for (const b of cardBlocks(c, 6)) if (b.kind === 'links') for (const link of b.links) expect(have.has(link.sec), `${concept.id} ${link.sec}`).toBe(true);
     }
   });
@@ -555,6 +599,45 @@ describe('the real cards', () => {
       expect(next.length).toBeLessThanOrEqual(3);
       expect(next.some((n) => n.id === x.id)).toBe(false);
       for (const n of next) expect(n.theses).toContain(x.theses[0]);
+    }
+  });
+});
+
+describe('chooseColumns', () => {
+  // Level 0: two left blocks, one right, and some rest blocks, 20px each (the first of a column loses its 4px of padding).
+  const l0 = (rest: number): Measured => ({ zones: zones(`LLR${'r'.repeat(rest)}`), metrics: flat(3 + rest) });
+  it('uses two columns for a short card, so the third does not stay empty', () => {
+    const m = l0(1);
+    expect(chooseColumns({ 2: m, 3: m }, 200, 3)).toBe(2);
+    // Even a card that would fit in one column uses two on a desktop screen, never one.
+    expect(chooseColumns({ 2: l0(0), 3: l0(0) }, 1000, 3)).toBe(2);
+  });
+  it('takes three when two do not hold the whole card, if three do', () => {
+    // 10 blocks: two columns need about 5 * 20 + 4, 3 columns about 3 * 20 + 4.
+    const m = l0(7);
+    const two = flowBlocks(m.zones, m.metrics, 90, 2);
+    const three = flowBlocks(m.zones, m.metrics, 90, 3);
+    expect(two.fits).toBe(false);
+    expect(three.fits).toBe(true);
+    expect(chooseColumns({ 2: m, 3: m }, 90, 3)).toBe(3);
+  });
+  it('takes three, and the clamp ladder after, when neither fits at level 0', () => {
+    const m = l0(30);
+    expect(chooseColumns({ 2: m, 3: m }, 90, 3)).toBe(3);
+  });
+  it('is two when the box has room for no more, whatever fits', () => {
+    const m = l0(30);
+    expect(chooseColumns({ 2: m }, 90, 2)).toBe(2);
+    expect(chooseColumns({ 2: l0(0), 3: l0(0) }, 1000, 2)).toBe(2);
+  });
+  it('is decided by the fewest columns that fit, not by the most room', () => {
+    for (const rest of [0, 1, 2, 3, 5, 8, 12]) {
+      for (const h of [60, 90, 120, 200, 400]) {
+        const m = l0(rest);
+        const n = chooseColumns({ 2: m, 3: m }, h, 3);
+        if (n === 3) expect(flowBlocks(m.zones, m.metrics, h, 2).fits, `rest=${rest} h=${h}`).toBe(false);
+        else expect(flowBlocks(m.zones, m.metrics, h, 2).fits).toBe(true);
+      }
     }
   });
 });

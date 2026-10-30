@@ -8,7 +8,7 @@ import { Books } from './Books.tsx';
 import { CameraRig, EYE_HEIGHT, FOV } from './CameraRig.tsx';
 import { Effects } from './Effects.tsx';
 import { FocusBook } from './FocusBook.tsx';
-import { caseWidth, type Layout, type Placement } from './layout.ts';
+import { caseHeight, caseWidth, type Layout, type Placement } from './layout.ts';
 import { Loose } from './Loose.tsx';
 import { Room } from './Room.tsx';
 import { StarLightDriver } from './starLight.ts';
@@ -54,7 +54,9 @@ function DevProbe({ layout }: { layout: Layout }) {
       __lookAt?: (id: string, dx?: number, distance?: number) => void;
       __frame?: (x: number, y: number, d: number) => void;
       __project?: (x: number, y: number, z: number) => { x: number; y: number };
+      __case?: { width: number; height: number; depth: number };
     };
+    w.__case = { width: caseWidth(layout.bookcase), height: caseHeight(layout.bookcase), depth: layout.bookcase.depth };
     w.__project = (x, y, z) => {
       const v = new THREE.Vector3(x, y, z).project(camera);
       return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height };

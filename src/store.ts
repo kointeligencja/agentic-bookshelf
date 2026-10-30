@@ -22,6 +22,12 @@ interface AppState {
   /** Distance of the camera from the wall, in mm. */
   distance: number;
   setDistance: (d: number) => void;
+  /**
+   * Where the left column's search pill starts and its theme card ends, in CSS pixels from the top of the window. The camera
+   * frames the bookcase between them (scene/CameraRig.tsx). Null until the column is on screen.
+   */
+  wallBox: { top: number; bottom: number } | null;
+  setWallBox: (box: { top: number; bottom: number } | null) => void;
   /** The conversation and how its themes map onto the books; null until loaded. */
   agentic: Agentic | null;
   setAgentic: (a: Agentic) => void;
@@ -82,6 +88,12 @@ export const useStore = create<AppState>((set, get) => ({
   setTargetY: (targetY) => set({ targetY }),
   distance: 3000,
   setDistance: (distance) => set({ distance }),
+  wallBox: null,
+  setWallBox: (box) => {
+    const b = get().wallBox;
+    if (b && box && Math.abs(b.top - box.top) < 0.5 && Math.abs(b.bottom - box.bottom) < 0.5) return;
+    set({ wallBox: box });
+  },
   agentic: null,
   setAgentic: (agentic) => set({ agentic }),
   theme: null,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { bookCounts, clock, conceptCount, themeAtTime, themeStart, timelineSegments } from '../lib/agentic.ts';
 import { createPlayer, PLAYING, type YTPlayer } from './youtube.ts';
 import { SearchResults } from './SearchResults.tsx';
@@ -80,9 +80,40 @@ export function ThemePanel({ data }: { data: Agentic }) {
   };
 
   const books = Object.keys(bookCounts(data, theme)).length;
+  // The numbered themes go in the index; the rest (T, C, M) are a small group under it.
+  const numbered = data.theses.filter((t) => /^\d+$/.test(t.key));
+  const others = data.theses.filter((t) => !/^\d+$/.test(t.key));
+
+  // Tell the camera where the column's search pill starts and its theme card ends, so the bookcase lines up with them.
+  const wall = useRef<HTMLElement>(null);
+  const setWallBox = useStore((s) => s.setWallBox);
+  useLayoutEffect(() => {
+    const el = wall.current;
+    if (!el) return;
+    const measure = () => {
+      const top = el.querySelector('.search')?.getBoundingClientRect().top;
+      const bottom = el.querySelector('.plaque')?.getBoundingClientRect().bottom;
+      if (top !== undefined && bottom !== undefined) setWallBox({ top, bottom });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    el.querySelectorAll('.wall-head, .plaque').forEach((e) => ro.observe(e));
+    void document.fonts?.ready.then(measure);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [setWallBox]);
+
+  // The results keep their last content while the pane fades out.
+  const shown = useRef(search.state);
+  if (search.state.active) shown.current = search.state;
+  const results = search.state.active;
 
   return (
-    <aside className={`wall${dim ? ' dim' : ''}`} aria-label="The conversation">
+    <aside ref={wall} className={`wall${dim ? ' dim' : ''}`} aria-label="The conversation">
       <header className="wall-head">
         <h1>The Agentic Bookshelf</h1>
         <p className="sub">What Matt Pocock and Lauren Tan say about working with coding agents, and the books that go further.</p>
@@ -120,48 +151,64 @@ export function ThemePanel({ data }: { data: Agentic }) {
       </figure>
       <Timeline data={data} theme={theme} getTime={getTime} onPlay={playClip} />
       <section className="plaque" aria-label="Themes">
-        {search.state.active ? (
-          <SearchResults data={data} state={search.state} />
-        ) : (
-          <>
-            <div className="index" role="group" aria-label="Themes">
-              {data.theses.map((t) => (
-                <button
-                  key={t.key}
-                  className={`idx${theme === t.key ? ' on' : ''}${playing === t.key ? ' playing' : ''}`}
-                  aria-pressed={theme === t.key}
-                  onClick={() => pick(t.key)}
-                >
-                  <span className="k">{t.key}</span>
-                  <span className="t">{t.title}</span>
-                </button>
-              ))}
+        <div className={`pane${results ? ' off' : ''}`} aria-hidden={results} inert={results}>
+          <div className="index" role="group" aria-label="Themes">
+            {numbered.map((t) => (
+              <button
+                key={t.key}
+                className={`idx${theme === t.key ? ' on' : ''}${playing === t.key ? ' playing' : ''}`}
+                aria-pressed={theme === t.key}
+                onClick={() => pick(t.key)}
+              >
+                <span className="k">{t.key}</span>
+                <span className="t">{t.title}</span>
+              </button>
+            ))}
+          </div>
+          {others.length > 0 && (
+            <div className="also" role="group" aria-label="Also in the conversation">
+              <span className="label">Also in the conversation</span>
+              <div className="row">
+                {others.map((t, i) => (
+                  <span key={t.key}>
+                    {i > 0 && <span className="dot" aria-hidden="true">·</span>}
+                    <button className={theme === t.key ? 'on' : ''} aria-pressed={theme === t.key} onClick={() => pick(t.key)}>
+                      {t.title}
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="now" aria-live="polite">
-              {active ? (
-                <>
-                  <div className="label">{playing === active.key ? 'Now in the conversation' : 'Selected theme'}</div>
-                  <h2>{active.title}</h2>
-                  <p>{active.line}</p>
-                  <div className="meta">
+          )}
+          <div className="now" aria-live="polite">
+            {active ? (
+              <>
+                <div className="label">{playing === active.key ? 'Now in the conversation' : 'Selected theme'}</div>
+                <h2>{active.title}</h2>
+                <p>{active.line}</p>
+                <div className="meta">
+                  <span>
                     {books} books lit · {conceptCount(data, active.key)} concepts
-                    {active.clips.map((c) => (
-                      <button key={c.start} className="ts" onClick={() => seek(c.start)}>
-                        ▶ {clock(c.start)}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="label">How it works</div>
-                  <h2>Play the conversation</h2>
-                  <p>When it reaches a theme, the books that take the idea further light up. Or pick a theme above.</p>
-                </>
-              )}
-            </div>
-          </>
-        )}
+                  </span>
+                  {active.clips.map((c) => (
+                    <button key={c.start} className="ts" onClick={() => seek(c.start)}>
+                      ▶ {clock(c.start)}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="label">How it works</div>
+                <h2>Play the conversation</h2>
+                <p>When it reaches a theme, the books that take the idea further light up. Or pick a theme above.</p>
+              </>
+            )}
+          </div>
+        </div>
+        <div className={`pane${results ? '' : ' off'}`} aria-hidden={!results} inert={!results}>
+          <SearchResults data={data} state={shown.current} />
+        </div>
       </section>
     </aside>
   );
