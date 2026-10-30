@@ -495,12 +495,12 @@
     ],
     "why": [
      "Parrish describes what happens without it: if employees cannot act until the boss approves, the boss is a single point of failure. With commander's intent each person can improvise while carrying out the plan, and the leader stops being the bottleneck.",
-     "Doshi and McGregor quote a former US Army officer who calls the concept \"the lifeblood of how we operate\" and says that without it \"you can't expect people on the ground to make decisions for themselves\". They give an example of why the stated intent matters. If the intent of a mission is to demolish a target at all costs, soldiers will improvise in a very different way than if the intent is to keep good relations with the local people."
+     "Doshi and McGregor quote a former US Army officer who calls the concept \"the lifeblood of how we operate\" and says that without it, people on the ground cannot be expected to decide things on their own. They give an example of why the stated intent matters. If the intent of a mission is to demolish a target at all costs, soldiers will improvise in a very different way than if the intent is to keep good relations with the local people."
     ],
     "stories": [
      {
       "source": "Primed to Perform",
-      "text": "In 1805, off the coast of Spain, Napoleon had assembled a fleet of forty ships to invade England. Britain's Admiral Lord Nelson had thirty-three. His opponent had over 21 percent more ships and almost 24 percent more cannons. Navies normally formed two parallel lines and opened fire, for two reasons: the side-facing cannons meant a straight line avoided hitting friendly ships, and the admiral on the flagship gave orders by signal flags, so the whole fleet needed a line of sight to him. Such battles rarely ended decisively, and Nelson wanted, in his own words, to \"make the business decisive\".\n\nHe split the plan into two parts. The tactical part was simple and unconventional. His ships would approach the enemy head-on in two perpendicular lines and cut the enemy line into three pieces as quickly as possible, taking fire they could not return. Nelson would lead the charge himself and direct his own ship at the enemy flagship. The adaptive part came after that. He told each captain they had discretion over which targets to choose and how to attack them.\n\nNelson set this out in what the authors call the Trafalgar Memorandum. It admits that a fleet cannot be brought into a perfect line in variable winds and thick weather, that \"something must be left to chance\", and that if signals cannot be seen or understood, \"no Captain can do very wrong if he places his Ship alongside that of an Enemy\". During the battle he issued only three signals, all at the start, including \"England expects that every man will do his duty\". He was shot shortly after crippling the enemy flagship. The French lost twenty-two ships and the British lost none. French casualties are estimated at more than three times the British.\n\nThe authors add that Nelson did not arrive at this on the morning of the battle. Throughout his career he spent hours dining with each of his captains, sharing his ideas and listening to theirs. A contemporary wrote that the captains could \"ascertain with precision what were the ideas and intentions of their commander without the aid of further instructions\"."
+      "text": "In 1805, off the coast of Spain, Napoleon had assembled a fleet of forty ships to invade England. Britain's Admiral Lord Nelson had thirty-three. Against that, the enemy had a numerical edge of more than 21 percent in ships and nearly 24 percent in cannons. Navies normally formed two parallel lines and opened fire, for two reasons: the side-facing cannons meant a straight line avoided hitting friendly ships, and the admiral on the flagship gave orders by signal flags, so the whole fleet needed a line of sight to him. Such battles rarely ended decisively, and Nelson wanted, in his own words, to \"make the business decisive\".\n\nHe split the plan into two parts. The tactical part was simple and unconventional. His ships would approach the enemy head-on in two perpendicular lines and cut the enemy line into three pieces as quickly as possible, taking fire they could not return. Nelson would lead the charge himself and direct his own ship at the enemy flagship. The adaptive part came after that. He told each captain they had discretion over which targets to choose and how to attack them.\n\nNelson set this out in what the authors call the Trafalgar Memorandum. It admits that a fleet cannot be brought into a perfect line in variable winds and thick weather, that \"something must be left to chance\", and that if signals cannot be seen or understood, a captain who placed his ship alongside an enemy ship could hardly go far wrong. During the battle he issued only three signals, all at the start, including \"England expects that every man will do his duty\". He was shot shortly after crippling the enemy flagship. The French lost twenty-two ships and the British lost none. French casualties are estimated at more than three times the British.\n\nThe authors add that Nelson did not arrive at this on the morning of the battle. Throughout his career he spent hours dining with each of his captains, sharing his ideas and listening to theirs. A contemporary wrote that the captains could work out exactly what their commander had in mind without any further instructions."
      }
     ],
     "method": {
@@ -548,7 +548,8 @@
      "label": "Our adaptation",
      "text": "Open each task for an agent with four lines: the goal, the reason for it, what is out of bounds, and the signs that should make it stop and ask. Leave the method open unless you have a reason to fix it. Ask the agent to say the goal and the limits back in its own words before it starts."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Give the reasons and the limits so people can adapt when the plan stops fitting"
    }
   },
   {
@@ -578,7 +579,7 @@
      }
     ],
     "idea": [
-     "Before you hand over a piece of work, ask yourself where your own views on it are fixed and where they are flexible. Then tell the other person about both. Webb's aim is to leave as much room as possible for the other person to shape the work, because even a little autonomy is more motivating than none. Where you do have a strong preference, say so.",
+     "Before handing work over, decide which parts of it you hold firm views on and which parts you are open about. Then tell the other person about both. Webb's aim is to leave as much room as possible for the other person to shape the work, because even a little autonomy is more motivating than none. Where you do have a strong preference, say so.",
      "Webb runs the Fix-Flex check through three steps. The what: define the deliverable, meaning its format, content, quality and timing. The how: ask the person how they plan to tackle it, then set the guardrails you care about and say where you do not mind. The when: agree on when you will next review progress."
     ],
     "why": [
@@ -588,7 +589,7 @@
     "stories": [
      {
       "source": "Leadership Intelligence",
-      "text": "Elena Sukacheva is CEO of UCAN, a company that makes functional food for endurance athletes. A team member she calls Stan suggested a sample-size package so customers could try the product for free. In earlier roles she might have led the project herself. Instead she said, \"Great idea. Let's meet in three days to discuss it—could you bring me some thoughts on how it could work?\" That was her first piece of flex.\n\nWhen they met, she had firm views about what a well-scoped sample plan needs, because she had done this kind of launch dozens of times. Stan's plan had to say which products would get samples, who the audience would be, and how the samples would be distributed. Those questions were fixed. The answers were left entirely to him.\n\nOn the how, she set financial guardrails. Stan had to consider the assumed demand, the assumed conversion to sales of the full-sized product, his best estimate of the cost per sample, and the maximum the samples could cost for the program to make financial sense. That was her fixed list. Everything else was flex, and she told him he could try any assumptions and scenarios he liked.\n\nShe checked in as often as daily in the intense early stage. Once the project was running she went back to what she calls a 30,000-foot view, checking weekly or less, and dropped to a 'five-foot view' only when something was going badly, then pulled back up. Some of what Stan brought her did not work. The program was first aimed at too many products, and some marketing channels, such as podcast ads, had little effect. She says she never starts from blame and says 'we' rather than 'you'. The sample program became the main way UCAN acquires customers."
+      "text": "Elena Sukacheva is CEO of UCAN, a company that makes functional food for endurance athletes. A team member she calls Stan suggested a sample-size package so customers could try the product for free. In earlier roles she might have led the project herself. Instead she told him it was a great idea and asked him to come back in three days with some thoughts on how it might work. That was her first piece of flex.\n\nWhen they met, she had firm views about what a well-scoped sample plan needs, because she had done this kind of launch dozens of times. Stan's plan had to say which products would get samples, who the audience would be, and how the samples would be distributed. Those questions were fixed. The answers were left entirely to him.\n\nOn the how, she set financial guardrails. Stan had to consider the assumed demand, the assumed conversion to sales of the full-sized product, his best estimate of the cost per sample, and the maximum the samples could cost for the program to make financial sense. That was her fixed list. Everything else was flex, and she told him he could try any assumptions and scenarios he liked.\n\nShe checked in as often as daily in the intense early stage. Once the project was running she went back to what she calls a 30,000-foot view, checking weekly or less, and dropped to a 'five-foot view' only when something was going badly, then pulled back up. Some of what Stan brought her did not work. The program was first aimed at too many products, and some marketing channels, such as podcast ads, had little effect. She says she never starts from blame and says 'we' rather than 'you'. The sample program became the main way UCAN acquires customers."
      }
     ],
     "method": {
@@ -629,7 +630,8 @@
      "label": "Our adaptation",
      "text": "Write two short lists in the task. Fixed: the things the agent must not change, such as the output format, the files it may touch, the test that must pass. Flexible: the things it may decide, such as structure, naming and tools. An agent that has been told what is open can choose without stopping to ask."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Before delegating, say which parts of the work you insist on and which are open"
    }
   },
   {
@@ -680,7 +682,8 @@
      "label": "Our adaptation",
      "text": "In a brief for an agent, write the goal precisely and give the reason a full paragraph: who will use the result and what decision it feeds. Prescribe steps only when the work is routine and the steps are known. For open-ended work, expect to stay involved while it runs."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "When managing professionals, be clear on what, explain why at length, and say little about how"
    }
   },
   {
@@ -755,7 +758,8 @@
      "label": "Our adaptation",
      "text": "Before assigning a task to an agent, rate how sure you are of the right answer and what a mistake would cost. Sure and costly: write exact instructions or do it yourself. Unsure and cheap: let the agent decide and skim the result. Sure and cheap: let the agent try, then use your review to write down what it should have done."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Choose what to delegate by how sure you are and what a mistake would cost"
    }
   },
   {
@@ -788,7 +792,7 @@
     "idea": [
      "Wiseman's first Smart Play for finishing strong is to draft a Statement of Work (SOW). It has three parts: the performance standard (what a great job looks like), the finish line (what a complete job looks like), and the boundaries (what is not part of the job). You do not need to wait for your boss or client to supply it. Start with what you have already heard, fill gaps with your own judgment, and review it with stakeholders to confirm that expectations match.",
      "She suggests opening that review with: \"Here is what I think success looks like. Where am I off?\"",
-     "The second Smart Play goes with it: negotiate the necessities. Be clear about what you need to succeed, such as information, time, access, guidance and resources, and negotiate for it at the outset, before you need it. A formal negotiation is not required. Wiseman offers an if/then statement: \"If I am to be able to do [this thing you need from me] then I will need you to do [this thing I'll need to be successful].\""
+     "The second Smart Play goes with it: negotiate the necessities. Be clear about what you need to succeed, such as information, time, access, guidance and resources, and negotiate for it at the outset, before you need it. A formal negotiation is not required. Wiseman offers an if/then template: if I am to deliver what you need from me, I will need [a named item] from you."
     ],
     "why": [
      "Wiseman's research is about what makes people finish. In her survey of 170 managers, three of the top ten frustrations involved failure to finish. She writes that the real value of a reliable person comes from the 'always' factor. The managers also said high-value contributors get the job done without being reminded 98 percent of the time. For typical contributors the figure is 48 percent, and for under-contributors 12 percent.",
@@ -798,7 +802,7 @@
     "stories": [
      {
       "source": "Impact Players",
-      "text": "Wiseman was the junior member of a team running a leadership program at Oracle, the Leaders Forum. The first program had been a success, apart from feedback that the strategy was unclear. Three senior executives sat at the table, and she worried they would be pulled in other directions. The president, Ray Lane, was responsible for $25 billion in revenue a year.\n\nAs the meeting ended and they were about to stand up, she decided to speak. She said: \"I will work my tail off, but the day you no longer have time for this is the day I stop working on it.\" Then she restated it for clarity: \"So if you stop, I stop.\" She knew the program would fail without the executives' personal involvement and was not willing to fail. Lane paused to take it in and answered, \"You have a deal.\" He walked to his executive assistant's office and told her that for the next year Liz had whatever time she needed on his calendar.\n\nLane never backed off. He attended every session and every meeting she called. Wiseman writes that it was a time when she did her best work, and that the support came because she negotiated the necessities."
+      "text": "Wiseman was the junior member of a team running a leadership program at Oracle, the Leaders Forum. The first program had been a success, apart from feedback that the strategy was unclear. Three senior executives sat at the table, and she worried they would be pulled in other directions. The president, Ray Lane, was responsible for $25 billion in revenue a year.\n\nAs the meeting ended and they were about to stand up, she decided to speak. She said she would work extremely hard, but that on the day they no longer had time for the program she would stop working on it. Then she restated it for clarity: \"So if you stop, I stop.\" She knew the program would fail without the executives' personal involvement and was not willing to fail. Lane paused to take it in and answered, \"You have a deal.\" He walked to his executive assistant's office and told her that for the next year Liz had whatever time she needed on his calendar.\n\nLane never backed off. He attended every session and every meeting she called. Wiseman writes that it was a time when she did her best work, and that the support came because she negotiated the necessities."
      }
     ],
     "method": {
@@ -831,7 +835,8 @@
      "label": "Our adaptation",
      "text": "Put three lines at the top of any task an agent may finish on its own: the standard, the finish line, and the boundaries. Add a short list of what it needs from you, such as access, files, and decisions you will answer. Ask the agent to reply with the version it understood before it starts, and correct that version."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Write down what great looks like and where the job ends, then check it with stakeholders"
    }
   },
   {
@@ -863,7 +868,7 @@
      }
     ],
     "idea": [
-     "TOSCA is the first step of the book's 4S method, \"state the problem\". Before writing the question you want answered, ask five questions. Trouble: what makes this problem real and present? Owner: whose problem is it? Success criteria: what will success look like, and when? Constraints: what limits the solution space? Actors: who has a say in how it gets solved, and what do they want? Once those are answered, you write a core question.",
+     "TOSCA is the first step of the book's 4S method, \"state the problem\". Before writing the question you want answered, ask five questions. Trouble: why is this problem real and pressing now? Owner: who does the problem belong to? Success criteria: what will success look like, and when? Constraints: what limits the solution space? Actors: who has a say in how it gets solved, and what do they want? Once those are answered, you write a core question.",
      "The authors define 'trouble' as a gap between an observation and an aspiration. If you aim to grow revenue and it falls, that is trouble. A perceived opportunity also counts. They take the acronym from Puccini's opera."
     ],
     "why": [
@@ -873,11 +878,11 @@
     "stories": [
      {
       "source": "Cracked It!",
-      "text": "In Puccini's opera, Tosca's lover Mario has been arrested and will be executed tomorrow. Tosca wants to get him out of jail alive and escape with him. She is virtuous, and there are things she will not do. Scarpia, the chief of police, is the key player, and what he wants from her is what she is unwilling to give. Her problem is thorny but clear: \"How do I get Mario out of jail alive, without yielding to Scarpia?\"\n\nIn the opera, Tosca promises to give herself to Scarpia if he saves Mario by staging a mock execution. When the time comes she kills Scarpia instead. Scarpia had also betrayed her, and Mario's execution was real. The authors call it a crisp problem with a disastrous solution, and note that it makes good tragedy. Mapped to the questions: the trouble is Mario's arrest, the owner is Tosca, the success criterion is escape, the constraint is her virtue, and the actor is Scarpia."
+      "text": "In Puccini's opera, Tosca's lover Mario has been arrested and will be executed tomorrow. Tosca wants to get him out of jail alive and escape with him. She is virtuous, and there are things she will not do. Scarpia, the chief of police, is the key player, and what he wants from her is what she is unwilling to give. Her problem is thorny but clear: she has to get Mario out of jail alive without giving in to Scarpia.\n\nIn the opera, Tosca promises to give herself to Scarpia if he saves Mario by staging a mock execution. When the time comes she kills Scarpia instead. Scarpia had also betrayed her, and Mario's execution was real. The authors call it a crisp problem with a disastrous solution, and note that it makes good tragedy. Mapped to the questions: the trouble is Mario's arrest, the owner is Tosca, the success criterion is escape, the constraint is her virtue, and the actor is Scarpia."
      },
      {
       "source": "Cracked It!",
-      "text": "The authors work through the music industry around 1999. The trouble looks obvious, since people are illegally downloading millions of files. They point out that downloads are not the trouble in themselves. Revenues were still growing then, so downloads were a precursor of future revenue decline. The industry's aspiration was stated in revenue, not downloads.\n\nOn owner, they ask who 'the music industry' is. If the owner is the RIAA, a lobbying body, the solution space is limited to lobbying and advertising. If the owner is the head of a large label, the options widen to product, pricing and new business models.\n\nOn success criteria, asking the executive 'why' repeatedly goes nowhere: after a few rounds the executive gets irritated. The authors suggest a different question: \"We are in the future and this problem-solving effort has been a great success. What is the date, and what do we see?\" In their role-play the executive says at least three years from now, and that revenues are growing again. The success metric turns out to be revenue, not file counts or arrests.\n\nOn actors, the industry spent years pushing Congress to crack down on file-sharing. A stakeholder analysis might have shown that few members of Congress wanted to be seen persecuting teenagers and stifling technology so the industry could keep selling CDs at $14 each."
+      "text": "The authors work through the music industry around 1999. The trouble looks obvious, since people are illegally downloading millions of files. They point out that downloads are not the trouble in themselves. Revenues were still growing then, so downloads were a precursor of future revenue decline. The industry's aspiration was stated in revenue, not downloads.\n\nOn owner, they ask who 'the music industry' is. If the owner is the RIAA, a lobbying body, the solution space is limited to lobbying and advertising. If the owner is the head of a large label, the options widen to product, pricing and new business models.\n\nOn success criteria, asking the executive 'why' repeatedly goes nowhere: after a few rounds the executive gets irritated. The authors suggest a different question. The executive is asked to imagine it is some time in the future and the effort has paid off completely, and then to say what the date is and what they can see. In their role-play the executive says at least three years from now, and that revenues are growing again. The success metric turns out to be revenue, not file counts or arrests.\n\nOn actors, the industry spent years pushing Congress to crack down on file-sharing. A stakeholder analysis might have shown that few members of Congress wanted to be seen persecuting teenagers and stifling technology so the industry could keep selling CDs at $14 each."
      }
     ],
     "method": {
@@ -912,7 +917,8 @@
      "label": "Our adaptation",
      "text": "When a request to an agent is more than a small edit, fill in the five lines first: the symptom, who owns the result, what done looks like and by when, the constraints, and who else is affected. Then write the request as a question the agent can answer. Ask the agent to say which of the five is missing."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Say what is wrong, whose problem it is and what success means before framing the question"
    }
   },
   {
@@ -951,7 +957,7 @@
     ],
     "idea": [
      "Gerber separates management by delegation from management by abdication. In abdication, the owner hands work to someone and runs. The owner has not given the person standards, the result they are accountable for, or any sense of where the business is going. Gerber describes the cause as desperation: the business has grown beyond what the owner can personally control, so the owner passes the accountability down and hopes it will be handled.",
-     "His remedy is a position contract. It is a summary of the results the position must achieve, the work its occupant is accountable for, the standards by which results are judged, and a line for the signature of the person who agrees to those accountabilities. Gerber stresses that it is a contract, not a job description. Accountability, he points out, literally means 'stand up and be counted'.",
+     "His remedy is a position contract. It is a summary of the results the position must achieve, the work its occupant is accountable for, the standards by which results are judged, and a space for whoever accepts those accountabilities to sign. Gerber stresses that it is a contract, not a job description. Accountability, he points out, literally means 'stand up and be counted'.",
      "Wickman adds a pair of tools for the delegator's own load. Delegate and elevate: when your work needs more than 100 percent of your time, hand off the extra to the right person in the right seat so you move toward your Unique Ability. Monkey management: do not take on the problems your direct reports bring you."
     ],
     "why": [
@@ -1011,7 +1017,8 @@
      "label": "Our adaptation",
      "text": "Give each agent or sub-agent a short role contract: the result it answers for, the standards that result is judged by, and what it hands back. You stay accountable for the outcome. When an agent returns with a problem, ask for options and a recommendation instead of a bare question."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Give each position a written contract of results and standards so delegation does not become abdication"
    }
   },
   {
@@ -1051,7 +1058,7 @@
     "idea": [
      "A trip wire is a decision made in advance about what you will do when a specific quantifiable time, amount or circumstance is reached. Parrish calls trip wires a form of precommitment. His example is a team climbing Everest that agrees to abort the summit attempt if it has not reached a certain location by a certain time. If the team fails to, it turns back, with no argument. The members do not try to decide in the middle of fatigue and oxygen deprivation, because they decided earlier.",
      "Parrish says trip wires cover red flags and the absence of expected positive signs. If neither appears, it is time to re-evaluate: is the most important thing still the most important thing, were you wrong, and what will it take to reach your goals now that you have moved further in time but not in progress?",
-     "Duke approaches the same problem from decision-making. After a bad outcome you can go on 'tilt', a hot emotional state that damages decisions. She gives the sunk cost fallacy as an example: you keep going on a project that an outside observer would say you should drop. Her advice is to come up in advance with the conditions under which you would quit, write them down, and commit to changing course when they arise. She also describes category decisions, a one-time advance choice about which options you may or may not take."
+     "Duke approaches the same problem from decision-making. After a bad outcome you can go on 'tilt', a hot emotional state that damages decisions. She gives the sunk cost fallacy as an example: you keep going on a project that an outside observer would say you should drop. Her advice is to decide ahead of time what circumstances would make you stop, write them down, and commit to changing course when they occur. She also describes category decisions, a one-time advance choice about which options you may or may not take."
     ],
     "why": [
      "Parrish's reason is that fail-safes make sure a decision is executed as planned, and a team that knows the markers of success and failure can act the minute things veer off course.",
@@ -1064,7 +1071,7 @@
      },
      {
       "source": "How to Decide",
-      "text": "Duke imagines a medical device company planning to sell a device in a new overseas market. The team's premortem finds that the country is considering new regulations that would ban the device, and the team estimates the probability of the regulations taking effect as high. In that case, she says, you might decide against selling in that market until the uncertainty resolves. She sets this in a longer process: record the premortem and a backcast in a Decision Exploration Table with likelihoods, then use the output to modify the decision, plan reactions to future outcomes so they do not take you by surprise, and look for ways to reduce the impact of bad outcomes."
+      "text": "Duke imagines a medical device company planning to sell a device in a new overseas market. The team's premortem finds that the country may bring in regulations banning the device, and the team estimates the probability of the regulations taking effect as high. In that case, she says, you might decide against selling in that market until the uncertainty resolves. She sets this in a longer process: record the premortem and a backcast in a Decision Exploration Table with likelihoods, then use the output to modify the decision, plan reactions to future outcomes so they do not take you by surprise, and look for ways to reduce the impact of bad outcomes."
      }
     ],
     "method": {
@@ -1107,7 +1114,8 @@
      "label": "Our adaptation",
      "text": "Write the stop conditions into the task before the agent starts, with numbers where possible: how many files it may change, how many times it may retry a failing test, how much time or spend it may use. Add the circumstances that always mean stop and ask, such as a deletion, a migration or a change to permissions."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Decide in advance the time, amount or event that forces you to stop and rethink"
    }
   },
   {
@@ -1144,7 +1152,7 @@
      }
     ],
     "idea": [
-     "Wiseman describes a way of asking for help while keeping ownership. When people escalate a problem to management, she writes, it often comes with an implied transfer of ownership. A Stanford Health Care manager described one employee whose emails \"essentially say, 'Hi, this is a problem. Goodbye.'\" The Impact Players Wiseman studied called in reinforcements from leaders and colleagues and kept the accountability. The message, she writes, was \"I need your guidance or action so I can move this forward.\"",
+     "Wiseman describes a way of asking for help while keeping ownership. She writes that when people take a problem to management, ownership often passes to the manager by implication. One Stanford Health Care manager told of an employee whose emails \"essentially say, 'Hi, this is a problem. Goodbye.'\" The Impact Players Wiseman studied called in reinforcements from leaders and colleagues and kept the accountability. The message, she writes, was that they needed the leader's guidance or action in order to keep the work moving.",
      "Two practices keep the manager informed. Take out a permit: agree with your manager where you are headed and why, and which parts of your core job you need to keep doing well. Drop pins: check in often with short updates and find out how priorities are shifting. Wiseman compares them to a hiker who files a destination and carries a satellite tracker.",
      "Dalio sets a duty to escalate: saying you do not believe you can handle a situation and passing the Responsible Party job to the person you report to, who then chooses whether to coach you, take control or have someone else handle it. He treats escalation as a responsibility. He also asks each person who reports to him to spend ten to fifteen minutes a day writing what they did, the issues that concern them and their reflections."
     ],
@@ -1155,7 +1163,7 @@
     "stories": [
      {
       "source": "Impact Players",
-      "text": "Fiona Su is a planning manager at Google's Media Lab. Her manager, John Tuchtenhagen, who heads media for North America, says she produces the output of at least two people. When she is told no, she asks why and starts from no to find a path forward. When she runs into trouble, she tells John that this one is over her head and she needs help. She involves him more as a consultant than as a new owner. John says, \"She knows how to bring me in and bring me along,\" and, \"Fiona never blindsides me.\" He is eager to help because he gets to contribute without taking back responsibility."
+      "text": "Fiona Su is a planning manager at Google's Media Lab. Her manager, John Tuchtenhagen, who heads media for North America, says she produces the output of at least two people. When she is told no, she asks why and starts from no to find a path forward. When she runs into trouble, she tells John the problem is beyond her and she needs help. She involves him in the role of consultant, and he does not take over ownership. John says she knows how to draw him in and keep him with her, and that \"Fiona never blindsides me.\" He is eager to help because he gets to contribute without taking back responsibility."
      },
      {
       "source": "Impact Players",
@@ -1201,7 +1209,8 @@
      "label": "Our adaptation",
      "text": "Tell the agent when to stop and ask, and what a question must contain: what it tried, what it recommends, and what it needs from you. State that the task stays its job. For long runs, have it keep a short progress note that you can read at any time."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Ask your manager for help with a problem while keeping ownership of the outcome"
    }
   },
   {
@@ -1237,12 +1246,12 @@
      "Fading is the other half. Allan Collins, John Seely Brown and Susan Newman used the term in 1986. As the learner builds skill, the expert backs away and lets the learner handle what they can and should handle themselves."
     ],
     "why": [
-     "Taking on more challenge with an expert's help also means stepping into territory that is much harder than you could manage alone, which raises the risk that you feel more incompetent. Beane names frustration management as the scaffolding tactic that matters most. The expert can act in advance by indicating the payoff of the coming struggle, and afterwards by reminding the learner how far they are stretching. His baseball example: before, \"Want to play on the varsity team in high school? You have to be able to hit pitches at least this fast.\" After a first hit that went nowhere: \"Great. You can now officially hit a foul ball in the majors.\""
+     "Taking on more challenge with an expert's help also means stepping into territory that is much harder than you could manage alone, which raises the risk that you feel more incompetent. Beane names frustration management as the scaffolding tactic that matters most. The expert can act in advance by indicating the payoff of the coming struggle, and afterwards by reminding the learner how far they are stretching. His baseball example: before the first swing, the expert says that anyone aiming for the high school varsity team must be able to hit pitches at least that fast. After a first hit that went nowhere, the expert tells the player that they could now officially foul off a pitch in the majors."
     ],
     "stories": [
      {
       "source": "The Skill Code",
-      "text": "Andre took six years to work his way up to deputy chef at a three-star Michelin steakhouse. In his early days he worked under a deputy chef, Jane. Before he began apprenticing for her role they met, and she laid out a plan. He would do easier, more peripheral tasks first, taking his lead from her, and they would debrief over a break. Then she threw more difficult work at him, a bit more than he thought he could handle, and he knew she would not come to his rescue at game time.\n\nAfter he mastered prep and showed interest in inventory, she introduced him to her purchasing guy and the appliance maintenance tech. The week after that it was the stations upstream and downstream of his. Then he set his own stretch goal of cutting his prep time by 25 percent and got her approving nod when he hit it. Sooner than he expected Andre was taking the lead and Jane took a back seat.\n\nYears later Andre does the same for a prep cook learning to fillet salmon. He starts her on skinning and deboning and stands by to watch for serious errors and give feedback, since Copper River salmon is expensive. Once she gets the hang of it, he challenges her to use smoother motions, fewer cuts and less waste, and then he steps away. The old scaffolding fades, new scaffolding goes in for new challenges, and the prep cook takes on more and more responsibility."
+      "text": "Andre took six years to work his way up to deputy chef at a three-star Michelin steakhouse. In his early days he worked under a deputy chef, Jane. Before he began apprenticing for her role they met, and she laid out a plan. He would do easier, more peripheral tasks first, taking his lead from her, and they would debrief over a break. Next she gave him harder work, slightly beyond what he believed he could manage, and he knew she would not step in to save him once service began.\n\nAfter he mastered prep and showed interest in inventory, she introduced him to her purchasing contact and to the technician who maintains the kitchen appliances. A week later he was learning the stations that come before and after his own. He then chose a stretch goal of his own, a 25 percent cut in his prep time, and Jane nodded in approval when he reached it. Earlier than he had expected, Andre was leading and Jane stood in the background.\n\nYears later Andre does the same for a prep cook learning to fillet salmon. He starts her on skinning and deboning and stands by to watch for serious errors and give feedback, since Copper River salmon is expensive. Once she gets the hang of it, he challenges her to use smoother motions, fewer cuts and less waste, and then he steps away. The old scaffolding fades, new scaffolding goes in for new challenges, and the prep cook takes on more and more responsibility."
      }
     ],
     "method": {
@@ -1284,7 +1293,8 @@
      "label": "Our adaptation",
      "text": "Raise the agent's autonomy in steps. Start with read-only work, then drafts, then changes on a branch, then merges, and widen each step as its previous work holds up. Review closely at first, then switch to sampling. Agree on what success looks like at each step before it begins."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Give learners hard real tasks with expert help and withdraw the help as skill grows"
    }
   },
   {
@@ -1315,7 +1325,7 @@
      }
     ],
     "idea": [
-     "Webb's coaching advice is to replace the instinct to instruct with the instinct to inquire. A good question makes the other person think. She writes that it is as though you are running a command in their brain that triggers a search for insight. The question she wants invites the colleague to explore their thinking out loud. She rules out a disguised suggestion such as \"Have you thought about doing X or Y?\" and a yes or no prompt such as \"Did you try asking them?\" Her example of a good question is \"So tell me, how are you thinking about this?\"",
+     "Webb's coaching advice is to replace the instinct to instruct with the instinct to inquire. A good question makes the other person think. She writes that the effect resembles issuing an instruction inside their head that sets off a hunt for insight. The question she wants invites the colleague to explore their thinking out loud. She rules out a disguised suggestion such as \"Have you thought about doing X or Y?\" and a yes or no prompt such as \"Did you try asking them?\" Her example of a good question is \"So tell me, how are you thinking about this?\"",
      "GUIDE is an acronym for five steps. Goal: ask them to get clear on what they are trying to achieve. Understanding: explore how they see the issue. Ideas: surface their ideas before you add yours. Deepen: sharpen their thinking through constructive challenge. Enable: make sure they are ready to take action."
     ],
     "why": [
@@ -1325,7 +1335,7 @@
     "stories": [
      {
       "source": "Leadership Intelligence",
-      "text": "Webb builds a sample conversation from a story told by Shellye Archambeau about a supply chain challenge at one of her companies. A colleague brings a concern about an external supplier.\n\nGoal. The colleague says the real goal is to make sure the new product launch is not derailed by the supplier situation, ideally with an alternative supplier of trusted quality and without blowing the budget or delaying the timeline. The coach plays back what was said: reliability is key, with cost and speed also important.\n\nUnderstanding. Eighty percent of supply comes from a partner that has had financing issues, and there have been two late shipments. The colleague has contacted a solid backup supplier who is interested but has not worked with their specifications.\n\nIdeas. The colleague proposes staying on top of the current supplier or onboarding the second supplier. The coach asks, \"Any other ideas? I have one, but let me let you finish your thought first,\" and waits. The colleague then suggests deferring part of the launch to reduce early exposure. The coach says they were thinking the same and shares their thought second.\n\nDeepen. The coach asks what would have to be true for each option to work. The colleague finds both unrealistic as they stand. When the coach asks what they are assuming, the colleague notices an assumption that the choice was either-or, and proposes a hybrid: one more push with the current supplier, the second supplier in parallel, and a softer launch timeline.\n\nEnable. Next steps are rough quotes from the second supplier and a map of how the launch schedule could change. The hardest part will be getting colleagues to agree to defer part of the launch. The support needed is a quick check of the financial assumptions before pitching Sales, due by end of day tomorrow. Archambeau ends such conversations with, \"Listen, I knew you could figure this out.\""
+      "text": "Webb builds a sample conversation from a story told by Shellye Archambeau about a supply chain challenge at one of her companies. A colleague brings a concern about an external supplier.\n\nGoal. The colleague says the real goal is to make sure the new product launch is not derailed by the supplier situation, ideally with an alternative supplier of trusted quality and without blowing the budget or delaying the timeline. The coach plays back what was said: reliability is key, with cost and speed also important.\n\nUnderstanding. Eighty percent of supply comes from a partner that has had financing issues, and there have been two late shipments. The colleague has contacted a solid backup supplier who is interested but has not worked with their specifications.\n\nIdeas. The colleague proposes staying on top of the current supplier or onboarding the second supplier. The coach asks whether there are any other ideas, says they have one too but would like the colleague to finish thinking first, and waits. The colleague then suggests deferring part of the launch to reduce early exposure. The coach says they were thinking the same and shares their thought second.\n\nDeepen. The coach asks what would have to be true for each option to work. The colleague finds both unrealistic as they stand. When the coach asks what they are assuming, the colleague notices an assumption that the choice was either-or, and proposes a hybrid: one more push with the current supplier, the second supplier in parallel, and a softer launch timeline.\n\nEnable. Next steps are rough quotes from the second supplier and a map of how the launch schedule could change. The hardest part will be getting colleagues to agree to defer part of the launch. The support needed is a quick check of the financial assumptions before pitching Sales, due by end of day tomorrow. Archambeau ends such conversations with, \"Listen, I knew you could figure this out.\""
      }
     ],
     "method": {
@@ -1360,7 +1370,8 @@
      "label": "Our adaptation",
      "text": "Two uses with an agent. When you cannot say what you want, ask the agent to interview you with these questions in order: goal, your understanding, your ideas, what would have to be true, next steps. When the agent proposes a plan, ask what would have to be true for the plan to work and what it is assuming, before you accept it."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Ask open questions that make people think aloud instead of handing them instructions"
    }
   },
   {
@@ -1421,7 +1432,7 @@
      },
      {
       "source": "The E-Myth Revisited",
-      "text": "Gerber describes Ray Kroc and McDonald's. He says Kroc understood that the franchisee, left to his own devices, would most assuredly not make it work, so the business had to work in order to be sold. Kroc therefore set out to create what Gerber calls a systems-dependent business and not a people-dependent business, one that could work without him. Among Gerber's rules for such a franchise prototype: it will be operated by people with the lowest possible level of skill, and all its work will be documented in operations manuals."
+      "text": "Gerber describes Ray Kroc and McDonald's. He says Kroc understood that the franchisee, left to his own devices, would most assuredly not make it work, so the business had to work in order to be sold. Kroc therefore set out to create what Gerber calls a systems-dependent business and not a people-dependent business, one that could work without him. Among Gerber's rules for such a franchise prototype: it will be staffed by people at the lowest skill level possible, and all its work will be documented in operations manuals."
      },
      {
       "source": "The Score",
@@ -1429,7 +1440,7 @@
      },
      {
       "source": "The Skill Code",
-      "text": "Sociologist Michael Burawoy took a job as a machine operator in a Chicago machine shop in the 1970s, hoping to earn the machinists' trust so he could learn from them. He joined an informal game they called 'making out', which meant producing more than the quota and hiding that output from management. He worked extra hard, and his coworkers confronted him and said he would make them look bad. Their game was about quality, safety and solidarity among workers too. The real informal rule, in Beane's words, was that you don't race ahead unless the group does it together, strategically. Beane uses the story to show that the standards for skill and conduct are rarely stated and can conflict with each other."
+      "text": "In the 1970s, sociologist Michael Burawoy worked as a machine operator in a Chicago machine shop, hoping to earn the machinists' trust so he could learn from them. He joined an informal game they called 'making out', which meant exceeding the quota and keeping the surplus hidden from management. He put in extra effort, and coworkers confronted him, saying he would make them look bad. Their game also served quality, safety and solidarity among the workers. In Beane's account, the actual informal rule was to stay with the group and move ahead only when everyone does so together, as a strategy. Beane uses the story to show that the standards for skill and conduct are rarely stated and can conflict with each other."
      }
     ],
     "tension": "Nguyen states the trade-off directly. Mechanical procedures are repeatable and accessible, and they work best on things that are naturally public and observable. Fuzzy principles need the trained judgment of an experienced person, who can then use all of their experience and sensitivity. They are harder for the public to inspect, and different experts may do different things. Agrawal et al. add that rules are decisions made in advance, and that making a decision costs more than following a rule, so it pays when the consequences are significant and the cost of information is small. Putting the two together, specification fits work where reliability and coordination at scale matter and the situation can be observed by anyone. Room for judgment fits work where the situation needs an expert's sensitivity, or where the person is still building skill. The last sentence is our synthesis.",
@@ -1466,7 +1477,8 @@
      "label": "Our adaptation",
      "text": "Sort the steps of a job. Where the situation is observable and the right answer is known, write it as a script, a checklist or a test. Where the right answer depends on how things look at that moment, describe the principle and let the agent judge, then review a sample of what it decided."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Some authors want procedures written down in advance, others want room left for the doer's judgment"
    }
   },
   {
@@ -1503,14 +1515,14 @@
      }
     ],
     "idea": [
-     "The curse of knowledge is the assumption that what is clear to you is equally clear to others. Browne and Keeley define it this way: we cannot recall what it is like when we did not know what we now know. Webb adds a second effect, the illusion of transparency. People also overestimate how clearly their hopes, feelings and intentions come across.",
-     "Webb opens her chapter on communication with a survey figure: only 45 percent of employees agree with the statement \"I know what is expected of me.\" She gives three reasons the gap opens. First, the curse of knowledge and the illusion of transparency. Second, listeners rarely take in everything the first time. Selective attention means they miss some of what you say without realising it, and working memory limits make it hard to take in a lot of new information at once. Third, people grasp and retain information better when it feels psychologically rewarding and relevant, so if they cannot see how what you say matters to them, it is less likely to stick.",
+     "The curse of knowledge is the assumption that what is clear to you is equally clear to others. Browne and Keeley define it this way: once we know something, we find it hard to remember what it was like not to know it. Webb adds a second effect, the illusion of transparency. People also overestimate how clearly their hopes, feelings and intentions come across.",
+     "Webb opens her chapter on communication with a survey figure: only 45 percent of employees agree that they know what is expected of them. She gives three reasons the gap opens. First, the curse of knowledge and the illusion of transparency. Second, listeners rarely take in everything the first time. Selective attention means they miss some of what you say without realising it, and working memory limits make it hard to take in a lot of new information at once. Third, people grasp and retain information better when it feels psychologically rewarding and relevant, so if they cannot see how what you say matters to them, it is less likely to stick.",
      "Browne and Keeley note that critical thinkers, like everyone else, struggle with the curse of knowledge."
     ],
     "stories": [
      {
       "source": "Leadership Intelligence",
-      "text": "Webb describes leaders she has coached who say \"I don't know why they're not getting it.\" Rob Allen is CEO of Intermountain Health, which has sixty thousand employees, and he led a simplification drive across its operations. Early on he worried his message was not landing: \"I felt like my words were going out into the organization and people would say, 'Yes, okay'—but then carry on as they always had.\" He adjusted by tailoring the message, with different angles for nurses and doctors, and by sharing personal stories and data."
+      "text": "Webb describes leaders she has coached who say \"I don't know why they're not getting it.\" Rob Allen is CEO of Intermountain Health, which has sixty thousand employees, and he led a simplification drive across its operations. Early on he worried his message was not landing: people nodded and agreed when he spoke, then went on working as before. He adjusted by tailoring the message, with different angles for nurses and doctors, and by sharing personal stories and data."
      },
      {
       "source": "Leadership Intelligence",
@@ -1518,7 +1530,7 @@
      },
      {
       "source": "Asking the Right Questions",
-      "text": "Browne and Keeley use a scene from The Big Bang Theory. Sheldon says, \"I need your help in a matter of semiotics.\" Penny asks, \"What?\" Sheldon answers, \"Semiotics, the study of signs and symbols as a branch of the philosophy related to linguistics.\" Penny replies, \"Okay, honey, I know you think you are explaining yourself, but you're really not.\" The authors say Sheldon's egocentrism gets in the way of a conversation that thinking about who Penny was might have made possible."
+      "text": "Browne and Keeley use a scene from The Big Bang Theory. Sheldon says, \"I need your help in a matter of semiotics.\" Penny asks, \"What?\" Sheldon answers by defining semiotics as the study of signs and symbols, a branch of philosophy related to linguistics. Penny replies, \"Okay, honey,\" and says she knows he thinks he is explaining himself, but he really is not. The authors say Sheldon's egocentrism gets in the way of a conversation that thinking about who Penny was might have made possible."
      }
     ],
     "method": {
@@ -1555,7 +1567,8 @@
      "label": "Our adaptation",
      "text": "Treat anything you leave out of a prompt as something the agent does not know. Before the agent starts, ask it to restate the task and list the assumptions it is making, then compare that list with what you meant. Write the change you want as a from-to sentence."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "What seems clear to you is often unclear to others, so spell out what you expect"
    }
   },
   {
@@ -1592,22 +1605,22 @@
      }
     ],
     "idea": [
-     "Kahneman abbreviates the rule as WYSIATI: what you see is all there is. System 1, the fast and automatic mind, builds the best story it can from the information that is active in the moment. It cannot allow for information it does not have. The measure of success for System 1 is the coherence of the story, and the amount and quality of the data behind the story are largely irrelevant.",
-     "One result is that confidence follows coherence. Kahneman writes that people's confidence depends mostly on the quality of the story they can tell about what they see, even if they see little. He also says that knowing little makes it easier to fit everything you know into a coherent pattern.",
+     "Kahneman abbreviates the rule as WYSIATI: what you see is all there is. System 1, the fast and automatic mind, builds the best story it can from the information that is active in the moment. It has no way of accounting for information it lacks. System 1 judges itself by how coherent the story is, and how much data stands behind the story, or how good that data is, hardly matters.",
+     "One result is that confidence follows coherence. Kahneman writes that how confident people feel depends largely on how good a story they can tell from what they see, however little that is. He adds that when you know little, it is easier to make everything you know fit into one consistent pattern.",
      "The same mechanism applies to a task handed from one person to another. Each side reads the same words and builds a complete picture from them, and each feels sure of it. This application is our reading, and the books discuss the mechanism."
     ],
     "stories": [
      {
       "source": "Thinking, Fast and Slow",
-      "text": "Kahneman asks the reader: \"Will Mindik be a good leader? She is intelligent and strong...\" An answer comes quickly, and it is yes. Then he asks what if the next two adjectives were corrupt and cruel. He points out what the reader did not do: they did not ask what they would need to know before forming an opinion about someone's leadership. System 1 delivered the best story from two adjectives, with great cognitive ease."
+      "text": "Kahneman asks the reader whether Mindik will be a good leader, and describes her only as intelligent and strong. The answer comes quickly, and it is yes. Then he asks what if the next two adjectives were corrupt and cruel. He points out what the reader did not do: they did not ask what they would need to know before forming an opinion about someone's leadership. System 1 delivered the best story from two adjectives, with great cognitive ease."
      },
      {
       "source": "Thinking, Fast and Slow",
-      "text": "Amos Tversky and two Stanford graduate students gave participants legal scenarios. In one, plaintiff David Thornton, a forty-three-year-old union field representative, was visiting Thrifty Drug Store #168. A store manager told him he could no longer speak with union employees on the floor and would have to use a back room while they were on break. The union contract allowed that, but it had never been enforced. Thornton objected and was told to comply, leave, or be arrested. He said he would rather be arrested. The manager called the police, he was handcuffed for trespassing, and all charges were later dropped. He sued for false arrest.\n\nAll participants read the background. Some then heard only the union lawyer, some only the store's lawyer, and some heard both sides like a jury. The lawyers added nothing that could not be inferred from the background, and participants knew the setup and could have generated the other side's argument. One-sided evidence still had a pronounced effect on judgments. People who saw one-sided evidence were also more confident than those who saw both sides."
+      "text": "Amos Tversky and two Stanford graduate students gave participants legal scenarios. In one, David Thornton, the plaintiff, is a union field representative aged forty-three who was visiting Thrifty Drug Store #168. A store manager told him he could no longer speak with union employees on the floor and would have to use a back room while they were on break. The union contract allowed that, but it had never been enforced. Thornton objected and was told to comply, leave, or be arrested. He said he would rather be arrested. The manager called the police, he was handcuffed for trespassing, and all charges were later dropped. He sued for false arrest.\n\nAll participants read the background. Some then heard only the union lawyer, some only the store's lawyer, and some heard both sides like a jury. The lawyers added nothing that could not be inferred from the background, and participants knew the setup and could have generated the other side's argument. One-sided evidence still had a pronounced effect on judgments. People who saw one-sided evidence were also more confident than those who saw both sides."
      },
      {
       "source": "Client Science",
-      "text": "In the 'f' exercise, run by Professor Roger Fisher and colleagues at Harvard Law School's Program on Negotiation, and now by many negotiation professors, a room of people is shown a sentence on a screen and asked to count the number of 'f's, silently. Most are confident of their count. The presenter asks how many recorded 8, 9, 10, 11 or more, and clusters of hands go up for each number. Before the right answer is revealed, the presenter asks who still feels confident in their original answer. Inevitably the majority do, despite learning that many others looking at the same sentence counted something different.\n\nAaron adds that people in more powerful roles may be the most confident. The powerful are less likely to consider another person's perspective and less likely to remember that others lack their privileged knowledge."
+      "text": "In the 'f' exercise, run by Professor Roger Fisher and colleagues at Harvard Law School's Program on Negotiation, and now by many negotiation professors, a room of people is shown a sentence on a screen and asked to count the number of 'f's, silently. Most are confident of their count. The presenter asks how many recorded 8, 9, 10, 11 or more, and clusters of hands go up for each number. Before the right answer is revealed, the presenter asks who still feels confident in their original answer. Inevitably the majority do, despite learning that many others looking at the same sentence counted something different.\n\nAaron adds that people in more powerful roles may be the most confident. The powerful are less inclined to take another person's point of view and less inclined to keep in mind that others do not share the knowledge they have."
      }
     ],
     "method": {
@@ -1648,7 +1661,8 @@
      "label": "Our adaptation",
      "text": "Remember that the agent works from the prompt, the files it opened, and nothing else. Before it starts, ask it what it would need to know that is not in front of it, and answer or supply those items. When you review, ask yourself the same question about your own summary of the problem."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "The fast mind builds a coherent story from whatever it has and feels sure of it"
    }
   },
   {
@@ -1688,7 +1702,7 @@
     ],
     "why": [
      "Duke says the pull is stronger in groups. Even when members hold information that goes against the group's consensus, they often do not share it. Opinions from higher-status people are the most contagious, and the halo effect leads people to weight the opinions of highly successful people across the board, including in areas where they have no expertise.",
-     "Batista and Griffiths report an experiment with 557 participants on a modified Wason 2-4-6 rule-discovery task. Unmodified LLM behaviour suppressed discovery and inflated confidence about as much as explicitly sycophantic prompting did. Unbiased sampling from the true distribution produced discovery rates five times higher. They cite work by Wang et al. in which simple opinion statements such as \"I believe the answer is X\" induced agreement with incorrect beliefs at rates averaging 63.7 percent across seven model families, from 46.6 percent to 95.1 percent."
+     "Batista and Griffiths report an experiment with 557 participants on a modified Wason 2-4-6 rule-discovery task. Unmodified LLM behaviour suppressed discovery and inflated confidence about as much as explicitly sycophantic prompting did. Unbiased sampling from the true distribution produced discovery rates five times higher. They cite work by Wang et al. in which simple opinion statements such as \"I believe the answer is X\" pushed the models into agreeing with wrong beliefs 63.7 percent of the time on average across seven model families, with rates running from 46.6 percent to 95.1 percent."
     ],
     "stories": [
      {
@@ -1701,7 +1715,7 @@
      },
      {
       "source": "How to Decide",
-      "text": "Dan Levy, Joshua Yardley and Richard Zeckhauser of the Harvard Kennedy School studied how classes answer questions. When students raised their hands, they herded: as soon as a consensus appeared, students joined it, creating supermajorities. When students answered with electronic clickers and could not see others' answers, the supermajorities broke up. Private answers gave the instructors a better picture of what students knew and preferred."
+      "text": "The Harvard Kennedy School researchers Dan Levy, Joshua Yardley and Richard Zeckhauser studied how classes answer questions. When students raised their hands, they herded: as soon as a consensus appeared, students joined it, creating supermajorities. When students answered with electronic clickers and could not see others' answers, the supermajorities broke up. Private answers gave the instructors a better picture of what students knew and preferred."
      }
     ],
     "method": {
@@ -1735,7 +1749,8 @@
      "label": "Our adaptation",
      "text": "When you want an agent to review or choose, leave your preferred answer out of the prompt. Ask for options, the reasons for each, and what would change its mind. For a second opinion, give a fresh session only the artifact and the question, with none of your reasoning. Ask for the strongest case against the plan."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Ask for advice before sharing your own view, because stating it first makes others echo it"
    }
   },
   {
@@ -1771,20 +1786,20 @@
     ],
     "why": [
      "Parrish says living on abstractions is like a diet of junk food. It has less information content, and real knowledge is earned while abstractions are borrowed. Relying on them also gives the ego default room to work: you feel confident about what to do without really understanding the problem. He also notes that when decisions look senseless to you, the other person is probably working from different information.",
-     "The person closest to the problem often has the most accurate information about it. What they tend to lack is the broader perspective. His example: a McDonald's line worker knows how to fix a recurring problem better than someone analysing data, but does not know whether the problem exists everywhere or whether the fix would cause harm if rolled out globally."
+     "Whoever is closest to the problem usually holds the most accurate information about it, though that person tends to lack the broader perspective. His example: a McDonald's line worker knows how to fix a recurring problem better than someone analysing data, but does not know whether the problem exists everywhere or whether the fix would cause harm if rolled out globally."
     ],
     "stories": [
      {
       "source": "Clear Thinking",
-      "text": "Parrish worked for a CEO of a large company, and nothing crossed the CEO's desk without going through him. One morning he saw an email from a direct report flagging a technical problem affecting operations. He told the CEO what he had heard. The CEO asked, \"Where did you get this information?\" Parrish said he had heard it from the VP in charge of the division. The CEO's face showed disappointment. After a silence he said softly that his decisions could only be as good as his information. He was not getting the raw information, and he knew people in the organisation had an incentive to convey things in a way that covered up mistakes or made themselves look good."
+      "text": "Parrish worked for a CEO of a large company, and nothing crossed the CEO's desk without going through him. One morning he saw an email from a direct report flagging a technical problem affecting operations. He told the CEO what he had heard. The CEO asked, \"Where did you get this information?\" Parrish said he had heard it from the VP in charge of the division. The CEO's face showed disappointment. After a silence he said softly that the quality of his decisions was capped by the quality of his information. He was not getting the raw information, and he knew people in the organisation had reasons to present things so that mistakes stayed hidden or they looked good."
      },
      {
       "source": "Clear Thinking",
-      "text": "United States general George Marshall always went to the source. During World War II, the War Department ran into a difficult situation with the Air Force in the Pacific: pilots were refusing to fly. Reports Marshall received suggested something was wrong with the planes. It was not a matter of parts. Marshall asked whether the pilots wanted the planes modified, and had one stripped of armour to cut its weight, because American planes were heavier and less maneuverable than Japanese Zeros. That was not the problem. Talking to the commander gave him no insight, so he sent someone \"to look around and see things that weren't being reported—not just what they were yelling about.\" No one likes the person sent from the head office, and everyone is suspicious.\n\nThe person he sent found that the ground crews had no protection from mosquitoes. They worked on the planes at night under electric lights that attracted insects, and many mechanics were so full of malaria or antimalarial medication that the pilots no longer trusted their work and refused to fly. Headquarters, in mosquito-protected areas, was focused on ammunition, parts and food. Marshall overrode part of the tonnage allocated to combat supplies and got mosquito nets."
+      "text": "United States general George Marshall always went to the source. In the Pacific during World War II, the War Department faced a hard problem with the Air Force: pilots would not fly. Reports Marshall received suggested something was wrong with the planes. It was not a matter of parts. Marshall asked whether the pilots wanted the planes modified, and had one stripped of armour to cut its weight, because American planes were heavier and less maneuverable than Japanese Zeros. That was not the problem. Talking to the commander gave him no insight, so he sent an observer to look for things that were not being reported, beyond what people were loudly complaining about. Nobody welcomes a person sent from head office, and everyone is suspicious.\n\nThe person he sent found that the ground crews had no protection from mosquitoes. They worked on the planes at night under electric lights that attracted insects, and many mechanics were so full of malaria or antimalarial medication that the pilots no longer trusted their work and refused to fly. Headquarters, in mosquito-protected areas, was focused on ammunition, parts and food. Marshall overrode part of the tonnage allocated to combat supplies and got mosquito nets."
      },
      {
       "source": "Clear Thinking",
-      "text": "Parrish cites Tim Urban's picture of chefs and line cooks. Both can follow a recipe, and when things go to plan there is no difference in process or result. When things go wrong the chef knows why, and the line cook often does not. The chef has built depth of understanding through years of experience, experimentation and reflection, so the chef can diagnose the problem.\n\nHe also cites Leonardo da Vinci's journals, which contain notes on how to get the right information, such as \"Get the master of arithmetic to show you how to square a triangle\" and \"Get a master of hydraulics to tell you how to repair a lock, canal and mill in the Lombard manner.\""
+      "text": "Parrish cites Tim Urban's picture of chefs and line cooks. Both can follow a recipe, and when things go to plan there is no difference in process or result. When things go wrong the chef knows why, and the line cook often does not. The chef has built depth of understanding through years of experience, experimentation and reflection, so the chef can diagnose the problem.\n\nHe also cites Leonardo da Vinci's journals, which contain notes on how to get the right information, such as asking a master of arithmetic how to square a triangle and a master of hydraulics how a lock, canal and mill are repaired in the Lombard manner."
      }
     ],
     "method": {
@@ -1825,7 +1840,8 @@
      "label": "Our adaptation",
      "text": "An agent's summary of a file, log or earlier session is an abstraction. When a decision depends on a detail, open the source. Pass the raw error output and the original brief to a sub-agent, and add your intent, instead of a paraphrase of either."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Each step away from the source filters out detail, so check the source yourself when possible"
    }
   },
   {
@@ -1861,13 +1877,13 @@
      }
     ],
     "idea": [
-     "Ackoff's Fable 2.5 shows a plan that people said yes to without adopting the planners' goal. His moral: the reason for one person's giving may not be the reason for another's receiving. He says the cultural gap that keeps problem solvers from understanding the objectives of others can occur even within small and apparently homogeneous organisations.",
-     "Ackoff's protection is participation. Where solutions depend on the reactions of others, taking part in the problem-solving process is the best protection against unexpected responses. He adds that failing to consult people with a stake in our decisions is often seen as an act of aggression, because it often is, and that inviting participation is an act of conciliation and a demonstration of care and concern."
+     "Ackoff's Fable 2.5 shows a plan that people said yes to without adopting the planners' goal. His moral is that one person's reason for giving may differ from another person's reason for receiving. He says the cultural gap that stops problem solvers from grasping what others are after can exist even inside small organisations that look homogeneous.",
+     "Ackoff's protection is participation. Where solutions depend on the reactions of others, involving them in solving the problem is the best safeguard against responses nobody expected. He adds that leaving out people who have a stake in our decisions is often taken as an act of aggression, and often it is, and that inviting participation is an act of conciliation and a demonstration of care and concern."
     ],
     "stories": [
      {
       "source": "The Art of Problem Solving",
-      "text": "A Mexican government agency responsible for water resources decided to build a dam and use it to irrigate a large farming area, whose productivity it believed could be doubled. When the plans were done it sent representatives to the rural areas to explain the project to the peasants and ask whether they wanted it. The answers were uniformly yes. The dam and irrigation system were built at great expense and failed to produce the expected increase in productivity.\n\nThe puzzled experts went to find out why. The peasants had reduced the amount of land they cultivated, which gave them more time to work in nearby towns or do nothing. They felt the extra work needed to use all their land was not worth the small increase in income. One expert asked a consultant why the peasants had not said this before the dam was built.\n\nThe consultant could have said, \"Because you didn't ask the right questions. You incorrectly assumed you knew the answers.\" He did not. He asked the expert whether he played the violin. The expert said no. Then the consultant asked what he would do if offered a Stradivarius. He said he would accept it. The consultant asked why, since he could not play it. The expert got the point."
+      "text": "A Mexican government agency in charge of water resources planned a dam that would irrigate a large area of farmland, and it believed the productivity of that area could be doubled. When the plans were done it sent representatives to the rural areas to explain the project to the peasants and ask whether they wanted it. Every answer was yes. The dam and irrigation system were built, at great expense, and the expected increase in productivity did not happen.\n\nThe puzzled experts went to find out why. The peasants had reduced the amount of land they cultivated, which left them free to work in nearby towns or do nothing. They felt the extra work needed to use all their land was not worth the small increase in income. One expert asked a consultant why the peasants had not said this before the dam was built.\n\nThe consultant could have answered that the expert had not asked the right questions and had wrongly assumed he already knew the answers. He did not. He asked the expert whether he played the violin. The expert said no. Then the consultant asked whether he would take a Stradivarius if one were offered to him. He said he would. The consultant asked for his reason, given that he could not play the instrument. The expert saw what he meant."
      }
     ],
     "method": {
@@ -1897,7 +1913,8 @@
      "label": "Our adaptation",
      "text": "An agent that accepts a plan has not necessarily taken on its goal. Put the goal in the prompt, then ask the agent to say what the goal is and why its approach serves it. When you question a choice it made, ask \"What were you trying to achieve here?\" and avoid \"Why did you do this?\""
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "People may agree to a plan without sharing its goal, so involve them in shaping it"
    }
   },
   {
@@ -1986,7 +2003,8 @@
      "label": "Our adaptation",
      "text": "Use a precise named term in a prompt when one exists (\"tautological test\", \"race condition\", \"idempotent\"). One term carries a whole description the agent already knows. Check that you can explain the term yourself, because an agent given a name you only half understand will produce work that copies the form."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Learn compact named ideas from many fields so you can skip the basic reasoning each time"
    }
   },
   {
@@ -2017,7 +2035,7 @@
      }
     ],
     "idea": [
-     "Leaders pick up pet phrases that compress an instruction into a few words: \"We need to understand the physics of...\", \"We need proof points for...\", \"We need to close the loop on...\". The leader has a full description behind the phrase. The listeners each fill it in with their own."
+     "Leaders pick up pet phrases that compress an instruction into a few words: \"We need to understand the physics of...\", \"We need to close the loop on...\", \"We need proof points for...\". The leader has a full description behind the phrase. The listeners each fill it in with their own."
     ],
     "why": [
      "Webb points to the curse of knowledge and the illusion of transparency. The speaker assumes the meaning is obvious and does not notice that colleagues are guessing. The result is a team that works to different standards while everyone believes they agree."
@@ -2025,7 +2043,7 @@
     "stories": [
      {
       "source": "Leadership Intelligence",
-      "text": "Webb describes her client Rob and other executives who repeatedly used phrases such as \"We need to understand the physics of...\", \"We need proof points for...\" and \"We need to close the loop on...\". When she talked with their teams, people held very different assumptions about what \"understanding the physics\" would require."
+      "text": "Webb describes her client Rob and other executives who repeatedly used phrases such as \"We need to understand the physics of...\", \"We need to close the loop on...\" and \"We need proof points for...\". When she talked with their teams, people held very different assumptions about what \"understanding the physics\" would require."
      }
     ],
     "method": {
@@ -2060,7 +2078,8 @@
      "label": "Our adaptation",
      "text": "Your own shorthand in prompts (\"clean this up\", \"make it robust\", \"do it properly\") means something specific to you and little to the agent. Write out what the phrase means, once, in a rules file, or ask the agent to say back what it understands by the phrase before it starts."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "A leader's shorthand phrases mean one thing to the leader and another to each listener"
    }
   },
   {
@@ -2137,7 +2156,8 @@
      "label": "Our adaptation",
      "text": "When the agent keeps misreading a term in your project, define it as genus plus difference in one sentence (\"An 'order' is a purchase that has been paid for, as opposed to a cart\") and put that sentence in the agent's context file. Check instructions for BEAR TO THE RIGHT readings, where one sentence can be taken two ways."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Pin down a word by giving its nearest class and what sets it apart"
    }
   },
   {
@@ -2215,7 +2235,8 @@
      "label": "Our adaptation",
      "text": "The picture you use for the agent (assistant, intern, factory, pair) brings in expectations about what it will do and what you owe it. Name the picture you are using, and ask what it leaves out. An \"assistant\" framing hides that the agent needs the goal and context spelled out."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Every metaphor makes an abstract idea manageable by highlighting some aspects and leaving others out"
    }
   },
   {
@@ -2308,7 +2329,8 @@
      "label": "Our adaptation",
      "text": "Ask the agent to restate a plan or a design in plain words before you approve it. If it cannot do that without the jargon, the plan has a gap. Do the same with your own task descriptions: replace the abstract label with the concrete thing it refers to."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Replacing jargon and legalese with everyday words exposes errors and vagueness that the jargon hides"
    }
   },
   {
@@ -2349,7 +2371,7 @@
      "Duke is writing about probabilities. Verbal terms such as \"likely\" or \"real possibility\" hide how much two people differ, so she asks for percentages. Nguyen is writing about values. He argues that turning rich values into precise, mechanical terms and scores eliminates the room in which subtle values develop. In his account this is value capture."
     ],
     "why": [
-     "Duke: \"when you use these blunt terms, you and the other people in the conversation are often speaking different languages without even knowing it.\" A person who thinks something has a 30% chance, talking to a person with reliable information that it has 70%, needs that disagreement to come out. Vague words let both nod in agreement.",
+     "Duke says that when people use blunt terms like these, they are often speaking different languages in the same conversation without being aware of it. A person who thinks something has a 30% chance, talking to a person with reliable information that it has 70%, needs that disagreement to come out. Vague words let both nod in agreement.",
      "Nguyen: simplified metrics decide where you look. They travel across contexts and aggregate at scale, and they hide error because they point your attention at what they measure. Precise value language would suit a world in which we already knew what is important. Where we do not know, it closes off exploration."
     ],
     "stories": [
@@ -2359,7 +2381,7 @@
      },
      {
       "source": "How to Decide",
-      "text": "In Garold Stasser and William Titus's experiment, four-person groups chose which of three candidates was best suited to be student body president. Researchers gave each member a dossier with positive and negative attributes of the candidates, built so that candidate A was the most favorable on all the information. Group members often did not share information that went against the group's view."
+      "text": "In Garold Stasser and William Titus's experiment, four-person groups were choosing the strongest of three candidates for student body president. Researchers gave each member a dossier with positive and negative attributes of the candidates, built so that candidate A was the most favorable on all the information. Group members often did not share information that went against the group's view."
      },
      {
       "source": "The Score",
@@ -2405,7 +2427,8 @@
      "label": "Our adaptation",
      "text": "When you ask an agent to judge something uncertain (will this migration break callers? is this test coverage enough?), ask for a percentage and the reasons, so you can see how sure it is. When you describe what \"good\" means for a design or a piece of writing, leave the standard in words and examples and do not reduce it to a score the agent will optimise."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Use exact numbers when describing probabilities but be wary of reducing values to precise scores"
    }
   },
   {
@@ -2478,7 +2501,8 @@
      "label": "Our adaptation",
      "text": "Treat a score, an estimate or a formula in an agent's report the way you would treat one in a vendor deck. Ask what went in, what units it has and whether the order of magnitude is plausible. An agent that reports \"confidence 0.92\" has not told you how it was computed."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Check formulas that look rigorous by tracking units and estimating the size of the answer"
    }
   },
   {
@@ -2521,7 +2545,7 @@
      },
      {
       "source": "Calling Bullshit",
-      "text": "After a 2019 NBC News investigation found that global manufacturers likely used materials produced by child labor in Madagascar, where children worked mica mines in the blazing sun for forty cents a day, a Fiat Chrysler spokesperson said the company \"engages in collaborative action with global stakeholders across industries and along the value chain to promote and develop our raw material supply chain.\""
+      "text": "After a 2019 NBC News investigation found that global manufacturers likely used materials produced by child labor in Madagascar, where children worked mica mines in the blazing sun for forty cents a day, a Fiat Chrysler spokesperson said the company engages in \"collaborative action\" with global stakeholders, and described this as work across industries and along the value chain, aimed at promoting and developing its raw material supply chain."
      },
      {
       "source": "Calling Bullshit",
@@ -2552,7 +2576,8 @@
      "label": "Our adaptation",
      "text": "Agent status reports can palter without intent: \"the tests pass\" can mean the tests that were run, or the ones that remained after the agent edited them. Ask for the exact command that ran, its output and who or what changed which files. Rewrite vague claims in the active voice (\"the agent deleted two tests\") before you accept them."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Check what a statement implies beyond its literal words, then restate it with someone responsible"
    }
   },
   {
@@ -2643,7 +2668,8 @@
      "label": "Our adaptation",
      "text": "Ask the agent to report with the answer first, then the support in groups: the conclusion, the three reasons, then the detail. Open a task brief with situation, complication, and the question you need answered. Ask for the structure before the full draft, so you can fix the top of the pyramid while it is still cheap."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Open with the answer, then support it with grouped ideas that answer the reader's questions"
    }
   },
   {
@@ -2709,7 +2735,8 @@
      "label": "Our adaptation",
      "text": "Before you write a prompt for a large task, dump everything you know about it into a scratch file, with constraints, worries and half-ideas. Group the notes into three or four headings and use those as the sections of the brief. You can also give the dump to the agent and ask it to propose the chunks, then correct them."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Write down everything on your mind, then group the notes under a few themes"
    }
   },
   {
@@ -2781,7 +2808,8 @@
      "label": "Our adaptation",
      "text": "When you need the agent to explain a diff or a design to you, state the audience and what they do not yet know, and ask for short sentences with the main point first. Ask it to cut anything the reader would not miss. Read the explanation aloud or ask yourself whether you could repeat it to a teammate."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Prepare a clear explanation by distilling the material, grouping it into strands and ordering them"
    }
   },
   {
@@ -2828,7 +2856,8 @@
      "label": "Our adaptation",
      "text": "Before you hand a large feature to an agent, write the announcement you would publish when it is done and the five questions a skeptical user would ask. If you cannot answer them in plain words, the brief is not ready."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Pitch a new project as a press release and FAQ in plain language before work begins"
    }
   },
   {
@@ -2898,7 +2927,8 @@
      "label": "Our adaptation",
      "text": "Start every task description with a summary of under 75 words: the situation, the question and what a good answer looks like. Ask the agent to open its report in the same way. Keep the subject and verb of each instruction early in the sentence, and list conditions after the instruction."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Open a document with a summary of under 75 words giving the question and its answer"
    }
   },
   {
@@ -2937,7 +2967,7 @@
     "stories": [
      {
       "source": "Thinking, Fast and Slow",
-      "text": "Danny Oppenheimer wrote a paper titled \"Consequences of Erudite Vernacular Utilized Irrespective of Necessity: Problems with Using Long Words Needlessly\". It found that familiar ideas expressed in pretentious language lead readers to rate the author as less intelligent and less credible."
+      "text": "Danny Oppenheimer wrote a paper titled \"Consequences of Erudite Vernacular Utilized Irrespective of Necessity\", with a subtitle about the problems of using long words needlessly. It found that familiar ideas expressed in pretentious language lead readers to rate the author as less intelligent and less credible."
      },
      {
       "source": "Thinking, Fast and Slow",
@@ -2980,7 +3010,8 @@
      "label": "Our adaptation",
      "text": "A fluent agent answer feels correct for the same reason. Treat smooth, confident prose as no evidence of accuracy, and check the claims that matter. When you review agent work, change how it looks (read the diff in a different order or tool, ask for a table) to create some strain."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Text that is easy to read feels true, while strain makes readers check more carefully"
    }
   },
   {
@@ -3040,7 +3071,8 @@
      "label": "Our adaptation",
      "text": "When an agent returns a long list of findings, ask it for the single conclusion and the three facts that support it. Ask it to state what it thinks should be done. A report with no position leaves you to do the analysis again."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Presenting every finding without saying what you conclude leaves the audience with data and no story"
    }
   },
   {
@@ -3110,7 +3142,8 @@
      "label": "Our adaptation",
      "text": "Ask the agent to argue for its proposed design and then to state the strongest case against it, and say why the proposal still holds. Do this before you accept a plan. If the agent cannot name a serious objection, ask it to try again."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Make your case, face the strongest counterargument, then show why your case still wins"
    }
   },
   {
@@ -3187,7 +3220,8 @@
      "label": "Our adaptation",
      "text": "Write agent instructions and project docs for the reader who will use them. Put a short layer first (what to do, the commands to run) and the long reference after it. Test the document by giving it to a fresh agent session and watching where it goes wrong."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Apply human-centered design so legal documents can be understood and used by the people they affect"
    }
   },
   {
@@ -3263,7 +3297,8 @@
      "label": "Our adaptation",
      "text": "Before an agent starts debugging or planning a broad change, ask it to list the possible causes or areas as a tree with no overlaps and an explicit \"other\" branch. Then have it check one branch at a time. This keeps it from settling on the first plausible hypothesis."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Split a problem into parts that do not overlap and together cover the whole"
    }
   },
   {
@@ -3303,12 +3338,12 @@
      "Minto and Garner say to put the answer, the governing thought or the deep issue first. Aaron and Berger say a stark conclusion up front can block understanding, and that bad news should be delivered in small steps. The two positions describe different situations."
     ],
     "why": [
-     "Minto's side: working memory holds roughly five to nine items, so a reader who has the governing thought can place each detail as it arrives. Aaron's side: on hearing life-altering news, people often enter what sociologist Douglas Maynard calls a \"noetic crisis\". If the client catches the negative import of the first phrase or two, emotions may stop them from absorbing the words that follow, even if they technically hear them."
+     "Minto's side: working memory holds roughly five to nine items, so a reader who has the governing thought can place each detail as it arrives. Aaron's side: on hearing life-altering news, people often enter what sociologist Douglas Maynard calls a \"noetic crisis\". If the client picks up the bad meaning from the first phrase or two, emotions may stop them from absorbing the words that follow, even if they technically hear them."
     ],
     "stories": [
      {
       "source": "Client Science",
-      "text": "Aaron has watched many law students give actor-clients a perfectly accurate explanation of summary judgment and then, without a break in tone or speed, finish with the bad news: \"that is why the other side is likely to win on summary judgment, and you will not recover anything.\" The actor-clients said the lawyer's matter-of-fact voice made them feel the lawyer was \"strolling along a logical road\" and was unaffected by its conclusion."
+      "text": "Aaron has watched many law students give actor-clients a perfectly accurate explanation of summary judgment and then, without a break in tone or speed, finish with the bad news: the other side is likely to win on summary judgment and the client will recover nothing. The actor-clients said the lawyer's matter-of-fact voice made them feel the lawyer was \"strolling along a logical road\" and was unaffected by its conclusion."
      },
      {
       "source": "Client Science",
@@ -3345,7 +3380,8 @@
      "label": "Our adaptation",
      "text": "Ask the agent for the answer first when it reports on its own work. When you tell an agent that its work is wrong, give it the failing evidence and one correction at a time, and ask it to say back what it understands before it acts."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Lead with the answer for readers who must act, but give bad news in small steps"
    }
   },
   {
@@ -3440,7 +3476,8 @@
      "label": "Our adaptation",
      "text": "Before you write a long, detailed instruction for an agent, ask whether the task is known risk (a stable procedure with a known right answer) or uncertainty (new, changing, noisy). For the second kind, give the agent two or three plain decision rules and the goal. Long rule lists for uncertain work tend to fit last week's cases."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Calculate when odds are known, but use a simple rule of thumb when they are not"
    }
   },
   {
@@ -3486,7 +3523,7 @@
      },
      {
       "source": "Power and Prediction",
-      "text": "During COVID-19, twelve large companies (the founding partners of the CDL Rapid Screening Consortium) used rapid antigen tests to decide case by case who could come to work. This replaced blanket shutdown rules."
+      "text": "During COVID-19, the twelve large companies that founded the CDL Rapid Screening Consortium used rapid antigen tests to decide case by case who could come to work. This replaced blanket shutdown rules."
      },
      {
       "source": "Power and Prediction",
@@ -3535,7 +3572,8 @@
      "label": "Our adaptation",
      "text": "Look at the rules you have written for your agent (a rules file, a skill, a checklist in the prompt). For each, ask what uncertainty it was written to cover. If a check can now be run on the real case, let the agent decide with that information. Keep the fixed rule for steps where other people or systems depend on a predictable result."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Procedures and checklists are decisions made in advance, which cheap prediction can turn into case-by-case choices"
    }
   },
   {
@@ -3626,7 +3664,8 @@
      "label": "Our adaptation",
      "text": "When you must rate many items the same way (candidate documents, vendor proposals, support tickets), ask the agent to score each on a fixed list of separate criteria first, and add the scores yourself or by script. Ask for one overall impression only after the criteria are scored, so the overall impression does not shape the scores."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "In noisy fields, let a simple formula make the final call instead of expert intuition"
    }
   },
   {
@@ -3690,7 +3729,7 @@
      },
      {
       "source": "Thinking, Fast and Slow and You're About to Make a Terrible Mistake!",
-      "text": "Gary Klein tells of firefighters hosing down a kitchen fire. Soon the commander heard himself shout \"Let's get out of here!\" without knowing why. The floor collapsed almost immediately after they left. Afterwards he realized that the fire had been unusually quiet and his ears unusually hot. The heart of the fire was in the basement beneath them. Sibony uses the same case to illustrate Klein's recognition-primed decision model."
+      "text": "Gary Klein tells of firefighters hosing down a kitchen fire. Soon the commander heard himself shouting for everyone to get out, without knowing why. The floor collapsed almost immediately after they left. Afterwards he realized that the fire had been unusually quiet and his ears unusually hot. The heart of the fire was in the basement beneath them. Sibony uses the same case to illustrate Klein's recognition-primed decision model."
      },
      {
       "source": "How Big Things Get Done",
@@ -3733,7 +3772,8 @@
      "label": "Our adaptation",
      "text": "When an agent states a result with confidence, treat the tone as no evidence. Ask what it checked, and whether it has had feedback on this kind of task. Apply the same test to your own hunches about what the agent will get right: trust them in areas where you have seen many results, and test them elsewhere."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Expert hunches deserve trust only in regular environments where the expert has had fast, clear feedback"
    }
   },
   {
@@ -3771,7 +3811,7 @@
     "stories": [
      {
       "source": "Algorithms to Live By",
-      "text": "The Lasso was discovered in 1996 by the biostatistician Robert Tibshirani. It uses the total weight of the factors in the model as its penalty. The authors' example is a nine-factor model of the German marriage survey data that becomes a simpler, more robust formula with just a couple of the most critical factors."
+      "text": "The Lasso was discovered in 1996 by the biostatistician Robert Tibshirani. It uses the total weight of the factors in the model as its penalty. The authors' example is a nine-factor model of the German marriage survey data that is reduced to a simpler and sturdier formula built on only a couple of the factors that matter most."
      }
     ],
     "method": {
@@ -3796,7 +3836,8 @@
      "label": "Our adaptation",
      "text": "When a prompt or rules file keeps growing, remove a rule and see whether the output gets worse. Keep only the rules whose removal shows a clear loss. Stop revising after a few rounds when the changes stop improving results on new cases."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Add a penalty for complexity so a model has to earn its extra detail"
    }
   },
   {
@@ -3905,7 +3946,8 @@
      "label": "Our adaptation",
      "text": "Sort the steps of an agent workflow into two lists. Steps with public, checkable inputs (formatting, file naming, a migration pattern) go into a script or fixed rule. Steps that need discernment (tone, what matters to a client, whether an exception applies) stay as principles with examples of good and bad cases."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Fixed rules give consistency across people but lose the adaptability that principles and judgment provide"
    }
   },
   {
@@ -3983,7 +4025,8 @@
      "label": "Our adaptation",
      "text": "Write the repeated decisions you make about an agent's work as standing rules in its instructions: which actions always need your approval, which files it never touches, what it reports at the end. Add friction for the one default you want to avoid, such as requiring a written reason before the agent skips a check."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Replace repeated case-by-case choices with fixed personal rules that protect you from fatigue and emotion"
    }
   },
   {
@@ -4065,7 +4108,8 @@
      "label": "Our adaptation",
      "text": "Give the agent an aspiration level for low-stakes choices (a library, a file layout, a wording) and tell it to take the first option that meets it and move on. For one-way choices, ask it to list and sort the options first, then pick."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Take the first option that clears a bar set in advance when stakes are low"
    }
   },
   {
@@ -4166,7 +4210,8 @@
      "label": "Our adaptation",
      "text": "Treat the agent's starting state as a default. Put the safe option in place before it begins: a working branch instead of main, a read-only mode, a template file with the required sections. Ask what the agent does when it makes no choice at all, and make that outcome the acceptable one."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Steer behavior by designing defaults and friction while leaving everyone free to choose"
    }
   },
   {
@@ -4207,7 +4252,7 @@
      }
     ],
     "idea": [
-     "A forcing function is a constraint, scheduled event or procedure that makes a step required before you can go on, or that physically prevents an error. In Don Norman's phrase, which Nudge quotes, to get what you want you have to do something else first."
+     "A forcing function is a constraint, scheduled event or procedure that makes a step required before you can go on, or that physically prevents an error. Nudge quotes Don Norman describing it as something that makes you do another thing before you get what you want."
     ],
     "why": [
      "People make postcompletion errors. After they finish the main task they forget the secondary steps, such as taking the card after taking the cash. A forcing function turns the secondary step into a condition of the main goal."
@@ -4257,7 +4302,8 @@
      "label": "Our adaptation",
      "text": "Make the required step a condition for finishing. For example, the agent may not mark a task done until the test or check command has run and its output is attached. Where a step must never be skipped, enforce it in the tool settings or a script instead of asking in the prompt."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Make a step required before you can go on, or make an error physically impossible"
    }
   },
   {
@@ -4353,7 +4399,8 @@
      "label": "Our adaptation",
      "text": "Keep a short checklist the agent must complete before it hands work back: files changed, checks run, anything it did not verify. Follow the Pronovost design. Give the person or process downstream the authority to stop the work when a step is missing."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "A checklist makes you pause and verify the required steps before complex or high-stakes work"
    }
   },
   {
@@ -4432,7 +4479,8 @@
      "label": "Our adaptation",
      "text": "Tell the agent the one thing that cannot change (the deadline, the data it may not touch, the format) and let the rest vary. When the agent is stuck, relax one constraint at a time and ask what that opens up. Do not drop several at once."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Tighten constraints to focus the search, or relax a single one to open up new options"
    }
   },
   {
@@ -4469,7 +4517,7 @@
      }
     ],
     "idea": [
-     "When a measure becomes a target, it ceases to be a good measure. The wording is Marilyn Strathern's version of Goodhart's law. Campbell's law is the parallel for social indicators: the more an indicator is used to make decisions, the more it is corrupted and the more it distorts the process it monitors."
+     "A measure that has turned into a target stops being a good measure. This is Marilyn Strathern's version of Goodhart's law. Campbell's law is the parallel for social indicators: the more an indicator is used to make decisions, the more it is corrupted and the more it distorts the process it monitors."
     ],
     "why": [
      "People optimize what is measured, by the cheapest route. The measure was only a stand-in for what you wanted, and the cheapest route often changes the stand-in without changing the real thing."
@@ -4514,7 +4562,8 @@
      "label": "Our adaptation",
      "text": "When you give an agent a number to hit (tests passing, lint warnings at zero, coverage percentage), check a sample of the result by reading it, because the agent may reach the number in ways you did not intend. Pair each metric with a second check that would expose a shortcut."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Once a measure is used as a target, it gets corrupted and no longer measures well"
    }
   },
   {
@@ -4558,7 +4607,7 @@
      },
      {
       "source": "The Score",
-      "text": "A pastor told Nguyen that his church had become obsessed with baptism rates. The higher-ups had set up an internal leaderboard on which pastors competed on monthly baptism rates. He found himself caring less about the long-term spiritual development of his flock and more about delivering popular sermons that would raise his rate."
+      "text": "A pastor told Nguyen that his church had become obsessed with baptism rates. The higher-ups had set up an internal leaderboard on which pastors competed on monthly baptism rates. He noticed he cared less about how his flock developed spiritually over the long term and more about giving popular sermons that would lift his rate."
      }
     ],
     "method": {
@@ -4588,7 +4637,8 @@
      "label": "Our adaptation",
      "text": "When you reduce a quality requirement to a checkable rule for the agent (word count, a rubric score), write down the value behind it in one sentence in the same place. Review samples against that sentence, and revise the rubric when it drifts from it."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Institutions offer simplified metrics of rich values, and those metrics then take over"
    }
   },
   {
@@ -4667,7 +4717,8 @@
      "label": "Our adaptation",
      "text": "Look at what the agent gets rewarded for in your setup, such as a passing check, a short answer or a finished status. Ask what the quickest route to that reward would be, and whether you would accept it. Reward the outcome itself."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "An incentive meant to solve a problem can reward behavior that makes the problem worse"
    }
   },
   {
@@ -4702,7 +4753,7 @@
      }
     ],
     "idea": [
-     "Rule beating is evasive action that gets around the intent of a system's rules, abiding by the letter and not the spirit. A related failure is seeking the wrong goal, which means optimizing an indicator that does not reflect the real welfare of the system."
+     "Rule beating is evasive action that sidesteps what a system's rules are meant to achieve while still complying with their exact wording. A related failure is seeking the wrong goal, which means optimizing an indicator that does not reflect the real welfare of the system."
     ],
     "why": [
      "A rule describes the behavior its authors expected. People who gain from avoiding it respond to the rule's wording and not to its purpose."
@@ -4750,7 +4801,8 @@
      "label": "Our adaptation",
      "text": "After you add a rule to an agent's instructions, ask how a system that wanted to comply cheaply would satisfy it. Write the purpose of the rule next to the rule, so the agent can follow the purpose when the wording and the purpose disagree."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "People can obey a rule's letter while defeating its purpose, so rules must aim at purpose"
    }
   },
   {
@@ -4789,7 +4841,7 @@
      "As an organization grows, its rules and approval layers multiply, and it becomes slow. Munger calls this the constant curse of scale. A second cost of too many routine decisions is decision fatigue, which lowers the quality of later decisions."
     ],
     "why": [
-     "Large units develop bad incentives and informal pacts between departments. Munger describes the unwritten rule \"If you won't bother me, I won't bother you, and we're both happy.\" Layers of management grow that nobody needs, and decisions take a long time."
+     "Large units develop bad incentives and informal pacts between departments. Munger describes the unwritten rule that if you leave me alone, I will leave you alone, and both of us are content. Layers of management grow that nobody needs, and decisions take a long time."
     ],
     "stories": [
      {
@@ -4825,7 +4877,8 @@
      "label": "Our adaptation",
      "text": "Count the approval steps in your agent workflow. Keep human approval for the actions you cannot undo, and remove the others. Fewer routine confirmation prompts leave more of your attention for the decisions that need it."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "As organizations grow, rules and approval layers multiply, slowing them down and wearing out decision makers"
    }
   },
   {
@@ -4858,7 +4911,7 @@
     ],
     "idea": [
      "Sibony calls this Technique #19. One team (the blue team) submits a proposal. A second team (the red team) is told to prepare the opposite assessment: to defend the other point of view or to show why the proposal will fail. The red team is \"a devil's advocate on steroids\". It does not depend on the rhetoric of one person, because it has its own fact-finding and analysis.",
-     "The decision maker then hears two equally well-researched views. Sibony compares her to a judge who has heard both the defense attorney and the prosecutor, each of whom did the best research they could."
+     "The decision maker then hears two equally well-researched views. Sibony compares her to a judge who has listened to the prosecutor and to the defense attorney, both of whom did as much research as they could."
     ],
     "why": [
      "The method builds disagreement into the process, so no single person has to risk being the one who objects. It works against groupthink and against interest biases, where the people advising have something to gain from one answer."
@@ -4866,11 +4919,11 @@
     "stories": [
      {
       "source": "You're About to Make a Terrible Mistake!",
-      "text": "Procter & Gamble decided to enter the bleach business against Clorox, the market leader. Its plan was to put its marketing and sales muscle behind a good product, Vibrant. P&G's managers suspected Clorox would respond. They were still surprised to find that in the test-market city, Clorox had delivered a gallon of free bleach to the doorstep of every house. Sibony says the move was expensive but predictable if you put yourself in Clorox's place, since P&G was invading the business that produced most of Clorox's profits. P&G gave up. A. G. Lafley, a former P&G CEO who told the story, took this lesson from it: \"Head-on, World War I-like assaults on walled cities generally end with a lot of casualties.\" Sibony uses the story for competitor neglect. A variant of the red team, the war game, has the red team anticipate the adversary's reaction."
+      "text": "Procter & Gamble decided to enter the bleach business against Clorox, the market leader. Its plan was to put its marketing and sales muscle behind a good product, Vibrant. P&G's managers suspected Clorox would respond. Still, they were surprised that in the test-market city, Clorox had left a free gallon of bleach at the door of every house. Sibony says the move was expensive but predictable if you put yourself in Clorox's place, since P&G was invading the business that produced most of Clorox's profits. P&G gave up. A. G. Lafley, a former P&G CEO who told the story, took this lesson from it: attacking head-on, like the World War I assaults on walled cities, generally ends in heavy casualties. Sibony uses the story for competitor neglect. A variant of the red team, the war game, has the red team anticipate the adversary's reaction."
      },
      {
       "source": "You're About to Make a Terrible Mistake!",
-      "text": "Warren Buffett recommends a version of the red team when a board studies an acquisition, especially one paid for in stock. In his words, directors who hear only from an investment bank should \"hire a second advisor to make the case against the proposed acquisition, with its fee contingent on the deal not going through.\" His summary is \"Don't ask the barber whether you need a haircut.\" Sibony adds that if you want to know whether you need a haircut, you ask two barbers and tell them what answer you want."
+      "text": "Warren Buffett recommends a version of the red team when a board studies an acquisition, especially one paid for in stock. He says directors who hear only from an investment bank should bring in a second advisor to argue against the proposed acquisition, with that advisor paid only if the deal does not go through. His summary is \"Don't ask the barber whether you need a haircut.\" Sibony adds that if you want to know whether you need a haircut, you ask two barbers and tell them what answer you want."
      }
     ],
     "method": {
@@ -4897,7 +4950,8 @@
      "label": "Our adaptation",
      "text": "For a high-stakes agent result, such as a migration plan or a change that cannot be undone, give a second agent the plan with one job: find the strongest case against it, using its own searches of the repo and docs. Do not show it the first agent's reasoning, so it cannot just agree. Read both reports before you decide."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Have an independent team build the opposite case with its own facts before you decide"
    }
   },
   {
@@ -4940,7 +4994,7 @@
      }
     ],
     "idea": [
-     "The premortem is Gary Klein's technique. Before a decision is final, the team imagines that it was carried out and went badly, and each person writes down why. Kahneman describes the session: when an organization has almost decided but has not yet committed, gather a small group who know the subject and say, \"Imagine that we are a year into the future. We implemented the plan as it now exists. The outcome was a disaster.\" Everyone takes 5 to 10 minutes to write a brief history of that disaster.",
+     "The premortem is Gary Klein's technique. Before a decision is final, the team imagines that it was carried out and went badly, and each person writes down why. Kahneman describes the session: when an organization has almost decided but has not yet committed, gather a small group who know the subject and say that a year has gone by, the plan went ahead as it currently stands, and the outcome was a disaster. Everyone spends 5 to 10 minutes writing a short history of that disaster.",
      "Sibony's version is the same: the organizer announces that it is year X and the project was a disaster, people write down possible reasons, then take turns sharing them, and everyone must contribute. Duke describes it as imagining a specific decision that worked out poorly, then looking back from that future to the present to find the reasons it might have happened."
     ],
     "why": [
@@ -4950,11 +5004,11 @@
     "stories": [
      {
       "source": "Thinking, Fast and Slow",
-      "text": "Kahneman describes the premortem casually at a session in Davos. Someone behind him muttered, \"It was worth coming to Davos just for this!\" He later noticed that the speaker was the CEO of a major international corporation."
+      "text": "Kahneman describes the premortem casually at a session in Davos. Someone behind him muttered, \"It was worth coming to Davos just for this!\" Afterwards he realized that the person speaking was the chief executive of a large international corporation."
      },
      {
       "source": "You're About to Make a Terrible Mistake!",
-      "text": "Smithburg, the CEO of Quaker, looked back on the failed acquisition of Snapple: \"There was so much excitement about bringing in a new brand, a brand with legs. We should have had a couple of people arguing the 'no' side of the evaluation.\" Sibony says a premortem would have given them the license, and the obligation, to do exactly that."
+      "text": "Smithburg, the CEO of Quaker, looked back on the failed Snapple acquisition. He said everyone was excited about adding a new brand, \"a brand with legs\", and that a couple of people should have been arguing the \"no\" side of the evaluation. Sibony says a premortem would have given them the license, and the obligation, to do exactly that."
      }
     ],
     "method": {
@@ -5002,7 +5056,8 @@
      "label": "Our adaptation",
      "text": "Before you let an agent run unattended on something that matters, ask a fresh agent: \"It is tomorrow and this run caused a serious problem. Write down what happened.\" Asked to list risks, an agent tends to list generic ones and agree with your plan. Turn the three most plausible stories into checks, limits or blocks."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Before committing, imagine the plan failed, have each person write why, then adjust the plan"
    }
   },
   {
@@ -5074,7 +5129,8 @@
      "label": "Our adaptation",
      "text": "Keep a short decision note next to the work: the goal you gave the agent, what you knew, what you assumed, and what you expected to see. When the result comes back, read the note before you judge it. Agent sessions are easy to rewrite in memory, so the note helps you tell a bad prompt from bad luck."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Note what you knew at the time you decide, since memory drifts toward the outcome afterward"
    }
   },
   {
@@ -5146,7 +5202,8 @@
      "label": "Our adaptation",
      "text": "When you hand an agent a task, write down what you expect it to produce and how long it should take. Afterward, when the result differs, sort the gap into Ackoff's four causes: wrong context given, a weak plan, an instruction the agent ignored, or something that changed in the codebase. Each cause points to a different fix."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Write down the decision, its assumptions and expected effects, then check them against what happens"
    }
   },
   {
@@ -5177,7 +5234,7 @@
      }
     ],
     "idea": [
-     "Burton argues that certainty is a sensation. It arises below conscious reasoning, involuntarily, and it can attach to a thought whether or not the thought is correct. He calls these \"mental sensations that feel like knowledge but occur in the absence of any specific knowledge.\"",
+     "Burton argues that certainty is a sensation. It arises below conscious reasoning, involuntarily, and it can attach to a thought whether or not the thought is correct. He describes them as mental sensations that feel like knowledge although no specific knowledge is behind them.",
      "It follows that you cannot test a belief by asking how sure you feel. Only evidence outside your own head can test it."
     ],
     "why": [
@@ -5207,7 +5264,8 @@
      "label": "Our adaptation",
      "text": "Treat an agent's confident tone, and your own sense that the answer is right, as no evidence. Ask what check would show it to be wrong, and run that check. Verification replaces the feeling of certainty with something observable."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "How sure you feel arises below conscious reasoning, so only outside evidence can test a belief"
    }
   },
   {
@@ -5280,7 +5338,8 @@
      "label": "Our adaptation",
      "text": "A fluent, well-organized agent answer is the story Kahneman describes. Do not use how convincing it sounds as a signal. Ask for the evidence, such as test output, a log or a source line, and judge that. For judgments that have no feedback, such as architecture taste, treat both the agent's confidence and your own as weak."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "A coherent story makes a judgment feel reliable even when little evidence supports it"
    }
   },
   {
@@ -5350,7 +5409,8 @@
      "label": "Our adaptation",
      "text": "When an agent reports that a change is safe, ask for a probability that it is correct, and keep a short log of those numbers against what the tests later showed. After a few weeks you will see whether its \"95% sure\" means anything. Give yourself the same exercise on your own estimates."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "State confidence as a percentage and check how often each level of confidence proved right"
    }
   },
   {
@@ -5430,7 +5490,8 @@
      "label": "Our adaptation",
      "text": "If an agent does the routine work that juniors used to do, decide where they will still get real problems with an expert beside them. For yourself, review agent output by working through part of the task yourself from time to time. Reading finished output alone does not keep a skill alive."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Novices learn by working near their limit on the whole system alongside a close expert"
    }
   },
   {
@@ -5470,7 +5531,7 @@
     ],
     "why": [
      "Motivation has six motives. Three are direct: play, purpose and potential. They raise total motivation (ToMo) and adaptive performance. Three are indirect: emotional pressure, economic pressure and inertia. They enforce compliance, lower ToMo and produce maladaptive performance, such as gaming metrics and undermining colleagues.",
-     "A single-minded focus on tactical performance can cripple adaptive performance. In a volatile world, the authors say, that mistake can be fatal."
+     "Concentrating single-mindedly on tactical performance can damage adaptive performance. In a volatile world, the authors say, that mistake can be fatal."
     ],
     "stories": [
      {
@@ -5483,7 +5544,7 @@
      },
      {
       "source": "Clear Thinking",
-      "text": "The USS Benfold was one of the worst-performing warships in the US Navy. Michael Abrashoff, in his first sea command, turned it into one of the highest-performing ships in under twenty months. He did not fire or demote anyone, change the hierarchy or change the technology. At a Sunday cookout he saw officers cutting to the head of the lunch line, went to the end of the line himself, and sat down with the sailors. The next weekend everyone waited in line and ate together. No command was ever issued. Parrish uses the case to show that you cannot simply order people to be better."
+      "text": "The USS Benfold was one of the worst-performing warships in the US Navy. Michael Abrashoff, in his first sea command, turned it into one of the highest-performing ships in under twenty months. He did not fire or demote anyone, change the hierarchy or change the technology. At a Sunday cookout he saw officers cutting to the head of the lunch line, went to the end of the line himself, and then ate with the sailors. By the following weekend everyone stood in line and ate together, and nobody had been ordered to. Parrish uses the case to show that you cannot simply order people to be better."
      },
      {
       "source": "Clear Thinking",
@@ -5528,7 +5589,8 @@
      "label": "Our adaptation",
      "text": "Give the agent the situation: who the work is for, what has already been tried, what a good result looks like, and what to do when the plan does not fit. Keep step-by-step control for the parts that need exact compliance. If you find yourself approving every small step, add the context the agent was missing."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Heavy control raises plan execution but lowers people's ability to depart from the plan when needed"
    }
   },
   {
@@ -5614,7 +5676,8 @@
      "label": "Our adaptation",
      "text": "A long agent run works from a snapshot of your instructions and of the world. Before it takes an irreversible step, have it re-read the current state (the latest messages, the file on disk, the ticket) and compare it with the snapshot. For quick feedback, shorten the loop and check progress at set points."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Acting on delayed information makes a balancing loop oscillate, so shorten delays and slow the changes"
    }
   },
   {
@@ -5687,7 +5750,8 @@
      "label": "Our adaptation",
      "text": "Keep a short running log of what the agent got wrong or took for granted, and review it on a fixed day each week. Group items into patterns, and fix the cause once in the instructions, checks or environment. A recurring list of numbers (failed checks, reverts, corrections you made) shows whether it is getting better."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Review a short weekly scorecard in a structured meeting so problems surface before assumptions go stale"
    }
   },
   {
@@ -5774,7 +5838,8 @@
      "label": "Our adaptation",
      "text": "When an agent makes a mistake, ask why until the answer is something you can change in the setup: missing context, an unclear instruction, a check that did not exist, a rule that was never written. Fix that, not just the output. If you stop at \"the agent made an error\", it will make the same error again."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Keep asking why about each answer, about five times, until you reach the system behind it"
    }
   },
   {
@@ -5852,7 +5917,8 @@
      "label": "Our adaptation",
      "text": "If you keep correcting the same agent behavior in prompts, widen the frame. Change the environment so the behavior cannot occur: a lint rule, a type, a tool that does the step deterministically, or a different task split. This removes the problem and spares you from catching it each time."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Redesign the system, often a larger one, so the problem no longer occurs at all"
    }
   },
   {
@@ -5887,7 +5953,7 @@
      "At Bridgewater, each problem goes into an Issue Log and is drilled down to the violated principles and design flaws."
     ],
     "why": [
-     "If you fix only the action, the same design produces the same action again. Dalio's line is that if you have the same people doing the same things, you should expect the same results."
+     "If you fix only the action, the same design produces the same action again. Dalio's point is that the same people doing the same things will give you the same results."
     ],
     "stories": [
      {
@@ -5927,7 +5993,8 @@
      "label": "Our adaptation",
      "text": "After a failed agent run, write the cause as a reason (\"the task did not say which test suite counts\") rather than an action (\"the agent skipped the tests\"). If several agents fail the same way, the design is at fault, and you fix the setup. If one run fails in a way no other does, a one-off is more likely."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Ask whether a bad outcome came from the person or the design, and state the reason"
    }
   },
   {
@@ -5998,7 +6065,8 @@
      "label": "Our adaptation",
      "text": "Use a separate verifier agent, with its own context and without the author's explanation, to check an agent's work. Do not give it the author's reasoning or let the same prompt grade itself. Vary what it checks from run to run, so the author cannot optimize for a known test."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Have auditors who report outside the audited department check the rules, without announcing their methods"
    }
   },
   {
@@ -6043,7 +6111,7 @@
     "stories": [
      {
       "source": "The E-Myth Revisited",
-      "text": "Gerber stops for the night at the Venetia, a hotel in a redwood grove above the Pacific, and finds that every detail has been designed. The manager, who a few months earlier was a short-order cook with no hotel experience, shows him the hotel's Operations Manual. It is a set of color-coded checklists. Each Room Support Person (RSP) gets a package of checklists for each of eight rooms. The back of each checklist has a drawing of the room that shows each task and its order, and the person ticks off each task and signs the checklist. Signing without doing the work is grounds for instant dismissal. With the drawing, the manager says, new people can be trained almost instantly and produce the same result as someone who has been there a long time. Then: \"As added insurance, my RSP Supervisors run spot checks every day to make certain that any errors are caught in time.\" He adds that there are rarely any errors: \"The system works like a charm.\""
+      "text": "Gerber stops for the night at the Venetia, a hotel in a redwood grove above the Pacific, and finds that every detail has been designed. The manager, who a few months earlier was a short-order cook with no hotel experience, shows him the hotel's Operations Manual. It is a set of color-coded checklists. Each Room Support Person (RSP) gets a package of checklists for each of eight rooms. The back of each checklist has a drawing of the room that shows each task and its order, and the person ticks off each task and signs the checklist. Signing without doing the work is grounds for instant dismissal. With the drawing, the manager says, new people can be trained almost instantly and produce the same result as someone who has been there a long time. Then he says the RSP Supervisors act as added insurance by running spot checks every day, so that any errors are caught in time. He adds that there are rarely any errors: \"The system works like a charm.\""
      },
      {
       "source": "The Skill Code",
@@ -6086,7 +6154,8 @@
      "label": "Our adaptation",
      "text": "Do not read every agent diff. Pick a few each day at random, read them closely against a written standard (your rules file or review checklist), and when you find a pattern, change the setup. If you have no written standard, write it first."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Alongside a written system, sample outputs every day and look closely at a few"
    }
   },
   {
@@ -6139,7 +6208,8 @@
      "label": "Our adaptation",
      "text": "When an agent summarizes or analyzes a large set of files, tickets or logs, ask what it actually read and how it chose. Check the sample it saw before you trust the totals."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "At scale, check the inputs, how the data was sampled and who collected it"
    }
   },
   {
@@ -6222,7 +6292,8 @@
      "label": "Our adaptation",
      "text": "Do not interrupt a long agent run to ask small questions. Keep them in a list and send them at the next natural stopping point. When you switch to a different task in the same session, start a clean one rather than carrying the old context along. Both choices reduce the cost of switching on your side and the agent's."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Each interruption costs a context switch, so be no more responsive than you need to be"
    }
   },
   {
@@ -6277,7 +6348,8 @@
      "label": "Our adaptation",
      "text": "Do your own thinking, such as specs, design decisions and reviews of what agents wrote, in your protected blocks. Let agents run in the other hours and read their results in a batch afterwards."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Guard long uninterrupted blocks of time in your best hours for creative work"
    }
   },
   {
@@ -6342,7 +6414,8 @@
      "label": "Our adaptation",
      "text": "Put a queue between detecting problems and fixing them. Let agents log issues to a file, and have them or you review the file on a schedule. Keep the queue short enough that items do not go stale."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Stocks absorb swings between inflow and outflow, but an oversized one makes the system slow"
    }
   },
   {
@@ -6406,7 +6479,8 @@
      "label": "Our adaptation",
      "text": "Have agents add problems they notice to a shared file instead of fixing everything at once. Review the file every few days, group the repeats, and fix each group once at its cause."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Write non-urgent issues down as they arise and solve them together in one scheduled session"
    }
   },
   {
@@ -6487,7 +6561,8 @@
       "source": "Jeff Bezos, quoted in Super Thinking",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Use a slow, consultative process only for irreversible decisions and decide reversible ones fast"
    }
   },
   {
@@ -6561,7 +6636,8 @@
       "source": "Shane Parrish, Clear Thinking",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Decide small reversible things fast and put off big irreversible ones as long as you can"
    }
   },
   {
@@ -6626,7 +6702,8 @@
       "source": "Annie Duke, How to Decide",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Before a high-stakes decision that is hard to undo, make small easy-to-quit ones that gather information"
    }
   },
   {
@@ -6682,7 +6759,8 @@
       "source": "Shane Parrish, Clear Thinking",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Practice in a setting where mistakes are cheap and easy to undo before the stakes rise"
    }
   },
   {
@@ -6767,7 +6845,8 @@
       "source": "Flyvbjerg and Gardner, How Big Things Get Done",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Plan and test for a long time while changes are cheap, then deliver quickly"
    }
   },
   {
@@ -6833,7 +6912,8 @@
       "source": "Flyvbjerg and Gardner, How Big Things Get Done",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Test changes on a simulation such as storyboards or models before building the real thing"
    }
   },
   {
@@ -6901,7 +6981,8 @@
       "source": "Accenture, quoted in Power and Prediction",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "A virtual copy of a real system lets you rehearse hard constraints without risk"
    }
   },
   {
@@ -6956,7 +7037,8 @@
      "label": "Our adaptation",
      "text": "Write down which parts of your agent setup are compliance zones (one allowed way, enforced by rules) and which are playgrounds (free to explore). Keep them in separate folders, branches or projects so the agent always knows which one it is in."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Keep one zone for following the plan exactly and another where people may experiment and fail"
    }
   },
   {
@@ -7016,7 +7098,8 @@
       "source": "Olivier Sibony, You're About to Make a Terrible Mistake!",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "A test seeks disconfirming data, while a pilot builds support for a rollout already decided"
    }
   },
   {
@@ -7088,7 +7171,8 @@
       "source": "Tim Brown of IDEO, quoted in Cracked It!",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Build cheap rough versions and test them with real users before committing money"
    }
   },
   {
@@ -7136,7 +7220,8 @@
      "label": "Our adaptation",
      "text": "Treat the first agent run on a new type of task as a bullet: small scope, easy to discard. Scale up the scope only after the result matches what you checked by hand."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Fire small cheap experiments first and put full resources behind one only after it hits"
    }
   },
   {
@@ -7200,7 +7285,8 @@
       "source": "Olivier Sibony, You're About to Make a Terrible Mistake!",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Weeks before sign-off, lock away a memo of deal-breakers and check the decision against it"
    }
   },
   {
@@ -7272,7 +7358,8 @@
       "source": "Annie Duke, Thinking in Bets",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Bind yourself in advance while calm so you cannot act on a later impulse"
    }
   },
   {
@@ -7357,7 +7444,8 @@
       "source": "Ray Dalio, Principles",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Log every mistake, find its root cause and redesign the process so it does not repeat"
    }
   },
   {
@@ -7428,7 +7516,8 @@
       "source": "Shane Parrish, Clear Thinking",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Ask experts for the variables and process behind their judgment instead of a single recommendation"
    }
   },
   {
@@ -7467,11 +7556,11 @@
     "stories": [
      {
       "source": "How Big Things Get Done",
-      "text": "When an adult gives a child what she thinks are complete instructions on how to ride a bike (put your foot on the pedal, push off, press down on the other pedal), the child typically falls on her first tries."
+      "text": "An adult may explain bike riding to a child in what she believes is full detail: step onto one pedal, push off, then press the other pedal down. The child usually falls in the first attempts."
      },
      {
       "source": "How Big Things Get Done",
-      "text": "Art experts instantly felt, correctly, that a supposedly ancient Greek statue was a fraud, even though it had passed various scientific tests and even if they could not say why they felt that way."
+      "text": "Art experts sensed at once, and rightly, that a statue presented as ancient Greek was a fake, although it had passed several scientific tests and although they could not explain why they felt so."
      }
     ],
     "limits": [
@@ -7493,7 +7582,8 @@
       "source": "Michael Polanyi, quoted in How Big Things Get Done",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Some knowledge is learned through experience and cannot be fully written down in words"
    }
   },
   {
@@ -7538,7 +7628,7 @@
      },
      {
       "source": "The E-Myth Revisited",
-      "text": "Sarah of All About Pies worked sixteen-hour days as a technician. She said: \"But I can't even imagine what my business would be like without me doing the work.\""
+      "text": "Sarah of All About Pies worked sixteen-hour days as a technician. She said she could not even imagine what her business would be like if she were not doing the work herself."
      }
     ],
     "method": {
@@ -7570,7 +7660,8 @@
       "source": "Michael E. Gerber, The E-Myth Revisited",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Document one expert's best way of working so ordinary people get predictable results"
    }
   },
   {
@@ -7609,11 +7700,11 @@
     "stories": [
      {
       "source": "The Skill Code",
-      "text": "Philip, a supervisor, did not tell Sita how everything worked or how to do her new tasks as she rotated through new areas. He did not ask her to analyze what she was experiencing. He suggested she focus somewhere new. He noticed she looked at what other people were doing, so in the boxing area he nudged her to look at technology. He noticed she treated defects as normal, so he encouraged her to watch the product as it came into the presort area. Once her attention was directed, she learned implicitly, and she had a wealth of skill to draw on when he later asked for process improvements."
+      "text": "Philip, a supervisor, did not explain to Sita how things worked or how to carry out her new tasks as she moved from area to area. He did not ask her to analyze what she was experiencing. He suggested she focus somewhere new. He noticed she was watching what other people did, so in the boxing area he nudged her toward looking at the technology. He noticed she regarded defects as normal, so he encouraged her to observe the product coming into the presort area. Once her attention was directed, she learned implicitly, and she had a wealth of skill to draw on when he later asked for process improvements."
      },
      {
       "source": "The Skill Code",
-      "text": "Richard Magill, a kinesiologist at New York University, says not to ask a trainee how the ball was released. Ask: \"Where were you looking to see what type of pitch it was?\" The first question has the novice pick the action apart. The second only asks where they were looking."
+      "text": "Richard Magill, a kinesiologist at New York University, says a trainee should not be asked how the ball was released. The question to ask is where the trainee was looking when working out what type of pitch it was. The first question has the novice pick the action apart. The second only asks where they were looking."
      }
     ],
     "method": {
@@ -7636,7 +7727,8 @@
       "source": "Matt Beane, The Skill Code",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Put learners in real work with brief prompts that point at key cues without explaining them"
    }
   },
   {
@@ -7698,7 +7790,8 @@
       "source": "David H. Maister, Managing the Professional Service Firm",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Map a client engagement, find its moments of truth and collect experienced people's tips for each"
    }
   },
   {
@@ -7758,7 +7851,8 @@
      "label": "Our adaptation",
      "text": "After a long agent session, ask the agent to list where you corrected it and what in the setup would have prevented each correction. Add the useful ones to your instruction file, and ask a colleague what they saw in the same work."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "After a piece of work, review it with yourself, your team, your client and your peers"
    }
   },
   {
@@ -7797,7 +7891,7 @@
     "stories": [
      {
       "source": "Leadership Intelligence",
-      "text": "Astro Teller's team at X runs Bad Idea Brainstorms, premortems and Tales from the Crypt. Every time a project is shut down, the team writes up what they tried, what they learned and where the insights might be reused. Every year around Halloween, X hosts an event where people read these write-ups, in costume."
+      "text": "Astro Teller's team at X runs Bad Idea Brainstorms, premortems and Tales from the Crypt. When a project is shut down, the team documents what they tried, what they learned and where the insights could be reused. Every year around Halloween, X hosts an event where people read these write-ups, in costume."
      },
      {
       "source": "Leadership Intelligence",
@@ -7828,7 +7922,8 @@
       "source": "Caroline Webb, Leadership Intelligence",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "After a mistake, move people from defensive threat mode to curiosity and problem-solving"
    }
   },
   {
@@ -7893,7 +7988,8 @@
       "source": "Shane Parrish, Clear Thinking",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Own a mistake by accepting responsibility, learning from it, committing to improve and repairing the damage"
    }
   },
   {
@@ -7959,7 +8055,8 @@
      "label": "Our adaptation",
      "text": "For an agent failure that happens twice, ask 'why' five times down to a setup cause such as a missing rule, a vague instruction or no check, and fix that. For a one-off failure, a note is enough."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "After a failure, ask why repeatedly until you reach the root cause, then fix that cause"
    }
   },
   {
@@ -8052,7 +8149,8 @@
       "source": "Gino Wickman, Traction",
       "verified": true
      }
-    ]
+    ],
+    "subtitle": "Write high-level documentation only for the 20 percent of processes that produce 80 percent of results"
    }
   },
   {
@@ -8131,7 +8229,8 @@
      "label": "Our adaptation",
      "text": "Do not ask the agent whether your plan is good. Ask it to list the ways the plan fails, or to argue the opposite case, and ask a second agent that has not seen your preferred answer. Treat any reply that praises the idea without a concrete objection as a sign that the question steered the answer."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Confirming feedback makes people more certain without moving them closer to the truth"
    }
   },
   {
@@ -8209,7 +8308,8 @@
      "label": "Our adaptation",
      "text": "When you give an agent a vague rule such as 'keep functions small', ask it for the cases where the rule would give a bad result, then rewrite the rule with those cases in it. The same loop works in the other direction: have the agent question your definition until the gaps in it show."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Test a rule against counterexamples until its hidden assumptions show and the definition needs refining"
    }
   },
   {
@@ -8273,7 +8373,8 @@
      "label": "Our adaptation",
      "text": "Before you write the task for an agent, ask it for 15 to 20 questions about the problem and tell it not to propose solutions. Read the list yourself first and pick the three that surprise you. Answer those in the prompt before you ask for any work."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Spend four minutes producing only questions about a challenge, with no answers or preambles"
    }
   },
   {
@@ -8311,7 +8412,7 @@
     "stories": [
      {
       "source": "A More Beautiful Question",
-      "text": "In 1943, on vacation in Santa Fe, Edwin Land took photographs of his three-year-old daughter Jennifer. She asked why they could not see the picture he had just taken without having to wait. Land asked what if there were a darkroom inside the camera. That question led to the Polaroid instant camera."
+      "text": "In 1943, on vacation in Santa Fe, Edwin Land took photographs of his three-year-old daughter Jennifer. She asked why they could not look at the picture he had just taken right away instead of waiting. Land asked what if there were a darkroom inside the camera. That question led to the Polaroid instant camera."
      }
     ],
     "method": {
@@ -8333,7 +8434,8 @@
      "label": "Our adaptation",
      "text": "Split an agent task into three prompts. First ask why the current behavior exists. Then ask for several alternative designs with no code. Only then ask for an implementation of one of them with a test."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Step back to question the situation, explore possibilities freely, then prototype and test"
    }
   },
   {
@@ -8400,7 +8502,8 @@
      "label": "Our adaptation",
      "text": "When an agent gives a recommendation, ask it to write down the conclusion, each reason, and the assumption that links them, labelled as value or descriptive. Check the descriptive ones against the repository or the logs before you accept the recommendation."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Reasons support a conclusion only through unstated assumptions, so find them and judge whether they hold"
    }
   },
   {
@@ -8469,7 +8572,8 @@
      "label": "Our adaptation",
      "text": "Run the same question through an agent in two or three wordings in separate sessions, including one that states the opposite of what you hope for. If the answers differ, the wording is doing part of the work, and you should use the neutral version."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Small changes in how a question is worded shift answers, which split-sample tests can measure"
    }
   },
   {
@@ -8532,7 +8636,8 @@
      "label": "Our adaptation",
      "text": "After an agent explains a change or a plan, ask it to state in its own words what you asked for, and ask yourself the same about its summary. Ask the agent open questions such as 'what happened next?' when you debug, so it does not just confirm your guess."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Ask clients open questions to learn what happened and what they already understand before explaining"
    }
   },
   {
@@ -8593,7 +8698,8 @@
      "label": "Our adaptation",
      "text": "Check your prompt for built-in answers, such as 'why is this code wrong?' or 'wasn't this a regression?'. Rewrite it as 'what does this code do in this case?'. The agent will often accept the premise in your wording."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Avoid questions that carry a judgment or a built-in answer, since your questions steer the group"
    }
   },
   {
@@ -8656,7 +8762,8 @@
      "label": "Our adaptation",
      "text": "Use the three questions on yourself before you prompt: what is on my mind, what else, what is the real challenge. Use them on the agent too when it jumps to a fix, by asking what else could cause the symptom and what the real problem is."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Resist giving advice early and ask a few short questions to reach the real challenge"
    }
   },
   {
@@ -8719,7 +8826,8 @@
      "label": "Our adaptation",
      "text": "When an agent and you disagree, ask the agent how it knows, and ask yourself the same. Settle the question with a test or a measurement and keep the result, so the next disagreement has a track record to point to."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Replace deference to rank with radical transparency and opinions weighted by how believable each person is"
    }
   },
   {
@@ -8789,7 +8897,8 @@
      "label": "Our adaptation",
      "text": "Collect independent answers before you show one model's view to another. Ask several agents the same question in separate sessions, compare, and only then discuss. Tell the reviewing agent to find reasons the change should not merge, and do not tell it which way you lean."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Groups suppress doubts once the leader's lean is known, so collect views before discussion"
    }
   },
   {
@@ -8847,7 +8956,8 @@
      "label": "Our adaptation",
      "text": "Put the rules in the instruction file that the agent reads: report the data behind a claim, judge a claim the same way whichever tool produced it, say when the answer would benefit the agent's own earlier choice, and list objections as a normal part of every review."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Groups seeking truth can adopt science's norms, such as sharing data and welcoming dissent"
    }
   },
   {
@@ -8913,7 +9023,8 @@
      "label": "Our adaptation",
      "text": "If an agent adds extra confirmation steps, hedges every answer or picks the most conventional design, ask it which option it thinks is best before it chooses. In your own review, check whether you accepted a change because it was safe to defend and not because it was best."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "People may choose an option they rank lower because it protects them if things go wrong"
    }
   },
   {
@@ -8975,7 +9086,8 @@
      "label": "Our adaptation",
      "text": "Apply the selective skeptic test to the agent's output and to your own: if a test result or a review comment supported the opposite conclusion, would you accept it as readily? Ask the agent what you would advise a colleague to do in the same situation and compare that to your plan."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Aim to see the world accurately, so that changing your mind counts as updating a map"
    }
   },
   {
@@ -9046,7 +9158,8 @@
      "label": "Our adaptation",
      "text": "Keep a record of what each agent setup has done well, by task type. Trust an agent on a kind of task after it has succeeded at that kind at least three times and can explain how it worked, and review its work closely on kinds it has not yet done."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Count someone as believable after at least three successes in the area and a clear explanation"
    }
   },
   {
@@ -9128,7 +9241,8 @@
      "label": "Our adaptation",
      "text": "Give an agent small tasks and require it to finish them, with tests run and loose ends listed, before it gets a larger one. Widen its permissions after it has done a kind of task without handing leftovers back to you. Beane's progression suggests letting it watch the work, then do supervised work, then work alone."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "People earn more responsibility by taking ownership, anticipating obstacles and finishing without passing leftovers upward"
    }
   },
   {
@@ -9167,7 +9281,7 @@
     "stories": [
      {
       "source": "The E-Myth Revisited",
-      "text": "Sarah, whom Gerber coaches in a running dialogue through the book, owns All About Pies and does much of the work herself. She says: \"But I can't even imagine what my business would be like without me doing the work.\" Gerber walks her toward designing the business apart from herself."
+      "text": "Sarah, whom Gerber coaches in a running dialogue through the book, owns All About Pies and does much of the work herself. She says she cannot even imagine what her business would be like if she were not doing the work herself. Gerber walks her toward designing the business apart from herself."
      },
      {
       "source": "The E-Myth Revisited",
@@ -9202,7 +9316,8 @@
      "label": "Our adaptation",
      "text": "Write down the work you repeat with an agent as a procedure: a skill, a script or a checklist the agent can run. Then your time goes to improving those procedures, and the agent runs them."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Treat the business as a product you design so it runs on documented procedures without you"
    }
   },
   {
@@ -9268,7 +9383,8 @@
      "label": "Our adaptation",
      "text": "If you run several agents, give one of them the role of coordinator with a list of tasks and a time-boxed goal for each, and make it report to you. Do not send instructions to the sub-agents around the coordinator."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "An integrator aligns the leaders, holds the team accountable and runs the organization day to day"
    }
   },
   {
@@ -9324,7 +9440,8 @@
      "label": "Our adaptation",
      "text": "Treat the senior role in an agent setup as coach and reviewer: set the task and the quality bar, let sub-agents do the doing, and spend your time on checking output and fixing the instructions behind repeated errors."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Structure teams as pyramids where seniors coach and oversee several projects instead of doing the work"
    }
   },
   {
@@ -9363,7 +9480,7 @@
     "stories": [
      {
       "source": "Thinking in Systems",
-      "text": "After the Windsor Castle fire, The Independent on Sunday wrote of \"the ominous feeling that the Windsor fire is symptomatic of the country at large, that it stems from the new national characteristic of ineptitude.\" Meadows uses the passage as an example of how a decline narrative gets accepted. Separately, she notes that physical capital drains through depreciation and needs constant reinvestment."
+      "text": "After the Windsor Castle fire, The Independent on Sunday wrote of an \"ominous feeling\" that the Windsor fire was a symptom of the country as a whole and came from a new national characteristic of ineptitude. Meadows uses the passage as an example of how a decline narrative gets accepted. Separately, she notes that physical capital drains through depreciation and needs constant reinvestment."
      }
     ],
     "method": {
@@ -9394,7 +9511,8 @@
      "label": "Our adaptation",
      "text": "Write the quality bar in the instruction file as fixed rules (coverage, lint, test style) and compare new work against the best code in the repository, not the average. Agents copy the patterns they see, so a slow decline in the code becomes the new baseline for every later change."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Standards that follow past results slowly erode, so keep them absolute and anchored to the best"
    }
   },
   {
@@ -9460,7 +9578,8 @@
      "label": "Our adaptation",
      "text": "Ask the agent to mark every shortcut it takes (a skipped test, a stub, a copied block) in a list in the pull request, and schedule a clean-up pass on that list. Agents take shortcuts readily, so an unlisted shortcut stays hidden."
     },
-    "depth": "full"
+    "depth": "full",
+    "subtitle": "Shortcuts taken now become debt to repay later, so treat them as deliberate temporary loans"
    }
   },
   {
@@ -9514,7 +9633,8 @@
      "label": "Our adaptation",
      "text": "Put maintenance on the calendar: a regular pass where an agent looks for stale notes, duplicated code and outdated instructions, writes its findings to a document, and you review them."
     },
-    "depth": "short"
+    "depth": "short",
+    "subtitle": "Left alone, systems drift toward disorder, and keeping order takes continuous energy"
    }
   }
  ]
