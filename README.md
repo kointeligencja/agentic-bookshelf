@@ -1,15 +1,29 @@
-# Bookshelf
+# The Agentic Bookshelf
+
+A conversation between Matt Pocock and Lauren Tan (poteto) about working with coding agents
+([video](https://www.youtube.com/watch?v=MN9dGgmLyso)), and 48 books whose ideas take it further.
+While a theme plays, the books that extend it light up; pull a book out to read the concept cards
+distilled from it, pin cards to a board, or describe what you are working on and search the
+cards with [Jev](https://typesafe.ai). Work in progress.
+
+This is a fork of [chrija76/bookshelf](https://github.com/chrija76/bookshelf) by Christoph Janz
+(MIT). The room, the bookcase and the data pipeline are his; the themes, cards, board and search
+are added here. His original README follows.
+
+---
+
+## Bookshelf (original README)
 
 > This repo (code, README and prompt) was written entirely by [Claude](https://claude.com/claude-code).
 
 Your Goodreads library as a 3D room: a walnut bookcase, a low table with every want-to-read book in stacks, and a small table with the books being read lying open. Every book is sized from its page count and binding and gets a generated spine in its cover colours.
 
-Two views, switched at the bottom right (or with `?view=covers` in the URL):
+Two views, switched at the bottom right (or with `?view=spines` in the URL for the spines):
 
 - **Spines**: one compact bookcase. Categories follow each other shelf by shelf, each starting, where there is one, with a favourite standing face-out.
 - **Covers**: every read book face-out on walnut display shelves, in the same order.
 
-A light switch on the wall left of the bookcase, labelled **Five stars**, dims the room and lights your five-star books. In the covers view their spots come on; in the spines view they slide a little out of the shelf.
+Picking a theme in the left panel (or reaching it in the video) dims the room and lights the books that extend it. In the covers view their spots come on; in the spines view they slide a little out of the shelf. `?t=<key>` opens with a theme on. `npm run data:agentic` rebuilds `public/data/agentic.json` from `data/agentic.json`.
 
 ![Spines view](docs/spines.jpg)
 ![Covers view with the five-star switch on](docs/covers-stars.jpg)

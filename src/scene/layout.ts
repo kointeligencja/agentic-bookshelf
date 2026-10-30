@@ -8,7 +8,7 @@ import type { Book, Category } from '../types.ts';
 /** Two ways to show the library: spines out in a bookcase, or every cover face-out on display shelves. */
 export type View = 'spines' | 'covers';
 export type SortKey = 'dateRead' | 'rating' | 'author' | 'colour' | 'pages';
-export type PlacementKind = 'shelf' | 'stack' | 'table' | 'display' | 'face' | 'reading';
+export type PlacementKind = 'shelf' | 'stack' | 'display' | 'face';
 export type Vec3 = [number, number, number];
 
 /** A walnut case: a grid of compartments. Row 0 is the top row. */
@@ -44,13 +44,6 @@ export const LAYOUT = {
   spineInset: 18,
   sidePadding: 10,
   leanDeg: 7,
-  /** Low table left of the bookcase with every want-to-read book, in two rows of stacks. */
-  table: { x: -1010, z: 470, width: 1340, depth: 600, height: 420 },
-  /** Stacks per row on the table; stacks grow taller rather than leave books off it. */
-  stacksPerRow: 4,
-  stackMin: 12,
-  /** Small table further left with the books being read, lying open. */
-  readingTable: { x: -2400, z: 540, width: 1040, depth: 560, height: 460 },
 } as const;
 
 export interface Placement {
@@ -60,7 +53,7 @@ export interface Placement {
   position: Vec3;
   /** Euler angles, XYZ order. */
   rotation: Vec3;
-  /** Order for the intro stagger (compartment index; -1 on the side table). */
+  /** Order for the intro stagger (compartment index). */
   bay: number;
   /** Shelf row (`col:row`) and position in it, for neighbours settling into a gap. */
   row: string | null;
@@ -404,56 +397,6 @@ export function computeLayout(books: Book[], categories: Category[], sort: SortK
     }
   });
 
-  // ── Tables: every want-to-read book in stacks, the books being read lying cover up ─────
-  const T = L.table;
-  const reading = books.filter((b) => b.shelf === 'currently-reading');
-  const toRead = books
-    .filter((b) => b.shelf === 'to-read')
-    .sort((a, b) => (b.dateAdded ?? '').localeCompare(a.dateAdded ?? ''));
-  const perStack = Math.max(L.stackMin, Math.ceil(toRead.length / (L.stacksPerRow * 2)));
-  const stacks: Book[][] = [];
-  for (let i = 0; i < toRead.length; i += perStack) stacks.push(toRead.slice(i, i + perStack));
-  // Newest stacks in the front row; the back row's stacks fall between them.
-  const front = stacks.slice(0, Math.ceil(stacks.length / 2));
-  const back = stacks.slice(front.length);
-  const usable = T.width - 160;
-  [front, back].forEach((row, ri) => {
-    row.forEach((stack, si) => {
-      const r = rng(`table:${ri}:${si}`);
-      const cx = T.x - usable / 2 + ((si + 0.5 + (ri ? 0.25 : 0)) * usable) / Math.max(row.length, L.stacksPerRow);
-      // Newest on top: each stack is built bottom-up from its oldest book.
-      let top = T.height;
-      [...stack].reverse().forEach((b, i) => {
-        const z = ri === 0 ? T.z + T.depth / 2 - 30 - b.dims.w / 2 : T.z - T.depth / 2 + 30 + b.dims.w / 2;
-        placements.push({
-          book: b,
-          kind: 'table',
-          position: [cx + (r() - 0.5) * 14, top + b.dims.t / 2, z],
-          rotation: [0, deg((r() - 0.5) * 5), Math.PI / 2],
-          bay: -1,
-          row: null,
-          slot: i,
-        });
-        top += b.dims.t;
-      });
-    });
-  });
-  const R = L.readingTable;
-  reading.forEach((book, i) => {
-    // Lying flat, cover up, side by side: the top edge points away from the room, the spine to the left.
-    const r = rng(`reading:${book.id}`);
-    const step = (R.width - 160) / Math.max(1, reading.length);
-    placements.push({
-      book,
-      kind: 'reading',
-      position: [R.x - (R.width - 160) / 2 + step * (i + 0.5), R.height + book.dims.t / 2, R.z + (r() - 0.5) * 50],
-      rotation: [0, deg(-90 + (r() - 0.5) * 16), Math.PI / 2],
-      bay: -1,
-      row: null,
-      slot: i,
-    });
-  });
-
   // A label that would run into the next one on the same shelf gives way: a continuation label is
   // dropped (the start label right after it says enough), a start label slides right.
   const tidy: Label[] = [];
@@ -474,8 +417,8 @@ export function computeLayout(books: Book[], categories: Category[], sort: SortK
     placements,
     decor,
     labels: tidy,
-    minX: R.x,
-    maxX: Math.max(R.x, width - 600),
+    minX: -300,
+    maxX: Math.max(-300, width - 600),
   };
 }
 

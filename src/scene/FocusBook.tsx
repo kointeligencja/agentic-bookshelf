@@ -193,10 +193,8 @@ function Focused({
     invalidate();
   });
 
-  const onBook = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    useStore.getState().open();
-  };
+  // The book panel covers the right of the screen, so there is no room to open the book: a click on it does nothing.
+  const onBook = (e: ThreeEvent<MouseEvent>) => e.stopPropagation();
   const onOutside = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     if (e.delta < 6) useStore.getState().close();

@@ -1,7 +1,7 @@
 import { Text } from '@react-three/drei';
-import { useMemo } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import * as THREE from 'three';
-import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { rng } from '../lib/random.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, compX, compY, LABEL, labelWidth, type CaseSpec, type Decor, type Layout } from './layout.ts';
@@ -320,7 +320,7 @@ function beamMaterial(): THREE.ShaderMaterial {
   });
 }
 
-/** Where a five-star spot hangs and what its beam lights: the top edge of the leaning cover. */
+/** Where a book's spot hangs and what its beam lights: the top edge of the leaning cover. */
 function spotFor(p: Layout['placements'][number], c: CaseSpec) {
   const row = Number(p.row!.split(':')[1]);
   const top = compY(c, row) + c.compH;
@@ -344,10 +344,19 @@ function spotFor(p: Layout['placements'][number], c: CaseSpec) {
   return { top, spot, beam };
 }
 
+/** A spot's fittings, shown only while its book is lit. A spot off is a puck in the shelf, but the shelf is dim and bare then. */
+function Spot({ id, children }: { id: string; children: ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (ref.current) ref.current.visible = (useStore.getState().lit[id] ?? 0) > 0;
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
 /**
  * Display lighting for the covers view: a slim aluminium LED profile under the front of every
- * shelf with its wash on the back panel, and for each five-star book a small spot in the shelf
- * above. Its beam runs from the spot to the head of the cover. The light on the books themselves is in their shader.
+ * shelf with its wash on the back panel, and for each book a small spot in the shelf
+ * above, switched on when a theme lights the book. Its beam runs from the spot to the head of the cover. The light on the books themselves is in their shader.
  */
 function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
   const c = layout.bookcase;
@@ -369,7 +378,7 @@ function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
     }),
     [],
   );
-  // The five-star switch: strips and their wash fade out, the spots and their beams fade in.
+  // A theme lighting books: strips and their wash fade out, the spots and their beams fade in.
   useFrame(() => {
     const a = starFx.amount;
     lm.led.emissiveIntensity = 1 - a;
@@ -379,7 +388,8 @@ function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
     lm.wash.visible = a < 0.999;
     lm.beam.visible = a > 0.001;
   });
-  const stars = layout.placements.filter((p) => p.kind === 'face' && p.book.rating === 5 && p.row);
+  // Every face-out book gets a spot; the ones for books the theme lights are switched on.
+  const stars = layout.placements.filter((p) => p.kind === 'face' && p.row);
   return (
     <group>
       {Array.from({ length: c.cols * c.rows }, (_, i) => {
@@ -406,7 +416,7 @@ function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
         const { top, spot, beam } = spotFor(p, c);
         const x = p.position[0];
         return (
-          <group key={p.book.id}>
+          <Spot key={p.book.id} id={p.book.id}>
             <mesh material={lm.puck} position={[x, top - 4, spot.z]}>
               <cylinderGeometry args={[17, 17, 8, 32]} />
             </mesh>
@@ -416,64 +426,9 @@ function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
             <mesh material={lm.beam} position={beam.position} quaternion={beam.quaternion}>
               <cylinderGeometry args={[9, beam.radius, beam.length, 40, 1, true]} />
             </mesh>
-          </group>
+          </Spot>
         );
       })}
-    </group>
-  );
-}
-
-/**
- * A wall switch left of the bookcase for the five-star lighting, with a brass plate to say so.
- * The rocker tips over and a small pilot light glows amber when it is on.
- */
-function LightSwitch({ spec, mats }: { spec: CaseSpec; mats: Mats }) {
-  const on = useStore((s) => s.starLight);
-  const toggle = useStore((s) => s.toggleStarLight);
-  const invalidate = useThree((s) => s.invalidate);
-  const sm = useMemo(
-    () => ({
-      plate: new THREE.MeshStandardMaterial({ color: '#f3f0ea', roughness: 0.5, emissive: '#f3f0ea', emissiveIntensity: 0 }),
-      pilotOff: new THREE.MeshStandardMaterial({ color: '#8a8278', roughness: 0.4 }),
-      pilotOn: new THREE.MeshStandardMaterial({ color: '#ffb347', emissive: '#ffa53a', emissiveIntensity: 2.2 }),
-    }),
-    [],
-  );
-  // In the dimmed room the switch stays findable, as a pale plate with an amber pilot.
-  useFrame(() => {
-    sm.plate.emissiveIntensity = 0.16 * starFx.amount;
-  });
-  const label = 'Five stars';
-  const lw = labelWidth(label);
-  const handlers = {
-    onClick: (e: ThreeEvent<MouseEvent>) => {
-      e.stopPropagation();
-      if (e.delta > 6 || useStore.getState().focused) return;
-      toggle();
-      invalidate();
-    },
-    onPointerOver: (e: ThreeEvent<PointerEvent>) => {
-      e.stopPropagation();
-      document.body.style.cursor = 'pointer';
-    },
-    onPointerOut: () => {
-      document.body.style.cursor = '';
-    },
-  };
-  return (
-    <group position={[spec.x0 - 190, 1050, 0]} scale={1.5}>
-      <group {...handlers}>
-        <mesh material={sm.plate} position={[0, 0, 5]} castShadow>
-          <boxGeometry args={[86, 86, 10]} />
-        </mesh>
-        <mesh material={sm.plate} position={[0, 0, 12]} rotation-x={on ? -0.14 : 0.14}>
-          <boxGeometry args={[40, 58, 8]} />
-        </mesh>
-        <mesh material={on ? sm.pilotOn : sm.pilotOff} position={[0, on ? -20 : -18, 16.4]} rotation-x={on ? -0.14 : 0.14}>
-          <circleGeometry args={[3.4, 20]} />
-        </mesh>
-      </group>
-      <BrassLabel text={label} position={[-lw / 2, -60, 0.5]} mats={mats} />
     </group>
   );
 }
@@ -484,7 +439,6 @@ export function Bookcase({ layout }: { layout: Layout }) {
     <group>
       <Case spec={layout.bookcase} mats={mats} />
       {layout.view === 'covers' && <ShelfLighting layout={layout} mats={mats} />}
-      <LightSwitch spec={layout.bookcase} mats={mats} />
       {layout.labels.map((l) => (
         <BrassLabel key={`${l.slug}:${l.position[0]}:${l.position[1]}`} text={l.text} position={l.position} mats={mats} />
       ))}

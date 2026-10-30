@@ -1,0 +1,38 @@
+[
+ {
+  "slug": "intent",
+  "name": "Passing on intent",
+  "short": "Intent",
+  "description": "Delegation, intent, and where understanding breaks down."
+ },
+ {
+  "slug": "language",
+  "name": "Language, structure & questions",
+  "short": "Language & questions",
+  "description": "Precise language, structure, asking questions and honest feedback."
+ },
+ {
+  "slug": "rules",
+  "name": "Rules, judgment & environment",
+  "short": "Rules & environment",
+  "description": "Rules versus judgment, and designing the environment people act in."
+ },
+ {
+  "slug": "verify",
+  "name": "Checking & quality",
+  "short": "Checking",
+  "description": "Verification, calibration and keeping quality up at scale."
+ },
+ {
+  "slug": "context",
+  "name": "Context & coordination",
+  "short": "Context",
+  "description": "Stale context, control and coordination."
+ },
+ {
+  "slug": "doors",
+  "name": "Doors & learning",
+  "short": "Doors & learning",
+  "description": "Reversible decisions, codifying process, learning from mistakes and maintenance."
+ }
+]

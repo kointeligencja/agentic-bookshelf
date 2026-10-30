@@ -1,8 +1,9 @@
 import { useKTX2 } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import type { Lit } from '../lib/agentic.ts';
 import { useStore } from '../store.ts';
 import type { AtlasSheet, Book } from '../types.ts';
 import { createBookMaterial, type ShelfLight } from './bookMaterial.ts';
@@ -12,7 +13,7 @@ import { starFx } from './starLight.ts';
 const geometry = new RoundedBoxGeometry(1, 1, 1, 3, 0.1);
 const TILT = THREE.MathUtils.degToRad(8);
 const INTRO_MS = 700;
-/** How far the five-star switch pulls a spine out past its neighbours, mm. */
+/** How far a lit spine is pulled out past its neighbours, mm. */
 const STAR_PULL = 38;
 
 export const boardMm = (b: Book) => (b.binding === 'hardcover' ? 2.6 : b.binding === 'paperback' || b.binding === 'massMarket' ? 0.5 : 1.2);
@@ -72,6 +73,7 @@ function SheetBooks({
     const radius = new Float32Array(n);
     const board = new Float32Array(n);
     const star = new Float32Array(n);
+    const lit = useStore.getState().lit;
     placements.forEach((p, i) => {
       const b = p.book;
       dims.set([b.dims.t, b.dims.h, b.dims.w], i * 3);
@@ -79,7 +81,7 @@ function SheetBooks({
       new THREE.Color(b.palette.dominant).toArray(color, i * 3);
       radius[i] = cornerRadius(b);
       board[i] = boardMm(b);
-      star[i] = b.rating === 5 ? 1 : 0;
+      star[i] = lit[b.id] ?? 0;
     });
     geo.setAttribute('aDims', new THREE.InstancedBufferAttribute(dims, 3));
     geo.setAttribute('aRect', new THREE.InstancedBufferAttribute(rect, 4));
@@ -94,6 +96,20 @@ function SheetBooks({
     introDone.current = false;
     invalidate();
   }, [placements, geo, highlight, invalidate, mode]);
+
+  // A new set of lit books rewrites the per-instance attribute; nothing is rebuilt.
+  useEffect(() => {
+    const write = (lit: Lit) => {
+      const attr = geo.getAttribute('aStar') as THREE.InstancedBufferAttribute | undefined;
+      if (!attr) return;
+      placements.forEach((p, i) => attr.setX(i, lit[p.book.id] ?? 0));
+      attr.needsUpdate = true;
+      invalidate();
+    };
+    return useStore.subscribe((now, before) => {
+      if (now.lit !== before.lit) write(now.lit);
+    });
+  }, [geo, placements, invalidate]);
 
   const m = useMemo(
     () => ({
@@ -111,7 +127,7 @@ function SheetBooks({
     const mesh = ref.current;
     if (!mesh) return;
     const dt = Math.min(delta, 0.1);
-    const { hovered, focused } = useStore.getState();
+    const { hovered, focused, lit } = useStore.getState();
     const now = performance.now() - start.current;
     const focusedP = focused ? placements[index.get(focused.id) ?? -1] : undefined;
     let moving = false;
@@ -134,8 +150,9 @@ function SheetBooks({
         glow: isHover ? 1 : 0,
       };
       const before = a.tilt + a.slide + a.lean + a.glow + a.intro + a.pull;
-      // The five-star switch pulls those spines a little proud of the shelf.
-      a.pull = mode === 'spine' && b.rating === 5 && p.kind !== 'table' ? starFx.amount : 0;
+      // The theme pulls its spines a little proud of the shelf.
+      const pullTarget = mode === 'spine' && (lit[b.id] ?? 0) > 0 ? starFx.amount : 0;
+      a.pull = approach(a.pull, pullTarget, 10, dt);
       a.tilt = approach(a.tilt, targets.tilt, 14, dt);
       a.slide = approach(a.slide, targets.slide, 14, dt);
       a.lean = approach(a.lean, targets.lean, 9, dt);
@@ -143,7 +160,7 @@ function SheetBooks({
       a.intro = easeOut(introT);
       const changed = Math.abs(a.tilt + a.slide + a.lean + a.glow + a.intro + a.pull - before) > 1e-4;
       const settledTargets =
-        Math.abs(a.tilt - targets.tilt) < 1e-3 && Math.abs(a.slide - targets.slide) < 1e-3 && Math.abs(a.lean - leanTarget) < 1e-4;
+        Math.abs(a.tilt - targets.tilt) < 1e-3 && Math.abs(a.slide - targets.slide) < 1e-3 && Math.abs(a.lean - leanTarget) < 1e-4 && Math.abs(a.pull - pullTarget) < 1e-3;
       if (!settledTargets || introT < 1) moving = true;
       const hidden = focused?.id === b.id;
       if (!changed && !hidden && composed.current[i]) return;
@@ -301,7 +318,7 @@ export function Books({
   placements: Placement[];
   bookcase: CaseSpec;
 }) {
-  const spines = useMemo(() => placements.filter((p) => p.kind === 'shelf' || p.kind === 'stack' || p.kind === 'table'), [placements]);
+  const spines = useMemo(() => placements.filter((p) => p.kind === 'shelf' || p.kind === 'stack'), [placements]);
   const faces = useMemo(() => placements.filter((p) => p.kind === 'face'), [placements]);
   // Books slide in compartment by compartment; the side table comes first.
   const introDelay = (p: Placement) => 250 + (p.bay + 1) * 70 + p.slot * 7;

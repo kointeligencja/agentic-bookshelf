@@ -67,6 +67,8 @@ export interface Book {
 export interface Category {
   slug: string;
   name: string;
+  /** A shorter name for the category nav, where space is tight. */
+  short?: string;
   description: string;
 }
 
@@ -82,4 +84,78 @@ export interface Library {
   atlas: AtlasSheet[];
   coverAtlas: AtlasSheet[];
   books: Book[];
+}
+
+// The Agentic Bookshelf: the conversation and how its ideas map onto the books.
+// Built by scripts/agentic.ts into public/data/agentic.json.
+
+export interface AgenticClip {
+  /** Seconds into the video. */
+  start: number;
+  end: number;
+  label: string;
+}
+
+/** One idea from the conversation, with the stretches of the video where it is discussed. */
+export interface AgenticThesis {
+  key: string;
+  title: string;
+  line: string;
+  clips: AgenticClip[];
+}
+
+export interface AgenticBook {
+  /** Id of the book in the 3D library (`Book.id`). */
+  id: string;
+  /** Our own slug, kept for the concept cards. */
+  slug: string;
+  title: string;
+  author: string;
+}
+
+export interface AgenticConcept {
+  id: string;
+  name: string;
+  /** 3D library ids of the books that carry this concept. */
+  bookIds: string[];
+  /** Keys of the theses it extends. */
+  theses: string[];
+  /** The idea in one line, for lists, the board and search. */
+  summary: string;
+  /** How far the card was checked against the books: ✓ checked, ⚠ checked and corrected, ? not yet. */
+  status: string;
+}
+
+/** A line of the conversation that bears on a concept, with where to find it in the video. */
+export interface AgenticConversationLine {
+  speaker: string;
+  /** `m:ss` as shown. */
+  at: string;
+  /** Seconds into the video. */
+  at_s: number;
+  text: string;
+}
+
+/** The card for a concept (public/data/agentic-cards.json, keyed by concept id). */
+export interface AgenticCard {
+  title: string;
+  sources: { book: string; authors: string }[];
+  idea?: string[];
+  why?: string[];
+  stories?: { source: string; text: string }[];
+  method?: { source?: string; intro?: string; steps?: string[] };
+  limits?: string[];
+  tension?: string;
+  quotes?: { text: string; source: string; verified: boolean }[];
+  conversation?: AgenticConversationLine[];
+  /** Our own suggestion, labelled as such. */
+  apply?: { label: string; text: string };
+  depth?: string;
+}
+
+export interface Agentic {
+  video: { id: string; url: string; duration: number };
+  theses: AgenticThesis[];
+  books: AgenticBook[];
+  concepts: AgenticConcept[];
 }

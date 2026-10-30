@@ -1,0 +1,194 @@
+{
+ "900000001": {
+  "primary": "rules",
+  "secondary": "doors"
+ },
+ "900000002": {
+  "primary": "doors",
+  "secondary": "intent"
+ },
+ "900000003": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000004": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000005": {
+  "primary": "doors",
+  "secondary": null
+ },
+ "900000006": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000007": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000008": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000009": {
+  "primary": "rules",
+  "secondary": "language"
+ },
+ "900000010": {
+  "primary": "verify",
+  "secondary": "language"
+ },
+ "900000011": {
+  "primary": "language",
+  "secondary": "intent"
+ },
+ "900000012": {
+  "primary": "language",
+  "secondary": "verify"
+ },
+ "900000013": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000014": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000015": {
+  "primary": "verify",
+  "secondary": "rules"
+ },
+ "900000016": {
+  "primary": "context",
+  "secondary": "doors"
+ },
+ "900000017": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000018": {
+  "primary": "verify",
+  "secondary": "context"
+ },
+ "900000019": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000020": {
+  "primary": "doors",
+  "secondary": "verify"
+ },
+ "900000021": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000022": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000023": {
+  "primary": "context",
+  "secondary": "verify"
+ },
+ "900000024": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000025": {
+  "primary": "language",
+  "secondary": "verify"
+ },
+ "900000026": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000027": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000028": {
+  "primary": "intent",
+  "secondary": "doors"
+ },
+ "900000029": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000030": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000031": {
+  "primary": "intent",
+  "secondary": "language"
+ },
+ "900000032": {
+  "primary": "doors",
+  "secondary": "verify"
+ },
+ "900000033": {
+  "primary": "intent",
+  "secondary": null
+ },
+ "900000034": {
+  "primary": "rules",
+  "secondary": "context"
+ },
+ "900000035": {
+  "primary": "context",
+  "secondary": "rules"
+ },
+ "900000036": {
+  "primary": "verify",
+  "secondary": "doors"
+ },
+ "900000037": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000038": {
+  "primary": "verify",
+  "secondary": "doors"
+ },
+ "900000039": {
+  "primary": "rules",
+  "secondary": null
+ },
+ "900000040": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000041": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000042": {
+  "primary": "verify",
+  "secondary": null
+ },
+ "900000043": {
+  "primary": "doors",
+  "secondary": "intent"
+ },
+ "900000044": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000045": {
+  "primary": "intent",
+  "secondary": null
+ },
+ "900000046": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000047": {
+  "primary": "language",
+  "secondary": null
+ },
+ "900000048": {
+  "primary": "language",
+  "secondary": null
+ }
+}

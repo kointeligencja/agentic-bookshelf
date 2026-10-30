@@ -1,44 +1,23 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { cardWidth, panelWidth } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
-import { caseHeight, caseWidth, LAYOUT, type Layout } from './layout.ts';
+import { caseHeight, caseWidth, type Layout } from './layout.ts';
 
 export const EYE_HEIGHT = 1250;
 /** Where the camera looks at the wall when it's back far enough to see the whole case. Set per layout. */
 let lookHeight = 1100;
-/** Over the tables the camera drops its gaze to the table tops. */
-const TABLE_LOOK = 760;
 export const MIN_DISTANCE = 1100;
 export const MAX_DISTANCE = 6000;
 export const DEFAULT_DISTANCE = 3500;
 export const FOV = 35;
 
-/** How much the camera is "at the tables", 0..1, from its x position. */
-function tableWeight(x: number): number {
-  const T = LAYOUT.table;
-  const d = (x - (T.x + T.width / 2)) / 900;
-  return THREE.MathUtils.clamp(1 - d, 0, 1) ** 2 * (3 - 2 * THREE.MathUtils.clamp(1 - d, 0, 1));
-}
-
-/** How much the camera is "at the reading table", 0..1, from its x position. */
-function readingWeight(x: number): number {
-  const R = LAYOUT.readingTable;
-  const t = THREE.MathUtils.clamp(1 - (Math.abs(x - R.x) - R.width / 2) / 600, 0, 1);
-  return t * t * (3 - 2 * t);
-}
-
 /** Camera position and look-at point for a dolly position x and wall distance d. */
 export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Vector3; look: THREE.Vector3 }) {
-  // Only drop the gaze to the table when the camera has come in close to it.
-  const tw = tableWeight(x) * THREE.MathUtils.clamp((3000 - d) / 700, 0, 1);
-  const look = THREE.MathUtils.lerp(y, TABLE_LOOK, tw);
-  // At the reading table the camera looks down onto the books lying there, so their covers read.
-  const R = LAYOUT.readingTable;
-  const rw = readingWeight(x) * THREE.MathUtils.clamp((3000 - d) / 700, 0, 1);
   // The eye sits a little above what it looks at, as a standing person's would.
-  out.eye.set(x, look + 150 + (d - DEFAULT_DISTANCE) * 0.04 - tw * 120 + rw * 800, d);
-  out.look.set(x, THREE.MathUtils.lerp(look, R.height + 60, rw), rw * R.z);
+  out.eye.set(x, y + 150 + (d - DEFAULT_DISTANCE) * 0.04, d);
+  out.look.set(x, y, 0);
   return out;
 }
 
@@ -47,11 +26,12 @@ export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Ve
  * the camera eases towards it. The pointer nudges the eye a little for parallax.
  * Input is ignored while a book is pulled out.
  */
-/** The opening view: the want-to-read table and as much of the case as fits, the case's full height in frame. */
+/** The opening view: the case from its left edge, as much as fits in the space right of the panel, its full height in frame. */
 export function homeView(layout: Layout, aspect: number): { x: number; d: number; look: number } {
   const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
   const H = caseHeight(layout.bookcase);
-  const left = LAYOUT.table.x - LAYOUT.table.width / 2 - 250;
+  // The opening view starts just left of the case.
+  const left = -300;
   const right = caseWidth(layout.bookcase) + 250;
   const look = H / 2 + 40;
   const dHeight = (H / 2 + 260) / tan;
@@ -70,9 +50,9 @@ export function CameraRig({ layout }: { layout: Layout }) {
     return [c.plinth + c.panel + c.compH / 2, caseHeight(c) - c.panel - c.compH / 2];
   }, [layout]);
   const homeD = useRef(DEFAULT_DISTANCE);
-  const { camera, gl, invalidate } = useThree();
+  const { camera, gl, invalidate, size } = useThree();
   const pointer = useRef(new THREE.Vector2());
-  const current = useRef<{ x: number; d: number; y: number; px: number; py: number } | null>(null);
+  const current = useRef<{ x: number; d: number; y: number; px: number; py: number; card: number } | null>(null);
   const pose = useRef({ eye: new THREE.Vector3(), look: new THREE.Vector3() });
 
   useEffect(() => {
@@ -113,7 +93,8 @@ export function CameraRig({ layout }: { layout: Layout }) {
       const s = useStore.getState();
       const rect = el.getBoundingClientRect();
       const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-      const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+      // The panel pushes the middle of the view to the right (see the view offset below).
+      const nx = ((clientX - rect.left - panelWidth(rect.width) / 2) / rect.width) * 2 - 1;
       const ny = 1 - ((clientY - rect.top) / rect.height) * 2;
       const halfH = s.distance * tan;
       const k = 1 - d / s.distance;
@@ -181,7 +162,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
   // Frame the room for this layout on first load and after switching views; otherwise keep the target in range.
   useEffect(() => {
     const s = useStore.getState();
-    const aspect = camera instanceof THREE.PerspectiveCamera ? camera.aspect : 1.6;
+    const aspect = camera instanceof THREE.PerspectiveCamera ? (size.width - panelWidth(size.width)) / size.height : 1.6;
     const home = homeView(layout, aspect);
     lookHeight = home.look;
     homeD.current = home.d;
@@ -193,20 +174,32 @@ export function CameraRig({ layout }: { layout: Layout }) {
       s.setTargetX(Math.min(maxX, Math.max(minX, s.targetX)));
     }
     invalidate();
-  }, [camera, layout, minX, maxX, invalidate]);
+  }, [camera, size, layout, minX, maxX, invalidate]);
+
+  // The view offset (see the frame loop) is cleared when the rig goes.
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    return () => camera.clearViewOffset();
+  }, [camera]);
 
   // Subscriptions don't re-render; a change of target just needs a frame.
   useEffect(() => useStore.subscribe(() => invalidate()), [invalidate]);
 
   useFrame((_, dt) => {
     const s = useStore.getState();
+    const { width, height } = size;
     const ty = s.targetY === null ? lookHeight : Math.min(yRange[1], Math.max(yRange[0], s.targetY));
-    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0 });
+    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0, card: 0 });
     const k = 1 - Math.exp(-Math.min(dt, 0.1) * 5);
     const kp = 1 - Math.exp(-Math.min(dt, 0.1) * 3);
     c.x += (s.targetX - c.x) * k;
     c.d += (s.distance - c.d) * k;
     c.y += (ty - c.y) * k;
+    // The left panel takes the left of the screen, and a pulled-out book's panel the right: shift the picture
+    // so the scene is centred in the space between them.
+    const cardTarget = s.focused && !s.focused.closing ? cardWidth(width) : 0;
+    c.card += (cardTarget - c.card) * k;
+    if (camera instanceof THREE.PerspectiveCamera) camera.setViewOffset(width, height, -(panelWidth(width) - c.card) / 2, 0, width, height);
     const still = s.focused ? 0.25 : 1;
     const px = pointer.current.x * 45 * still;
     const py = -pointer.current.y * 30 * still;
@@ -216,7 +209,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
     camera.position.set(eye.x + c.px, eye.y + c.py, eye.z);
     camera.lookAt(look);
     const moving =
-      Math.abs(s.targetX - c.x) > 0.3 || Math.abs(s.distance - c.d) > 0.3 || Math.abs(ty - c.y) > 0.3 || Math.abs(px - c.px) > 0.2 || Math.abs(py - c.py) > 0.2;
+      Math.abs(s.targetX - c.x) > 0.3 || Math.abs(s.distance - c.d) > 0.3 || Math.abs(ty - c.y) > 0.3 || Math.abs(px - c.px) > 0.2 || Math.abs(py - c.py) > 0.2 || Math.abs(cardTarget - c.card) > 0.5;
     if (moving) invalidate();
   });
 

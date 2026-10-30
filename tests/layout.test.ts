@@ -97,7 +97,7 @@ describe('computeLayout', () => {
     const layout = computeLayout(books, categories, 'dateRead', view);
     const rows = layout.bookcase.rows;
     const byComp = new Map<number, Set<string>>();
-    for (const p of layout.placements.filter((pl) => pl.kind !== 'table' && pl.kind !== 'reading')) {
+    for (const p of layout.placements) {
       const comp = p.bay;
       if (!byComp.has(comp)) byComp.set(comp, new Set());
       byComp.get(comp)!.add(p.book.category);

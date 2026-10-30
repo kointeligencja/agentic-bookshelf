@@ -5,6 +5,7 @@
   "scripts": {
     "test": "vitest run",
     "data": "tsx pipeline/index.ts",
+    "data:agentic": "tsx scripts/agentic.ts",
     "data:sample": "BOOKSHELF_DATA=fixtures/sample tsx pipeline/index.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",

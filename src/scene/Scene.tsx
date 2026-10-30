@@ -8,7 +8,7 @@ import { Books } from './Books.tsx';
 import { CameraRig, EYE_HEIGHT, FOV } from './CameraRig.tsx';
 import { Effects } from './Effects.tsx';
 import { FocusBook } from './FocusBook.tsx';
-import { caseWidth, LAYOUT, type Layout, type Placement } from './layout.ts';
+import { caseWidth, type Layout, type Placement } from './layout.ts';
 import { Loose } from './Loose.tsx';
 import { Room } from './Room.tsx';
 import { StarLightDriver } from './starLight.ts';
@@ -16,7 +16,6 @@ import { StarLightDriver } from './starLight.ts';
 export function Scene({ library, layout, onReady }: { library: Library; layout: Layout; onReady: () => void }) {
   const setHovered = useStore((s) => s.setHovered);
   const right = caseWidth(layout.bookcase);
-  const left = LAYOUT.readingTable.x - LAYOUT.readingTable.width / 2;
 
   return (
     <Canvas
@@ -28,7 +27,7 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
       onPointerMissed={() => setHovered(null)}
       onCreated={({ gl }) => gl.setClearColor('#eeeae3')}
     >
-      <Room x0={left - 4000} x1={right + 4000} focusX0={left} focusX1={right} />
+      <Room x0={layout.minX - 4000} x1={right + 4000} focusX0={layout.minX} focusX1={right} />
       <Suspense fallback={null}>
         <Bookcase layout={layout} />
         <Books atlas={library.atlas} coverAtlas={library.coverAtlas} placements={layout.placements} bookcase={layout.bookcase} />
@@ -53,7 +52,6 @@ function DevProbe({ layout }: { layout: Layout }) {
       __bookPos?: (id: string) => { x: number; y: number } | null;
       __centreBook?: () => string | null;
       __lookAt?: (id: string, dx?: number, distance?: number) => void;
-      __stars?: () => void;
       __frame?: (x: number, y: number, d: number) => void;
       __project?: (x: number, y: number, z: number) => { x: number; y: number };
     };
@@ -67,14 +65,10 @@ function DevProbe({ layout }: { layout: Layout }) {
       st.setTargetY(y);
       st.setDistance(d);
     };
-    w.__stars = () => {
-      useStore.getState().toggleStarLight();
-      invalidate();
-    };
     // The centre of the visible face: the spine for shelved and stacked books, the cover for face-out and reading ones.
     const screen = (p: Placement) => {
       const { t, w } = p.book.dims;
-      const faceOut = p.kind === 'face' || p.kind === 'display' || p.kind === 'reading';
+      const faceOut = p.kind === 'face' || p.kind === 'display';
       const v = new THREE.Vector3(faceOut ? t / 2 : 0, 0, faceOut ? 0 : w / 2)
         .applyEuler(new THREE.Euler(...p.rotation))
         .add(new THREE.Vector3(...p.position))
