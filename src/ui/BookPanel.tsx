@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { stepTo } from '../lib/board.ts';
-import type { SectionId } from '../lib/card.ts';
 import { useStore } from '../store.ts';
 import type { Agentic, Library } from '../types.ts';
 import { CardView } from './CardView.tsx';
 
 /**
- * The panel over the right of the screen while a book is pulled out: what the book contributes, and one
- * concept's card at a time. Esc or ✕ puts the book back.
+ * The page over the right of the screen while a book is pulled out: one concept's card at a time. In reading mode (900px and wider)
+ * it is an opaque paper page right of the walnut strip that holds the book; narrower, it fills the screen. Esc or ✕ puts the book back.
  */
 export function BookPanel({ library, data }: { library: Library; data: Agentic }) {
   const focused = useStore((s) => s.focused);
@@ -19,8 +18,6 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
   const book = focused ? library.books.find((b) => b.id === focused.id) : undefined;
   const visible = !!book && !focused?.closing;
   const [menu, setMenu] = useState(false);
-  // The section opened in place of a card's body, if any, and the concept it belongs to.
-  const [more, setMore] = useState<{ concept: string; sec: SectionId } | null>(null);
 
   // This book's concepts, those of the active theme first.
   const list = useMemo(() => {
@@ -33,33 +30,16 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
 
   // The list closes with the book and when the book changes.
   useEffect(() => setMenu(false), [book?.id, visible]);
-  // A section opened in place goes back to its card when the concept or the book changes.
-  useEffect(() => setMore(null), [current?.id, book?.id, visible]);
 
   const menuOpen = useRef(false);
   menuOpen.current = menu;
-  const expanded = more && more.concept === current?.id ? more.sec : null;
-  const expandedRef = useRef<SectionId | null>(null);
-  expandedRef.current = expanded;
-
-  // Only for the card audit (scripts/card-audit.ts): opens a section without needing its link on screen.
-  useEffect(() => {
-    if (!import.meta.env.DEV || !current) return;
-    const w = window as unknown as { __more?: (sec: SectionId | null) => void };
-    w.__more = (sec) => setMore(sec ? { concept: current.id, sec } : null);
-    return () => {
-      delete w.__more;
-    };
-  }, [current]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const s = useStore.getState();
       if (e.key === 'Escape') {
-        // The board covers everything, so it goes first. Then, innermost first: a section opened in place, the
-        // concept list, the book.
+        // The board covers everything, so it goes first. Then, innermost first: the concept list, the book.
         if (s.boardOpen) s.setBoardOpen(false);
-        else if (expandedRef.current) setMore(null);
         else if (menuOpen.current) setMenu(false);
         else s.close();
       } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && s.focused && !s.boardOpen && (e.target as HTMLElement | null)?.tagName !== 'INPUT') {
@@ -79,92 +59,95 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
   const inTheme = theme ? list.filter((c) => c.theses.includes(theme)).length : 0;
   const themeTitle = data.theses.find((t) => t.key === theme)?.title;
 
+  // The concept list, `‹ 1/3 ▾ ›`, and ✕, at the top right of the page.
+  const controls = (
+    <>
+      <div className="cnav">
+        <button className="step" onClick={() => go(-1)} disabled={index <= 0} aria-label="Previous concept">
+          ‹
+        </button>
+        <button className="pick" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="listbox" aria-label={`Concept ${index + 1} of ${list.length}: ${current?.name ?? ''}`} title={themeTitle ? `${inTheme} of ${list.length} for “${themeTitle}”` : undefined}>
+          <span className="count">
+            {index + 1}/{list.length}
+          </span>{' '}
+          <span className="caret">▾</span>
+        </button>
+        <button className="step" onClick={() => go(1)} disabled={index >= list.length - 1} aria-label="Next concept">
+          ›
+        </button>
+        {menu && (
+          <>
+            <div className="scrim" onClick={() => setMenu(false)} />
+            <ul className="clist pop" role="listbox" aria-label="Concepts in this book">
+              {list.map((c) => (
+                <li key={c.id}>
+                  <button
+                    role="option"
+                    aria-selected={c.id === current?.id}
+                    className={`${c.id === current?.id ? 'sel' : ''}${theme && !c.theses.includes(theme) ? ' inactive' : ''}`}
+                    onClick={() => {
+                      setConcept(c.id);
+                      setMenu(false);
+                    }}
+                  >
+                    <span>{c.name}</span>
+                    <span className="tags">
+                      {c.theses.map((k) => (
+                        <i key={k} className={`tag${k === theme ? ' hot' : ''}`}>
+                          {k}
+                        </i>
+                      ))}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+      <button className="page-close" onClick={close} aria-label="Put back">
+        ✕
+      </button>
+    </>
+  );
+
   return (
     <aside className={`book-panel${visible ? ' visible' : ''}`} aria-hidden={!visible} aria-label="The book">
-      {book && (
-        <>
-          <header>
-            <div>
-              <h2 title={book.title}>{book.title.split(/:\s+/)[0]}</h2>
-              <div className="by">{book.author}</div>
-            </div>
-            <button className="pill icon" onClick={close} aria-label="Put back">
-              ✕
-            </button>
-          </header>
-          {list.length === 0 ? (
-            <p className="wip">No concepts from this book yet.</p>
-          ) : (
-            <>
-              <div className="cnav">
-                <button className="step" onClick={() => go(-1)} disabled={index <= 0} aria-label="Previous concept">
-                  ‹
-                </button>
-                <button className="pick" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="listbox" title={themeTitle ? `${inTheme} of ${list.length} for “${themeTitle}”` : undefined}>
-                  <span className="nm">{current?.name}</span> <span className="caret">▾</span>
-                </button>
-                <span className="count">
-                  {index + 1} / {list.length}
-                </span>
-                <button className="step" onClick={() => go(1)} disabled={index >= list.length - 1} aria-label="Next concept">
-                  ›
-                </button>
-                {menu && (
-                  <>
-                    <div className="scrim" onClick={() => setMenu(false)} />
-                    <ul className="clist pop" role="listbox" aria-label="Concepts in this book">
-                      {list.map((c) => (
-                        <li key={c.id}>
-                          <button
-                            role="option"
-                            aria-selected={c.id === current?.id}
-                            className={`${c.id === current?.id ? 'sel' : ''}${theme && !c.theses.includes(theme) ? ' inactive' : ''}`}
-                            onClick={() => {
-                              setConcept(c.id);
-                              setMenu(false);
-                            }}
-                          >
-                            <span>{c.name}</span>
-                            <span className="tags">
-                              {c.theses.map((k) => (
-                                <i key={k} className={`tag${k === theme ? ' hot' : ''}`}>
-                                  {k}
-                                </i>
-                              ))}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
+      {book &&
+        (list.length === 0 || !current ? (
+          <div className="card">
+            <header className="c-head">
+              <div className="c-titles">
+                <div className="c-by">
+                  {book.title} · {book.author}
+                </div>
               </div>
-              {current && (
-                <CardView
-                  key={current.id}
-                  concept={current}
-                  concepts={data.concepts}
-                  bookId={book.id}
-                  card={cards?.[current.id]}
-                  themes={data.theses}
-                  activeTheme={theme}
-                  pinned={pins.includes(current.id)}
-                  expanded={expanded}
-                  onMore={(sec) => setMore({ concept: current.id, sec })}
-                  onBack={() => setMore(null)}
-                  onPin={() => togglePin(current.id)}
-                  onTheme={setTheme}
-                  onSeek={(s) => {
-                    close();
-                    useStore.getState().seek(s);
-                  }}
-                  onOpen={(id) => useStore.getState().openConcept(id)}
-                />
-              )}
-            </>
-          )}
-        </>
-      )}
+              <div className="c-ctl">
+                <button className="page-close" onClick={close} aria-label="Put back">
+                  ✕
+                </button>
+              </div>
+            </header>
+            <p className="wip">No concepts from this book yet.</p>
+          </div>
+        ) : (
+          <CardView
+            key={current.id}
+            concept={current}
+            book={{ title: book.title.split(/:\s+/)[0] ?? book.title, author: book.author, accent: book.palette.accent, cover: book.coverUrl }}
+            card={cards?.[current.id]}
+            themes={data.theses}
+            activeTheme={theme}
+            pinned={pins.includes(current.id)}
+            controls={controls}
+            onPin={() => togglePin(current.id)}
+            onTheme={setTheme}
+            onSeek={(s) => {
+              close();
+              useStore.getState().seek(s);
+            }}
+          />
+        ))}
     </aside>
   );
 }

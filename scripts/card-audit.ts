@@ -1,216 +1,133 @@
-// Opens every concept card at each viewport and checks that it is exactly one screen: the page does not scroll, the
-// card's body does not overflow, Idea, With your agent and the lead are never clamped (Why it works is cut only at levels 8 and 9). Records the
-// clamp level each card ends up at. Then opens each of a card's "more" views once and checks those too (paging is
-// allowed there). Writes /tmp/card-audit.json and prints a summary.
+// Opens every concept card at each viewport and checks the fixed template: the page does not scroll, every tab's content is inside
+// its region (on every page of a paged tab), the band's text fits. Lists the cards with `data-band-overflow` and the tabs that
+// needed pages. Writes /tmp/card-audit.json and prints a summary. No screenshots.
 // Usage: npx tsx scripts/card-audit.ts [baseUrl] [WxH,WxH,...]   (needs `npx vite --port 5181` running)
-// Env: CHROME_BIN = a Chromium executable to use instead of Playwright's own; CARD_W = a panel width in px to try
-// in place of the one the app computes (what-if only, the camera does not follow); OUT = the JSON file;
-// ONLY = comma-separated concept ids to audit (default all); MORE=0 skips the section views.
+// Env: CHROME_BIN = a Chromium executable to use instead of Playwright's own; OUT = the JSON file;
+// ONLY = comma-separated concept ids to audit (default all); QUICK=1 reads the band only (no tabs).
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium, type Page } from 'playwright';
-import { sectionBlocks, sectionsOf, type SectionId } from '../src/lib/card.ts';
-import type { Agentic, AgenticCard } from '../src/types.ts';
+import type { Agentic } from '../src/types.ts';
 
 const base = process.argv[2] ?? 'http://localhost:5181';
-const sizes = (process.argv[3] ?? '1280x800,1440x900').split(',').map((s) => s.split('x').map(Number) as [number, number]);
+const sizes = (process.argv[3] ?? '1440x900,1280x800').split(',').map((s) => s.split('x').map(Number) as [number, number]);
 const out = process.env.OUT ?? '/tmp/card-audit.json';
-const MORE_AT = '1280x800';
-const doMore = process.env.MORE !== '0';
+const quick = process.env.QUICK === '1';
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
-
 const data = JSON.parse(await readFile('public/data/agentic.json', 'utf8')) as Agentic;
-const cards = JSON.parse(await readFile('public/data/agentic-cards.json', 'utf8')) as Record<string, AgenticCard>;
 
+interface TabRow {
+  tab: string;
+  pages: number;
+  failures: string[];
+}
 interface Row {
   id: string;
   name: string;
-  level: number;
-  overflow: boolean;
-  cols: number;
-  lead: string | null;
-  next: number;
-  /** Space left at the bottom of the columns, px. */
-  free: number;
-  /** For a card marked data-overflow: how far its columns run over, px. */
-  over: number;
-  failures: string[];
-}
-interface MoreRow {
-  id: string;
-  sec: string;
-  pages: number;
+  bandOverflow: string;
+  /** Height the band's two texts need, px, and the card's height. */
+  need?: { idea: number; apply: number; page: number };
+  tabs: TabRow[];
   failures: string[];
 }
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 
-/** What the page says about the card on screen, as one object. Runs in the page. */
+/** What the page says about the card on screen. Runs in the page. */
 const READ = `(() => {
   const q = (s) => document.querySelector(s);
-  const over = (e) => (e ? e.scrollHeight - e.clientHeight : 0);
-  const card = q('.card');
-  const body = q('.c-body');
-  const cols = q('.c-cols');
-  const panel = q('.book-panel');
   const doc = document.documentElement;
-  const colEls = [...document.querySelectorAll('.c-body .c-col')];
-  // Every visible block ends inside its column.
-  const cb = cols ? cols.getBoundingClientRect() : null;
-  const spill = [...document.querySelectorAll('.c-body .c-col .blk')].filter((b) => cb && b.getBoundingClientRect().bottom > cb.bottom + 0.5).length;
-  const last = colEls.map((c) => { const k = c.lastElementChild; return k ? k.getBoundingClientRect().bottom : 0; });
+  const card = q('.card');
+  const tb = q('.c-panel .tb');
+  const tbr = tb ? tb.getBoundingClientRect() : null;
+  const bottom = (s) => { const e = q(s); return e ? e.getBoundingClientRect().bottom : 0; };
+  const mc = q('.c-panel .tb > .mc:not(.tb-measure)');
+  const band = q('.band');
+  const panel = q('.book-panel');
   return {
-    view: card && card.dataset.view,
-    level: card && card.dataset.level,
-    overflow: !!card && card.dataset.overflow !== undefined,
-    cols: card && card.dataset.cols,
     name: (q('.c-name') || {}).textContent,
-    docScroll: Math.max(doc.scrollHeight - innerHeight, document.body.scrollHeight - innerHeight, doc.scrollWidth - innerWidth),
-    over: { card: over(card), body: over(body), cols: over(cols), panel: over(panel), col: Math.max(0, ...colEls.map(over)) },
-    spill,
-    clampedSkeleton: document.querySelectorAll('.c-body .c-col [data-sk][data-clamped]').length,
-    skeletonBlocks: document.querySelectorAll('.c-body .c-col [data-sk]').length,
-    lead: q('.c-lead') ? (q('.c-lead').className.includes('quote') ? 'quote' : 'summary') : null,
-    leadText: q('.c-lead p') ? q('.c-lead p').textContent.trim().length : 0,
-    next: document.querySelectorAll('.c-body > .c-next .c-nrow').length,
-    free: cb ? Math.round(cb.bottom - Math.max(0, ...last)) : 0,
-    links: [...document.querySelectorAll('.c-body [data-more]')].map((l) => l.getAttribute('data-more')),
-    chips: [...document.querySelectorAll('.c-chips .t')].map((t) => t.scrollWidth <= t.clientWidth + 1 && t.scrollHeight <= t.clientHeight + 1),
-    ready: !!(card && body && (card.dataset.level !== undefined || card.dataset.view === 'section')),
+    tab: card && card.dataset.tab,
+    pages: card && card.dataset.pages ? Number(card.dataset.pages) : 1,
+    bandOverflow: card ? card.dataset.bandOverflow || '' : '',
+    docScroll: Math.max(doc.scrollHeight - innerHeight, doc.scrollWidth - innerWidth, 0),
+    panelOver: panel ? panel.scrollHeight - panel.clientHeight : 0,
+    region: tbr ? Math.round(tbr.height) : 0,
+    below: tbr ? Math.round(Math.max(0, bottom('.m-cols') - tbr.bottom, bottom('.q-cols') - tbr.bottom, ...Array.from(document.querySelectorAll('.q-col, .m-col')).map((c) => (c.lastElementChild ? c.lastElementChild.getBoundingClientRect().bottom : 0) - tbr.bottom))) : 0,
+    flowOver: mc ? [mc.scrollHeight - mc.clientHeight, card.dataset.pages ? 0 : mc.scrollWidth - mc.clientWidth] : [0, 0],
+    band: band ? Math.round(band.getBoundingClientRect().height) : 0,
+    need: { idea: q('.b-idea p') ? Math.round(q('.b-idea p').getBoundingClientRect().bottom - q('.b-idea').getBoundingClientRect().top) : 0, apply: q('.b-apply p') ? Math.round(q('.b-apply p').getBoundingClientRect().bottom - q('.b-apply').getBoundingClientRect().top + 16) : 0, page: card ? Math.round(card.getBoundingClientRect().height) : 0 },
+    tabs: Array.from(document.querySelectorAll('.c-tabs [role=tab]')).map((t) => t.dataset.tab),
+    chips: Array.from(document.querySelectorAll('.c-chips .t')).every((t) => t.scrollWidth <= t.clientWidth + 1),
   };
 })()`;
 
-async function open(page: Page, bookId: string, conceptId: string, name: string) {
-  await page.evaluate(`window.location.hash = ${JSON.stringify(`#book/${bookId}/${conceptId}`)}`);
-  await page.waitForFunction(
-    `(() => {
-      const c = document.querySelector('.card[data-level]');
-      return !!c && document.querySelector('.c-name').textContent === ${JSON.stringify(name)} && c.dataset.view === 'card';
-    })()`,
-    undefined,
-    { timeout: 20000 },
-  );
-  await page.waitForTimeout(90);
+async function settle(page: Page) {
+  await page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+  await page.waitForTimeout(110);
 }
 
-const result: { viewport: string; cards: Row[]; more: MoreRow[]; clicks: { id: string; failures: string[] }[] }[] = [];
-const origin = process.env.CARD_W ? `with the panel at ${process.env.CARD_W}px` : '';
-
+const result: { viewport: string; cards: Row[] }[] = [];
 for (const [w, h] of sizes) {
   const vp = `${w}x${h}`;
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
-  await page.addInitScript('window.__name = (f) => f');
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(base, { waitUntil: 'load' });
   await page.waitForSelector('.app.ready', { timeout: 60000 });
   await page.waitForTimeout(1500);
-  if (process.env.CARD_W) await page.evaluate(`document.documentElement.style.setProperty('--card-w', '${Number(process.env.CARD_W)}px')`);
   const rows: Row[] = [];
-  const more: MoreRow[] = [];
-  const clicks: { id: string; failures: string[] }[] = [];
-
   for (const c of data.concepts.filter((x) => !only || only.has(x.id))) {
     const failures: string[] = [];
-    const bookId = c.bookIds[0]!;
     try {
-      await open(page, bookId, c.id, c.name);
+      await page.evaluate(`window.location.hash = ${JSON.stringify(`#book/${c.bookIds[0]}/${c.id}`)}`);
+      await page.waitForFunction(`(() => { const e = document.querySelector('.book-panel.visible .c-name'); return !!e && e.textContent === ${JSON.stringify(c.name)} && !!document.querySelector('.card[data-tab]'); })()`, undefined, { timeout: 20000 });
     } catch (e) {
-      rows.push({ id: c.id, name: c.name, level: -1, overflow: false, cols: 0, lead: null, next: 0, free: 0, over: 0, failures: [`did not open: ${String(e).slice(0, 80)}`] });
+      rows.push({ id: c.id, name: c.name, bandOverflow: '', tabs: [], failures: [`did not open: ${String(e).slice(0, 80)}`] });
       continue;
     }
-    // Again once the fonts and the panel have settled: the level must not move.
-    const r = (await page.evaluate(READ)) as any;
-    if (r.docScroll > 0) failures.push(`page scrolls by ${r.docScroll}px`);
-    // A card marked data-overflow is clipped on purpose: its skeleton does not fit, and it is listed for shortening.
-    if (!r.overflow) {
-      for (const [k, v] of Object.entries(r.over as Record<string, number>)) if (v > 0) failures.push(`${k} overflows by ${v}px`);
-      if (r.spill) failures.push(`${r.spill} block(s) end below the columns`);
-    }
-    if (r.clampedSkeleton) failures.push('a skeleton block is clamped');
-    if (!r.lead || !r.leadText) failures.push('no lead');
-    if (!r.skeletonBlocks) failures.push('no skeleton blocks');
-    if (r.chips.some((ok: boolean) => !ok)) failures.push('a theme chip is truncated');
-    if (r.overflow && r.level !== '9') failures.push(`overflow at level ${r.level}, not 9`);
-    rows.push({ id: c.id, name: c.name, level: Number(r.level), overflow: r.overflow, cols: Number(r.cols), lead: r.lead, next: r.next, free: r.free, over: r.overflow ? Math.max(r.over.col, r.over.cols) : 0, failures });
-
-    if (vp !== MORE_AT || !doMore) continue;
-    // Each section's view, whole, opened through the dev hook.
-    for (const sec of sectionsOf(cards[c.id]) as SectionId[]) {
+    await settle(page);
+    const first = (await page.evaluate(READ)) as any;
+    const tabs: TabRow[] = [];
+    for (const t of quick ? [] : (first.tabs as string[])) {
       const f: string[] = [];
-      await page.evaluate(`window.__more(${JSON.stringify(sec)})`);
-      try {
-        await page.waitForFunction(`document.querySelector('.c-section[data-section="${sec}"] .c-col .blk') !== null`, undefined, { timeout: 8000 });
-      } catch {
-        f.push('section view did not render');
-      }
-      await page.waitForTimeout(60);
-      const pager = (await page.evaluate(`(document.querySelector('.c-section .c-pager') || {}).textContent || ''`)) as string;
-      const pages = Number(/\/\s*(\d+)/.exec(pager)?.[1] ?? 1);
-      // Every page fits, and every block of the section is on some page, once.
-      const want = sectionBlocks(cards[c.id], sec, Number(r.level) >= 7).length;
-      let seen = 0;
+      await page.click(`.c-tabs [role=tab][data-tab="${t}"]`);
+      await settle(page);
+      let r = (await page.evaluate(READ)) as any;
+      const pages = r.pages as number;
       for (let p = 0; p < pages; p++) {
-        const m = (await page.evaluate(READ)) as any;
-        seen += Number(await page.evaluate(`document.querySelectorAll('.c-section .c-col .blk').length`));
-        if (m.docScroll > 0) f.push(`page ${p + 1} scrolls by ${m.docScroll}px`);
-        for (const [k, v] of Object.entries(m.over as Record<string, number>)) if (v > 0) f.push(`page ${p + 1}: ${k} overflows by ${v}px`);
-        if (m.spill) f.push(`page ${p + 1}: ${m.spill} block(s) end below the columns`);
+        if (r.docScroll > 0) f.push(`page ${p + 1}: document scrolls by ${r.docScroll}px`);
+        if (r.panelOver > 0) f.push(`page ${p + 1}: panel overflows by ${r.panelOver}px`);
+        if (r.below > 1) f.push(`page ${p + 1}: content ${r.below}px below its region`);
+        if (r.flowOver[0] > 1) f.push(`page ${p + 1}: columns overflow by ${r.flowOver[0]}px`);
+        if (r.flowOver[1] > 1) f.push(`columns spill sideways by ${r.flowOver[1]}px with no pager`);
         if (p < pages - 1) {
-          await page.click('.c-section .c-pager button[aria-label="Next page"]');
-          await page.waitForTimeout(40);
+          await page.click('.c-pager button[aria-label="Next page"]');
+          await settle(page);
+          r = (await page.evaluate(READ)) as any;
         }
       }
-      if (seen !== want) f.push(`${seen} of ${want} blocks shown across ${pages} page(s)`);
-      more.push({ id: c.id, sec, pages, failures: f });
-      await page.evaluate('window.__more(null)');
-      await page.waitForSelector('.card[data-view="card"] .c-cols', { timeout: 8000 }).catch(() => f.push('did not come back to the card'));
+      tabs.push({ tab: t, pages, failures: f });
     }
-
-    // The keyboard path through a real link: Enter opens, focus lands on the heading, Esc goes back to the link.
-    const link = (await page.evaluate(`(document.querySelector('.c-body [data-more]') || { getAttribute: () => null }).getAttribute('data-more')`)) as string | null;
-    if (link) {
-      const f: string[] = [];
-      await page.focus(`.c-body [data-more="${link}"]`);
-      await page.keyboard.press('Enter');
-      await page.waitForSelector(`.c-section[data-section="${link}"]`, { timeout: 5000 }).catch(() => f.push('Enter did not open the section'));
-      await page.waitForTimeout(80);
-      if (!(await page.evaluate(`!!document.activeElement && document.activeElement.matches('.c-xhead h4')`))) f.push('focus is not on the heading');
-      await page.keyboard.press('Escape');
-      await page.waitForSelector('.card[data-view="card"] .c-cols', { timeout: 5000 }).catch(() => f.push('Esc did not go back'));
-      await page.waitForTimeout(80);
-      if (!(await page.evaluate(`document.querySelector('.book-panel.visible') !== null`))) f.push('Esc closed the book panel');
-      if (!(await page.evaluate(`!!document.activeElement && document.activeElement.getAttribute('data-more') === ${JSON.stringify(link)}`))) f.push('focus did not return to the link');
-      clicks.push({ id: c.id, failures: f });
-    }
+    if (!first.tabs.length) failures.push('no tabs');
+    if (!first.chips) failures.push('a theme chip is truncated');
+    rows.push({ id: c.id, name: c.name, bandOverflow: first.bandOverflow, need: first.need, tabs, failures });
   }
-  if (errors.length) rows.push({ id: '(page errors)', name: errors.slice(0, 3).join(' | '), level: -1, overflow: false, cols: 0, lead: null, next: 0, free: 0, over: 0, failures: errors.slice(0, 3) });
-  result.push({ viewport: vp, cards: rows, more, clicks });
+  if (errors.length) rows.push({ id: '(page errors)', name: errors.slice(0, 3).join(' | '), bandOverflow: '', tabs: [], failures: errors.slice(0, 3) });
+  result.push({ viewport: vp, cards: rows });
   await page.close();
 }
 await browser.close();
-await writeFile(out, JSON.stringify({ base, panel: origin || 'as the app sets it', result }, null, 1));
+await writeFile(out, JSON.stringify({ base, result }, null, 1));
 
-// Summary
 let failed = 0;
-for (const { viewport, cards: rows, more, clicks } of result) {
-  const count: Record<string, number> = {};
-  for (const r of rows) count[`L${r.level}`] = (count[`L${r.level}`] ?? 0) + 1;
-  const over = rows.filter((r) => r.overflow);
-  const bad = rows.filter((r) => r.failures.length);
-  const badMore = more.filter((m) => m.failures.length);
-  const badClicks = clicks.filter((m) => m.failures.length);
-  failed += bad.length + badMore.length + badClicks.length;
-  const cols = [...new Set(rows.map((r) => r.cols))].join('/');
-  console.log(`\n${viewport} ${origin} (${rows.length} cards, columns: ${cols})`);
-  console.log('  clamp levels: ' + Object.entries(count).sort().map(([k, v]) => `${k}=${v}`).join('  '));
-  const px = over.map((r) => r.over).sort((a, b) => a - b);
-  console.log(`  data-overflow (${over.length}): ${over.map((r) => r.id).join(', ') || 'none'}`);
-  if (px.length) console.log(`  ...by how much, px: median ${px[Math.floor(px.length / 2)]}, max ${px.at(-1)}, under 60: ${px.filter((x) => x < 60).length}`);
-  console.log(`  read next shown on ${rows.filter((r) => r.next > 0).length} cards`);
-  if (more.length) console.log(`  more views opened: ${more.length}, paged: ${more.filter((m) => m.pages > 1).length}, key path checked on ${clicks.length} cards`);
-  console.log(`  failures: ${bad.length} cards${more.length ? `, ${badMore.length} more views, ${badClicks.length} key paths` : ''}`);
-  for (const r of bad.slice(0, 20)) console.log(`    ${r.id}: ${r.failures.join('; ')}`);
-  for (const m of badMore.slice(0, 20)) console.log(`    ${m.id} / ${m.sec}: ${m.failures.join('; ')}`);
-  for (const m of badClicks.slice(0, 20)) console.log(`    ${m.id} (key path): ${m.failures.join('; ')}`);
+for (const { viewport, cards: rows } of result) {
+  const over = rows.filter((r) => r.bandOverflow);
+  const paged = rows.flatMap((r) => r.tabs.filter((t) => t.pages > 1).map((t) => `${r.id}/${t.tab}(${t.pages})`));
+  const bad = rows.filter((r) => r.failures.length || r.tabs.some((t) => t.failures.length));
+  failed += bad.length;
+  console.log(`\n${viewport} (${rows.length} cards)`);
+  console.log(`  data-band-overflow (${over.length}): ${over.map((r) => `${r.id}[${r.bandOverflow}]`).join(', ') || 'none'}`);
+  console.log(`  paged tabs (${paged.length}): ${paged.join(', ') || 'none'}`);
+  console.log(`  failures: ${bad.length} cards`);
+  for (const r of bad.slice(0, 30)) console.log(`    ${r.id}: ${[...r.failures, ...r.tabs.flatMap((t) => t.failures.map((x) => `${t.tab}: ${x}`))].join('; ')}`);
 }
 console.log(`\nwrote ${out}${failed ? `, ${failed} failing` : ', no failures'}`);

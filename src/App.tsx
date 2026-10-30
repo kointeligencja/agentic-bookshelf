@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { categorySpot, computeLayout, type Layout } from './scene/layout.ts';
 import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
-import { cardWidth, isReading, panelWidth, readingPanel } from './lib/panel.ts';
+import { isReading, panelWidth, readingPanel } from './lib/panel.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import { CategoryNav } from './ui/CategoryNav.tsx';
 import { Board, BoardButton } from './ui/Board.tsx';
@@ -76,7 +76,6 @@ export function App() {
     const set = () => {
       const root = document.documentElement.style;
       root.setProperty('--panel-w', `${panelWidth(window.innerWidth)}px`);
-      root.setProperty('--card-w', `${cardWidth(window.innerWidth)}px`);
       const r = readingPanel(window.innerWidth);
       root.setProperty('--read-left', `${r.left}px`);
       root.setProperty('--strip-w', `${r.strip}px`);

@@ -17,31 +17,26 @@ export function cardWidth(viewport: number): number {
   return Math.round(Math.max(space * 0.55, Math.min(CARD_MIN, space - BOOK_ROOM)));
 }
 
-/** From this viewport width on, a pulled-out book switches the page to reading mode; below it the card stays a single scrolling column. */
+/** From this viewport width on, a pulled-out book switches the page to reading mode; below it the card is a full-width page that scrolls. */
 export const READING_MIN = 900;
-/** Space between the reading-mode card and the viewport's edges, and between the book strip and the card (`--s4`), px. */
-export const READING_MARGIN = 24;
-export const READING_GAP = 32;
+/** In reading mode the left quarter of the screen holds the pulled-out book; it is at least this wide, px. */
+export const STRIP_MIN = 240;
+export const STRIP_SHARE = 0.25;
+/** The pulled-out book is this share of the strip wide. */
+export const BOOK_SHARE = 0.7;
 
 export const isReading = (viewport: number): boolean => viewport >= READING_MIN;
 
-/** Width in CSS pixels of the strip at the left edge where the pulled-out book is held in reading mode. */
+/** Width in CSS pixels of the walnut strip at the left edge where the pulled-out book is held in reading mode: a quarter of the screen, 240px at least. */
 export function stripWidth(viewport: number): number {
-  return Math.round(Math.min(220, Math.max(180, viewport * 0.15)));
+  return Math.round(Math.max(STRIP_MIN, viewport * STRIP_SHARE));
 }
 
-/** The pulled-out book is held this much smaller than the strip it is held in (a fifth). */
-export const BOOK_SCALE = 0.8;
-
 /**
- * Reading mode's geometry: the book strip runs from the margin to `left - READING_GAP`, its middle is `centre`; the card
- * starts at `left` and runs `width` px to the right margin. The pulled-out book is `book` px wide on screen (a fifth less
- * than the strip, less its 24px of air) and sits against the card: its right edge is READING_GAP from the card's left edge,
- * so its middle is `bookCentre`.
+ * Reading mode's geometry: the strip runs from the left edge to `left`, the paper page from `left` to the right edge (`width`
+ * px). The pulled-out book is `book` px wide on screen and centred in the strip (`bookCentre`).
  */
-export function readingPanel(viewport: number): { strip: number; centre: number; left: number; width: number; book: number; bookCentre: number } {
+export function readingPanel(viewport: number): { strip: number; left: number; width: number; book: number; bookCentre: number } {
   const strip = stripWidth(viewport);
-  const left = READING_MARGIN + strip + READING_GAP;
-  const book = Math.round(Math.max(60, strip - 24) * BOOK_SCALE);
-  return { strip, centre: READING_MARGIN + strip / 2, left, width: viewport - READING_MARGIN - left, book, bookCentre: left - READING_GAP - book / 2 };
+  return { strip, left: strip, width: viewport - strip, book: Math.round(Math.max(60, strip * BOOK_SHARE)), bookCentre: strip / 2 };
 }

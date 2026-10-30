@@ -112,37 +112,33 @@ describe('cardWidth', () => {
 });
 
 describe('reading mode', () => {
-  it('starts at 900px; narrower screens keep the single scrolling column', () => {
+  it('starts at 900px; narrower screens get a full-width page', () => {
     expect(isReading(900)).toBe(true);
     expect(isReading(899)).toBe(false);
   });
-  it('holds the book in a strip of 180 to 220px', () => {
-    expect(stripWidth(900)).toBe(180);
-    expect(stripWidth(1280)).toBe(192);
-    expect(stripWidth(1440)).toBe(216);
-    expect(stripWidth(1920)).toBe(220);
-    for (const w of [900, 1100, 1280, 1440, 1920, 2560]) expect(stripWidth(w)).toBeGreaterThanOrEqual(180);
+  it('holds the book in the left quarter of the screen, 240px at least', () => {
+    expect(stripWidth(900)).toBe(240);
+    expect(stripWidth(1280)).toBe(320);
+    expect(stripWidth(1440)).toBe(360);
+    expect(stripWidth(2000)).toBe(500);
+    for (const w of [900, 960, 1100, 1280, 1440, 1920, 2560]) expect(stripWidth(w), `${w}`).toBeGreaterThanOrEqual(240);
+    for (const w of [1100, 1280, 1440, 1920, 2560]) expect(stripWidth(w) / w, `${w}`).toBe(Math.round(w * 0.25) / w);
   });
-  it('puts the card 32px right of the strip and 24px from the right edge', () => {
-    const r = readingPanel(1280);
-    expect(r.left).toBe(24 + 192 + 32);
-    expect(r.left + r.width).toBe(1280 - 24);
-    expect(r.centre).toBe(24 + 96);
-  });
-  it('holds the book a fifth smaller than the strip, 32px from the card', () => {
-    for (const w of [900, 1280, 1440, 1920]) {
+  it('puts the paper page right of the strip, to the edge of the screen', () => {
+    for (const w of [900, 1280, 1440, 2000]) {
       const r = readingPanel(w);
-      expect(r.book, `${w}`).toBe(Math.round((r.strip - 24) * 0.8));
-      // Its right edge is the grid's --s4 (32px) left of the card.
-      expect(r.bookCentre + r.book / 2, `${w}`).toBe(r.left - 32);
-      // It stays inside the strip, right of the margin.
-      expect(r.bookCentre - r.book / 2, `${w}`).toBeGreaterThanOrEqual(24);
+      expect(r.left, `${w}`).toBe(r.strip);
+      expect(r.left + r.width, `${w}`).toBe(w);
+      expect(r.width / w, `${w}`).toBeGreaterThanOrEqual(0.7);
     }
   });
-  it('gives the card more room than the 2D layout on laptop screens', () => {
-    expect(readingPanel(1280).width).toBeGreaterThan(cardWidth(1280) + 350);
-    expect(readingPanel(1440).width).toBeGreaterThan(cardWidth(1440) + 450);
-    expect(readingPanel(900).width).toBeGreaterThanOrEqual(600);
+  it('centres the book in the strip, less wide than the strip', () => {
+    for (const w of [900, 1280, 1440, 1920, 2560]) {
+      const r = readingPanel(w);
+      expect(r.bookCentre, `${w}`).toBe(r.strip / 2);
+      expect(r.book, `${w}`).toBeLessThan(r.strip);
+      expect(r.bookCentre - r.book / 2, `${w}`).toBeGreaterThanOrEqual(32);
+    }
   });
 });
 

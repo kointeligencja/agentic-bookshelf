@@ -19,6 +19,39 @@ const HOLD = 880; // mm in front of the camera
 const MAX_HOLD = 3000;
 /** The dimming plane in front of the case. */
 const DIM_Z = 720;
+/** Reading mode's backdrop: the bookcase's walnut, a little lighter behind the book. */
+const WALNUT_EDGE = '#3b2618';
+const WALNUT_GLOW = '#5b3a22';
+/** The dim of the room while a book is pulled out and there is no reading mode (a narrow screen). */
+const DIM_COLOR = '#1d1813';
+
+/**
+ * The plane in front of the case. Out of reading mode it is the dim (a flat colour, mostly transparent). In reading mode it fades
+ * to opaque walnut, lighter round the book (a glow in screen space, `uCentre` and `uRadius` in drawing-buffer pixels), so no shelf
+ * shows behind the left quarter of the screen. Colours are linear, as the composer expects.
+ */
+function backdropMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uOpacity: { value: 0 },
+      uRead: { value: 0 },
+      uDim: { value: new THREE.Color(DIM_COLOR) },
+      uEdge: { value: new THREE.Color(WALNUT_EDGE) },
+      uGlow: { value: new THREE.Color(WALNUT_GLOW) },
+      uCentre: { value: new THREE.Vector2(0, 0) },
+      uRadius: { value: 1 },
+    },
+    vertexShader: 'void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform float uOpacity; uniform float uRead; uniform vec3 uDim; uniform vec3 uEdge; uniform vec3 uGlow; uniform vec2 uCentre; uniform float uRadius;
+      void main() {
+        float k = 1.0 - smoothstep(0.0, uRadius, distance(gl_FragCoord.xy, uCentre));
+        gl_FragColor = vec4(mix(uDim, mix(uEdge, uGlow, k), uRead), uOpacity);
+      }`,
+  });
+}
 const OPEN_ANGLE = THREE.MathUtils.degToRad(-160);
 const FACE_CAMERA = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -81,8 +114,10 @@ function Focused({
   const book = placement.book;
   const group = useRef<THREE.Group>(null);
   const cover = useRef<THREE.Group>(null);
-  const dim = useRef<THREE.MeshBasicMaterial>(null);
-  const { camera, invalidate, size } = useThree();
+  const dim = useMemo(backdropMaterial, []);
+  useEffect(() => () => dim.dispose(), [dim]);
+  const { camera, gl, invalidate, size } = useThree();
+  const buffer = useMemo(() => new THREE.Vector2(), []);
   const state = useRef({ p: { x: 0, v: 0 }, o: { x: 0, v: 0 }, read: 0 });
   const home = useMemo(() => homePose(placement), [placement]);
   const [pages, setPages] = useState<{ left: THREE.Texture; right: THREE.Texture } | null>(null);
@@ -190,7 +225,14 @@ function Focused({
     g.position.lerpVectors(tmp.out, tmp.target, smooth(0.3, 1, p));
     g.quaternion.slerpQuaternions(home.quaternion, tmp.q, smooth(0.32, 0.9, p));
     if (cover.current) cover.current.rotation.y = OPEN_ANGLE * o;
-    if (dim.current) dim.current.opacity = (0.16 + 0.44 * st.read) * THREE.MathUtils.clamp(p, 0, 1);
+    // The room dims, and in reading mode becomes walnut, centred where the book is held (middle of the strip, middle of the height).
+    const u = dim.uniforms as { uOpacity: { value: number }; uRead: { value: number }; uCentre: { value: THREE.Vector2 }; uRadius: { value: number } };
+    u.uOpacity.value = THREE.MathUtils.lerp(0.16, 1, st.read) * THREE.MathUtils.clamp(p, 0, 1);
+    u.uRead.value = st.read;
+    gl.getDrawingBufferSize(buffer);
+    const px = buffer.x / size.width;
+    u.uCentre.value.set(readingPanel(size.width).bookCentre * px, buffer.y / 2);
+    u.uRadius.value = readingPanel(size.width).strip * px * 1.1;
 
     focusFx.amount = THREE.MathUtils.clamp(p, 0, 1);
     focusFx.position.copy(g.position);
@@ -214,7 +256,7 @@ function Focused({
       {/* Dims the shelf behind the book and catches "click outside to close". */}
       <mesh position={[home.position.x, 1300, DIM_Z]} onClick={onOutside} renderOrder={5}>
         <planeGeometry args={[20000, 8000]} />
-        <meshBasicMaterial ref={dim} color="#1d1813" transparent opacity={0} depthWrite={false} />
+        <primitive object={dim} attach="material" />
       </mesh>
       <group ref={group} onClick={onBook} position={home.position} quaternion={home.quaternion}>
         <FullBook ref={cover} book={book} atlas={atlas} pages={pages} />

@@ -1,37 +1,38 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { readableOn, rgba } from '../lib/accent.ts';
 import {
-  cardBlocks,
-  chooseLevel,
-  type Columns,
-  flowBlocks,
-  LEVELS,
-  lead as leadOf,
-  paginateColumns,
-  readNext,
-  SECTION_TITLES,
-  sectionBlocks,
+  band,
+  columnCount,
+  defaultTab,
+  limitsContent,
+  packColumn,
+  packSteps,
+  pagesOf,
+  paragraphs,
+  quotesContent,
+  splitSteps,
+  stepTab,
   STATUS,
-  type Block,
-  chooseColumns,
-  type ColumnPage,
-  type Lead,
-  type Measured,
-  type Metric,
-  type SectionId,
+  TAB_LABELS,
+  tabsOf,
+  whyContent,
+  type StepPage,
+  type TabId,
 } from '../lib/card.ts';
+import { useStore } from '../store.ts';
 import type { AgenticCard, AgenticConcept, AgenticThesis } from '../types.ts';
 
-/** Space between the two columns, px. */
+/** Space between two columns, px (`--s3`). */
 const GAP = 24;
-/** Below this viewport width the card is one column that scrolls, with nothing clamped. */
+/** Space between two steps, px (`--s3`); between two quotes (`--s2`). */
+const STEP_GAP = 24;
+const ITEM_GAP = 16;
+/** A column's label and the space under it, px (`--label-h`). */
+const LABEL_H = 24;
+/** Space between a method's intro and its steps, px (`--s2`). */
+const HEAD_GAP = 16;
+/** Below this viewport width the page is one column and scrolls: no fixed regions, no pages. */
 const NARROW = '(max-width: 899px)';
-/** A column holds at least this many characters of body text, or there is one column fewer, and at most MAX_CHARS. There are three columns at most. */
-const MIN_CHARS = 40;
-const MAX_CHARS = 70;
-/** Typical English, to measure how wide a character of the body text is. */
-const SAMPLE = 'Most of the time a short and clear instruction does the job, so the agent knows what to do next and why it matters.';
-/** Fallbacks for the column limits until they are measured, px. */
-const LIMITS = { min: 220, max: 385 };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Hooks
@@ -79,523 +80,473 @@ function useFonts(): number {
   return tick;
 }
 
-/**
- * How many columns fit in a box this wide, and how wide each is. As many as give each at least 40 characters of the body
- * text, three at most, otherwise fewer; never wider than 70. The probe holds a sample of text to measure a character with, since the
- * font is narrow and the `ch` unit would be too wide.
- */
-function useColumns(width: number, narrow: boolean, probe: RefObject<HTMLElement | null>, tick: number): { cols: Columns; colW: number; widthFor: (n: number) => number } {
-  const [limits, setLimits] = useState(LIMITS);
-  useLayoutEffect(() => {
-    const w = probe.current?.firstElementChild?.getBoundingClientRect().width;
-    if (!w) return;
-    const ch = w / SAMPLE.length;
-    const next = { min: Math.ceil(MIN_CHARS * ch), max: Math.floor(MAX_CHARS * ch) };
-    setLimits((l) => (l.min === next.min && l.max === next.max ? l : next));
-  }, [probe, tick, narrow]);
-  // On a desktop screen a card has two columns at least, even when the box is narrower than 40 characters each.
-  const cols = (narrow ? 1 : Math.max(2, Math.min(3, Math.floor((width + GAP) / (limits.min + GAP))))) as Columns;
-  const widthFor = (n: number) => Math.max(1, Math.floor(Math.min(limits.max, (width - GAP * (n - 1)) / n)));
-  return { cols, colW: widthFor(cols), widthFor };
-}
-
-/** Heights of an element's children, and the padding each has on top. */
-function metricsOf(group: Element | null | undefined): Metric[] {
-  return Array.from(group?.children ?? []).map((el) => ({ h: el.getBoundingClientRect().height, top: parseFloat(getComputedStyle(el).paddingTop) || 0 }));
-}
+/** Heights of an element's children, px. */
+const heightsOf = (el: Element | null | undefined): number[] => Array.from(el?.children ?? []).map((c) => c.getBoundingClientRect().height);
 
 // ---------------------------------------------------------------------------------------------------------------
-// Pieces
+// Tab panels. Each fills the same fixed region; when its content does not fit, that tab alone is paged (the pager sits in the
+// tab row). The hidden copy (`.tb-measure`) is the same content at the same width, to measure.
 
-/** A "more ›" link. In the hidden copy it is the same button, not clickable. */
-function MoreLink({ label, sec, onMore, measure }: { label: string; sec: SectionId; onMore: (s: SectionId) => void; measure?: boolean }) {
-  return measure ? (
-    <button type="button" className="more" tabIndex={-1} disabled>
-      {label}
-    </button>
-  ) : (
-    <button type="button" className="more" data-more={sec} onClick={() => onMore(sec)}>
-      {label}
-    </button>
-  );
+interface PanelProps {
+  card: AgenticCard;
+  narrow: boolean;
+  /** Current page, from 0. */
+  page: number;
+  /** How many pages the content comes to. */
+  onPages: (n: number) => void;
+  onSeek: (seconds: number) => void;
 }
 
-/** One block of a card. Spacing is padding on the wrapper, so measured heights add up exactly. */
-function BlockView({ b, onSeek, onMore, measure }: { b: Block; onSeek: (s: number) => void; onMore: (s: SectionId) => void; measure?: boolean }) {
-  const head = b.kind !== 'apply' && 'head' in b && b.head;
-  return (
-    <div className={`blk blk-${b.kind}${'cont' in b && b.cont ? ' cont' : ''}`} data-sk={b.skeleton ? '' : undefined} data-clamped={b.clamped ? '' : undefined}>
-      {head && (
-        <div className="label c-sub">
-          {head.label}
-          {head.em && (
-            <>
-              {' '}
-              <em>{head.em}</em>
-            </>
-          )}
-        </div>
-      )}
-      {b.kind === 'text' && (
-        <p className="c-text">
-          {b.text}
-          {b.more && (
-            <>
-              {' '}
-              <MoreLink label={b.more.label} sec={b.more.sec} onMore={onMore} measure={measure} />
-            </>
-          )}
-        </p>
-      )}
-      {b.kind === 'step' && (
-        <div className="c-step">
-          <b>{b.n}</b>
-          <span>{b.text}</span>
-        </div>
-      )}
-      {b.kind === 'quote' && (
-        <div className="c-quote">
-          “{b.text}”
-          <small>
-            {b.source}
-            {b.verified ? '' : ' · not checked against the book text'}
-          </small>
-        </div>
-      )}
-      {b.kind === 'conv' && (
-        <div className="c-conv">
-          “{b.text}” <small>{b.speaker}</small>{' '}
-          <button className="ts" type="button" tabIndex={measure ? -1 : undefined} disabled={measure} onClick={() => onSeek(b.atS)}>
-            ▶ {b.at}
-          </button>
-        </div>
-      )}
-      {b.kind === 'apply' && (
-        <div className="c-try">
-          <div className="label">
-            {b.head.label}
-            {b.head.em && (
-              <>
-                {' '}
-                <em>{b.head.em}</em>
-              </>
-            )}
-          </div>
-          {b.text}
-        </div>
-      )}
-      {b.kind === 'more' && <MoreLink label={b.more.label} sec={b.more.sec} onMore={onMore} measure={measure} />}
-      {b.kind === 'links' && (
-        <div className="c-links">
-          {b.links.map((l) => (
-            <MoreLink key={l.sec} label={l.label} sec={l.sec} onMore={onMore} measure={measure} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** The lead: the card's first quote, large, or its summary when it has no quotes. */
-function LeadView({ lead }: { lead: Lead }) {
-  return (
-    <div className={`c-lead ${lead.kind}`} data-sk="">
-      <p>{lead.kind === 'quote' ? `“${lead.text}”` : lead.text}</p>
-      {lead.kind === 'quote' && (
-        <small>
-          {lead.source}
-          {lead.verified ? '' : ' · not checked against the book text'}
-        </small>
-      )}
-    </div>
-  );
-}
-
-/** "Read next": up to `n` concepts, one row each. */
-function NextView({ items, n, onOpen, measure }: { items: AgenticConcept[]; n: number; onOpen?: (id: string) => void; measure?: boolean }) {
-  return (
-    <div className="c-next">
-      <div className="label">Read next</div>
-      {items.slice(0, n).map((c) => (
-        <button key={c.id} type="button" className="c-nrow" tabIndex={measure ? -1 : undefined} disabled={measure} onClick={() => onOpen?.(c.id)}>
-          <span className="nm">{c.name}</span>
-          <span className="sm">{c.summary}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/** The hidden sample of body text the layout measures a character with. */
-function Probe({ probe }: { probe: RefObject<HTMLDivElement | null> }) {
-  return (
-    <div className="c-probe" ref={probe}>
-      <i>{SAMPLE}</i>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// The card's body: one screen
-
-interface Plan {
-  level: number;
-  overflow: boolean;
-  cols: Columns;
-  /** Width of one column, px. */
-  colW: number;
-  left: Block[];
-  right: Block[];
-  third: Block[];
-  /** How many "Read next" rows fit under the columns; 0 for none. */
-  next: number;
-}
-
-/**
- * The lead, then Idea and Why it works on the left and With your agent on the right, then what follows. Every level of
- * the clamp ladder is laid out in a hidden copy of the box; the first that fits is shown. Nothing scrolls on a wide
- * screen; on a narrow one it is a single column with everything in it.
- */
-function CardBody({
-  card,
-  concept,
-  related,
-  restore,
-  onRestored,
-  onMore,
-  onSeek,
-  onOpen,
-  onPlan,
-}: {
-  card: AgenticCard | undefined;
-  concept: AgenticConcept;
-  related: AgenticConcept[];
-  restore: SectionId | null;
-  onRestored: () => void;
-  onMore: (s: SectionId) => void;
-  onSeek: (s: number) => void;
-  onOpen: (id: string) => void;
-  onPlan: (p: Pick<Plan, 'level' | 'overflow' | 'cols'> | null) => void;
-}) {
-  const body = useRef<HTMLDivElement>(null);
-  const wrap = useRef<HTMLDivElement>(null);
-  const probe = useRef<HTMLDivElement>(null);
-  const box = useBox(body);
-  const narrow = useNarrow();
+/** Two balanced columns of running text (Why it works, Story, Limits). Too long for the region: columns fill in turn, a page at a time. */
+function FlowTab({ narrow, page, onPages, children }: { narrow: boolean; page: number; onPages: (n: number) => void; children: ReactNode }) {
+  const region = useRef<HTMLDivElement>(null);
+  const meas = useRef<HTMLDivElement>(null);
+  const box = useBox(region);
   const tick = useFonts();
-  const { cols, colW, widthFor } = useColumns(box.w, narrow, probe, tick);
-  const [plan, setPlan] = useState<Plan | null>(null);
-  // Column counts to try: two, and three if the box has room for them.
-  const tries = ([2, 3] as const).filter((n) => n <= cols);
-
-  const levels = useMemo(() => LEVELS.map((l) => cardBlocks(card, l)), [card]);
-  // Levels that come out the same share one measured copy.
-  const { distinct, which } = useMemo(() => {
-    const keys = new Map<string, number>();
-    const distinct: Block[][] = [];
-    const which = levels.map((blocks) => {
-      const key = JSON.stringify(blocks);
-      let d = keys.get(key);
-      if (d === undefined) {
-        d = distinct.length;
-        keys.set(key, d);
-        distinct.push(blocks);
-      }
-      return d;
-    });
-    return { distinct, which };
-  }, [levels]);
-  const lead = useMemo(() => leadOf(card, concept.summary), [card, concept.summary]);
+  const [layout, setLayout] = useState({ paged: false, pages: 1 });
 
   useLayoutEffect(() => {
-    const root = wrap.current;
-    if (narrow || !root || !box.w || !box.h) return;
-    const [ld, nx] = [root.querySelector('.m-lead'), root.querySelector('.m-next')];
-    const leadH = ld?.firstElementChild?.getBoundingClientRect().height ?? 0;
-    // Every level, laid out at the width of one column of each count.
-    const measuredAt = (n: number): Measured[] => {
-      const cl = root.querySelector(`.m-cols[data-n="${n}"]`);
-      return levels.map((blocks, l) => ({ zones: blocks.map((b) => b.zone), metrics: metricsOf(cl?.children[which[l] ?? 0]) }));
-    };
-    const at: Partial<Record<2 | 3, Measured[]>> = {};
-    for (const n of tries) at[n] = measuredAt(n);
-    // A pixel of room against rounding.
-    const avail = box.h - leadH - 1;
-    // Two columns or three: the fewest in which the whole card (nothing clamped) fits; else three and the clamp ladder.
-    const n = chooseColumns({ 2: at[2]?.[0], 3: at[3]?.[0] }, avail, cols);
-    const choice = chooseLevel(at[n] ?? [], avail, n);
-    const blocks = levels[choice.level] ?? [];
-    // "Read next" takes what is left under both columns, one row at least.
-    const free = avail - Math.max(choice.flow.usedLeft, choice.flow.usedRight, choice.flow.usedThird);
-    const heights = Array.from(nx?.children ?? []).map((e) => e.getBoundingClientRect().height);
-    let next = 0;
-    heights.forEach((h, i) => {
-      if (h <= free) next = i + 1;
-    });
-    setPlan({ level: choice.level, overflow: choice.overflow, cols: n, colW: widthFor(n), left: choice.flow.left.flatMap((i) => blocks[i] ?? []), right: choice.flow.right.flatMap((i) => blocks[i] ?? []), third: choice.flow.third.flatMap((i) => blocks[i] ?? []), next });
-  }, [narrow, box, cols, colW, levels, which, tick, related.length]);
+    const m = meas.current;
+    if (narrow || !m || !box.w || !box.h) return;
+    m.style.width = `${box.w}px`;
+    m.style.height = `${box.h}px`;
+    const col = (box.w - GAP) / 2;
+    // Balanced columns: it fits when they stay two. Otherwise they fill one after the other and the rest is on the next pages.
+    m.style.columnFill = 'balance';
+    let n = columnCount(m.scrollWidth, col, GAP);
+    if (n > 2) {
+      m.style.columnFill = 'auto';
+      n = columnCount(m.scrollWidth, col, GAP);
+    }
+    setLayout((l) => (l.paged === n > 2 && l.pages === pagesOf(n) ? l : { paged: n > 2, pages: pagesOf(n) }));
+  }, [narrow, box.w, box.h, tick]);
 
-  // Narrow: all of it, in one column, in reading order.
-  const all = useMemo<Plan>(() => {
-    const blocks = levels[0] ?? [];
-    return { level: 0, overflow: false, cols: 1, colW: 0, left: flowBlocks(blocks.map((b) => b.zone), [], 0, 1).left.flatMap((i) => blocks[i] ?? []), right: [], third: [], next: related.length };
-  }, [levels, related.length]);
-  const shown = narrow ? all : plan;
-
-  useEffect(() => {
-    onPlan(shown ? { level: shown.level, overflow: shown.overflow, cols: shown.cols } : null);
-  }, [shown, onPlan]);
-
-  // Coming back from a section: focus the link that opened it.
-  useEffect(() => {
-    if (!restore || !shown) return;
-    (body.current?.querySelector<HTMLElement>(`[data-more="${restore}"]`) ?? body.current)?.focus({ preventScroll: true });
-    onRestored();
-  }, [restore, shown, onRestored]);
-
-  const style = { '--n': shown?.cols ?? cols, '--colw': `${shown?.colW || colW}px` } as CSSProperties;
-  const column = (blocks: Block[]) => blocks.map((b) => <BlockView key={b.id} b={b} onSeek={onSeek} onMore={onMore} />);
+  useEffect(() => onPages(narrow ? 1 : layout.pages), [narrow, layout.pages, onPages]);
+  const at = Math.min(page, layout.pages - 1);
+  const style: CSSProperties | undefined = narrow ? undefined : { height: box.h, columnFill: layout.paged ? 'auto' : 'balance', transform: at ? `translateX(${-at * (box.w + GAP)}px)` : undefined };
   return (
-    <div className={`c-body${narrow ? ' scroll' : ''}`} ref={body} tabIndex={-1}>
-      {shown && (
+    <div className="tb" ref={region}>
+      <div className="mc" style={style}>
+        {children}
+      </div>
+      {!narrow && (
+        <div className="mc tb-measure" ref={meas} aria-hidden="true">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WhyTab({ card, narrow, page, onPages }: PanelProps) {
+  const { more, why } = whyContent(card);
+  return (
+    <FlowTab narrow={narrow} page={page} onPages={onPages}>
+      {more.length > 0 && (
         <>
-          <LeadView lead={lead} />
-          <div className="c-cols" style={narrow ? undefined : style}>
-            <div className="c-col">{column(shown.left)}</div>
-            {shown.cols >= 2 && <div className="c-col">{column(shown.right)}</div>}
-            {shown.cols === 3 && <div className="c-col">{column(shown.third)}</div>}
-          </div>
-          {shown.next > 0 && <NextView items={related} n={shown.next} onOpen={onOpen} />}
+          <div className="label">More on the idea</div>
+          {more.map((p, i) => (
+            <p key={`m${i}`}>{p}</p>
+          ))}
         </>
       )}
-      {!narrow && (
-        <div className="c-measure-wrap" ref={wrap} aria-hidden="true">
-          <Probe probe={probe} />
-          <div className="c-measure m-lead" style={{ width: box.w }}>
-            <LeadView lead={lead} />
-          </div>
-          {tries.map((n) => (
-            <div key={n} className="c-measure m-cols" data-n={n} style={{ width: widthFor(n) }}>
-              {distinct.map((blocks, d) => (
-                <div key={d}>
-                  {blocks.map((b) => (
-                    <BlockView key={b.id} b={b} onSeek={onSeek} onMore={onMore} measure />
-                  ))}
-                </div>
-              ))}
-            </div>
+      {why.length > 0 && (
+        <>
+          {more.length > 0 && <div className="label">Why it works</div>}
+          {why.map((p, i) => (
+            <p key={`w${i}`}>{p}</p>
           ))}
-          <div className="c-measure m-next" style={{ width: box.w }}>
-            {[1, 2, 3]
-              .filter((n) => n <= related.length)
-              .map((n) => (
-                <NextView key={n} items={related} n={n} measure />
-              ))}
-          </div>
-        </div>
+        </>
       )}
-    </div>
+    </FlowTab>
   );
 }
 
-// ---------------------------------------------------------------------------------------------------------------
-// One section, whole
+function StoryTab({ card, narrow, page, onPages }: PanelProps) {
+  return (
+    <FlowTab narrow={narrow} page={page} onPages={onPages}>
+      {(card.stories ?? []).map((s, i) => (
+        <section className="story" key={i}>
+          <div className="label">
+            From <em>{s.source}</em>
+          </div>
+          {paragraphs(s.text).map((p, j) => (
+            <p key={j}>{p}</p>
+          ))}
+        </section>
+      ))}
+    </FlowTab>
+  );
+}
 
-/**
- * A section in full, in place of the card's body. Two columns like the card; if it still does not fit it is paged,
- * here only. Focus lands on the heading, and Esc or the Back button return to the card.
- */
-function SectionView({
-  card,
-  sec,
-  wholeConversation,
-  onBack,
-  onSeek,
-}: {
-  card: AgenticCard | undefined;
-  sec: SectionId;
-  wholeConversation: boolean;
-  onBack: () => void;
-  onSeek: (s: number) => void;
-}) {
-  const area = useRef<HTMLDivElement>(null);
-  const wrap = useRef<HTMLDivElement>(null);
-  const probe = useRef<HTMLDivElement>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const box = useBox(area);
-  const narrow = useNarrow();
+function LimitsTab({ card, narrow, page, onPages }: PanelProps) {
+  const { limits, tension } = limitsContent(card);
+  return (
+    <FlowTab narrow={narrow} page={page} onPages={onPages}>
+      {limits.map((p, i) => (
+        <p key={i}>{p}</p>
+      ))}
+      {tension && (
+        <>
+          <div className="label">Tension</div>
+          {paragraphs(tension).map((p, i) => (
+            <p key={`t${i}`}>{p}</p>
+          ))}
+        </>
+      )}
+    </FlowTab>
+  );
+}
+
+/** One step: a large numeral in the accent and the text. */
+function Step({ n, text }: { n: number; text: string }) {
+  return (
+    <li className="m-step">
+      <b>{n}</b>
+      <span>{text}</span>
+    </li>
+  );
+}
+
+/** The method: its source and intro, then the steps in two columns, ceil(n/2) on the left. Too many for the region: the steps are paged. */
+function MethodTab({ card, narrow, page, onPages }: PanelProps) {
+  const m = card.method;
+  const steps = m?.steps ?? [];
+  const region = useRef<HTMLDivElement>(null);
+  const meas = useRef<HTMLDivElement>(null);
+  const box = useBox(region);
   const tick = useFonts();
-  const { cols, colW } = useColumns(box.w, narrow, probe, tick);
-  const blocks = useMemo(() => sectionBlocks(card, sec, wholeConversation), [card, sec, wholeConversation]);
-  const [pages, setPages] = useState<ColumnPage[] | null>(null);
-  const [page, setPage] = useState(0);
-  const none = () => {};
+  const [pages, setPages] = useState<StepPage[]>([]);
 
-  useEffect(() => heading.current?.focus({ preventScroll: true }), []);
+  const head = (
+    <>
+      {m?.source && (
+        <div className="label">
+          From <em>{m.source}</em>
+        </div>
+      )}
+      {m?.intro && <p className="m-intro">{m.intro}</p>}
+    </>
+  );
+  const hasHead = !!m?.source || !!m?.intro;
 
   useLayoutEffect(() => {
-    const root = wrap.current;
+    const root = meas.current;
     if (narrow || !root || !box.w || !box.h) return;
-    setPages(paginateColumns(metricsOf(root.querySelector('.m-cols')?.firstElementChild), box.h - 1, cols));
-  }, [narrow, box, cols, colW, blocks, tick]);
+    const headH = root.querySelector('.m-head')?.getBoundingClientRect().height ?? 0;
+    const heights = heightsOf(root.querySelector('.m-steps'));
+    const first = box.h - (headH ? headH + HEAD_GAP : 0);
+    setPages(packSteps(heights, STEP_GAP, first, box.h));
+  }, [narrow, box.w, box.h, tick, steps.length]);
 
-  const last = Math.max(0, (pages?.length ?? 1) - 1);
-  const at = Math.min(page, last);
-  const go = (to: number) => setPage(Math.max(0, Math.min(last, to)));
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return;
-      if (e.key === 'ArrowRight') go(at + 1);
-      else if (e.key === 'ArrowLeft') go(at - 1);
-      else return;
-      e.preventDefault();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
+  const count = Math.max(1, pages.length);
+  useEffect(() => onPages(narrow ? 1 : count), [narrow, count, onPages]);
+  const at = Math.min(page, count - 1);
 
-  const current = pages?.[at];
-  const column = (idx: number[]) => idx.map((i) => blocks[i]).flatMap((b) => (b ? [<BlockView key={b.id} b={b} onSeek={onSeek} onMore={none} />] : []));
-  const style = { '--n': cols, '--colw': `${colW}px` } as CSSProperties;
+  const col = (idx: number[]) => (
+    <ol className="m-col" start={(idx[0] ?? 0) + 1}>
+      {idx.map((i) => (
+        <Step key={i} n={i + 1} text={steps[i] ?? ''} />
+      ))}
+    </ol>
+  );
+  const shown = pages[at] ?? (narrow ? undefined : { left: [], right: [] });
+  const whole = splitSteps(steps.length);
   return (
-    <div className={`c-body c-section${narrow ? ' scroll' : ''}`} data-section={sec}>
-      <div className="c-xhead">
-        <button type="button" className="back" onClick={onBack}>
-          ‹ Back to card
-        </button>
-        <h4 ref={heading} tabIndex={-1}>
-          {SECTION_TITLES[sec]}
-        </h4>
-        {!narrow && pages && pages.length > 1 && (
-          <span className="c-pager">
-            <button type="button" onClick={() => go(at - 1)} disabled={at === 0} aria-label="Previous page">
-              ‹
-            </button>
-            {at + 1} / {pages.length}
-            <button type="button" onClick={() => go(at + 1)} disabled={at === last} aria-label="Next page">
-              ›
-            </button>
-          </span>
-        )}
-      </div>
-      <div className="c-cols" ref={area} style={narrow ? undefined : style}>
-        {narrow ? (
-          <div className="c-col">{blocks.map((b) => <BlockView key={b.id} b={b} onSeek={onSeek} onMore={none} />)}</div>
-        ) : (
-          current && (
-            <>
-              <div className="c-col">{column(current.left)}</div>
-              {cols >= 2 && <div className="c-col">{column(current.right)}</div>}
-              {cols === 3 && <div className="c-col">{column(current.third)}</div>}
-            </>
-          )
-        )}
-      </div>
+    <div className="tb method" ref={region}>
+      {(narrow || at === 0) && hasHead && <div className="m-head">{head}</div>}
+      <div className="m-cols">{narrow ? col(whole.left.concat(whole.right)) : (
+        <>
+          {col(shown?.left ?? [])}
+          {col(shown?.right ?? [])}
+        </>
+      )}</div>
       {!narrow && (
-        <div className="c-measure-wrap" ref={wrap} aria-hidden="true">
-          <Probe probe={probe} />
-          <div className="c-measure m-cols" style={{ width: colW }}>
-            <div>
-              {blocks.map((b) => (
-                <BlockView key={b.id} b={b} onSeek={onSeek} onMore={none} measure />
-              ))}
-            </div>
+        <div className="tb-measure" ref={meas} aria-hidden="true" style={{ width: box.w }}>
+          <div className="m-head" style={{ width: box.w }}>
+            {head}
           </div>
+          <ol className="m-steps" style={{ width: Math.max(0, (box.w - GAP) / 2) }}>
+            {steps.map((t, i) => (
+              <Step key={i} n={i + 1} text={t} />
+            ))}
+          </ol>
         </div>
       )}
     </div>
   );
 }
 
+/** Left: the book's quotes, all. Right: the conversation's lines, each with its speaker and a ▶ that seeks the video. Paged together. */
+function QuotesTab({ card, narrow, page, onPages, onSeek }: PanelProps) {
+  const { quotes, lines } = quotesContent(card);
+  const region = useRef<HTMLDivElement>(null);
+  const meas = useRef<HTMLDivElement>(null);
+  const box = useBox(region);
+  const tick = useFonts();
+  const [cut, setCut] = useState<{ q: number[][]; l: number[][] }>({ q: [], l: [] });
+
+  useLayoutEffect(() => {
+    const root = meas.current;
+    if (narrow || !root || !box.w || !box.h) return;
+    const room = box.h - LABEL_H;
+    setCut({ q: packColumn(heightsOf(root.querySelector('.q-quotes')), ITEM_GAP, room), l: packColumn(heightsOf(root.querySelector('.q-lines')), ITEM_GAP, room) });
+  }, [narrow, box.w, box.h, tick, quotes.length, lines.length]);
+
+  const count = Math.max(1, cut.q.length, cut.l.length);
+  useEffect(() => onPages(narrow ? 1 : count), [narrow, count, onPages]);
+  const at = Math.min(page, count - 1);
+
+  const quote = (i: number) => {
+    const q = quotes[i];
+    return q ? (
+      <li className="q-quote" key={i}>
+        <p>“{q.text}”</p>
+        <small>
+          {q.source}
+          {q.verified ? '' : ' · not checked against the book text'}
+        </small>
+      </li>
+    ) : null;
+  };
+  const line = (i: number, measure?: boolean) => {
+    const l = lines[i];
+    return l ? (
+      <li className="q-line" key={i}>
+        <p>“{l.text}”</p>
+        <small>
+          {l.speaker}{' '}
+          <button className="ts" type="button" tabIndex={measure ? -1 : undefined} disabled={measure} onClick={() => onSeek(l.at_s)}>
+            ▶ {l.at}
+          </button>
+        </small>
+      </li>
+    ) : null;
+  };
+  const all = (n: number) => Array.from({ length: n }, (_, i) => i);
+  const qIdx = narrow ? all(quotes.length) : (cut.q[at] ?? []);
+  const lIdx = narrow ? all(lines.length) : (cut.l[at] ?? []);
+  return (
+    <div className="tb quotes" ref={region}>
+      <div className="q-cols">
+        <div className="q-col">
+          {quotes.length > 0 && <div className="label">In the book</div>}
+          <ul className="q-list">{qIdx.map((i) => quote(i))}</ul>
+        </div>
+        <div className="q-col">
+          {lines.length > 0 && <div className="label">In the conversation</div>}
+          <ul className="q-list">{lIdx.map((i) => line(i))}</ul>
+        </div>
+      </div>
+      {!narrow && (
+        <div className="tb-measure" ref={meas} aria-hidden="true" style={{ width: Math.max(0, (box.w - GAP) / 2) }}>
+          <ul className="q-list q-quotes">{all(quotes.length).map((i) => quote(i))}</ul>
+          <ul className="q-list q-lines">{all(lines.length).map((i) => line(i, true))}</ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PANELS: Record<TabId, ComponentType<PanelProps>> = {
+  why: WhyTab,
+  story: StoryTab,
+  method: MethodTab,
+  limits: LimitsTab,
+  quotes: QuotesTab,
+};
+
 // ---------------------------------------------------------------------------------------------------------------
+// The band
 
 /**
- * A concept card: theme chips, name and source books, then the body, which is one screen: never tabs or pages.
- * A "more ›" link swaps the body for one section in full (`expanded`, owned by the panel so Esc can close it).
+ * Idea (the first paragraph) on the left, "With your agent" on the right, in a band of one fixed height. Text that does not fit is
+ * cut, faded and reported: the card gets `data-band-overflow` for the audit, and the data is shortened.
+ */
+function Band({ card, narrow, onOverflow }: { card: AgenticCard; narrow: boolean; onOverflow: (o: { idea: boolean; apply: boolean }) => void }) {
+  const { idea, apply } = band(card);
+  const root = useRef<HTMLDivElement>(null);
+  const tick = useFonts();
+  const box = useBox(root);
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el || narrow) return onOverflow({ idea: false, apply: false });
+    const over = (s: string) => {
+      const e = el.querySelector(s);
+      return !!e && e.scrollHeight > e.clientHeight + 1;
+    };
+    onOverflow({ idea: over('.b-idea'), apply: over('.b-apply') });
+  }, [narrow, box.w, box.h, tick, idea, apply?.text, onOverflow]);
+  if (!idea && !apply) return null;
+  return (
+    <section className="band" ref={root}>
+      {idea && (
+        <div className="b-idea">
+          <div className="label">Idea</div>
+          <p>{idea}</p>
+        </div>
+      )}
+      {apply && (
+        <aside className="b-apply">
+          <div className="label">
+            With your agent <em>{apply.label}</em>
+          </div>
+          <p>{apply.text}</p>
+        </aside>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+
+export interface CardBook {
+  title: string;
+  author: string;
+  /** The book's accent colour, as in the library; made readable on the paper here. */
+  accent: string;
+  /** A small cover for narrow screens. */
+  cover: string | null;
+}
+
+/**
+ * A concept card, a fixed template for every card: the header (book, concept, summary, themes; `controls` sit at its right), the
+ * band (Idea | With your agent), the tabs the card has and the panel of the open one, the footer. Left and right arrows switch tabs.
  */
 export function CardView({
   concept,
-  concepts,
-  bookId,
+  book,
   card,
   themes,
   activeTheme,
   pinned,
-  expanded,
-  onMore,
-  onBack,
+  controls,
   onPin,
   onTheme,
   onSeek,
-  onOpen,
 }: {
   concept: AgenticConcept;
-  /** Every concept, for "Read next". */
-  concepts: AgenticConcept[];
-  /** The book the card is shown in. */
-  bookId: string;
+  book: CardBook;
   card: AgenticCard | undefined;
   themes: AgenticThesis[];
   activeTheme: string | null;
   pinned: boolean;
-  expanded: SectionId | null;
-  onMore: (s: SectionId) => void;
-  onBack: () => void;
+  controls: ReactNode;
   onPin: () => void;
   onTheme: (key: string) => void;
   onSeek: (seconds: number) => void;
-  onOpen: (id: string) => void;
 }) {
-  const related = useMemo(() => readNext(concepts, concept.id, bookId), [concepts, concept.id, bookId]);
-  const [plan, setPlan] = useState<Pick<Plan, 'level' | 'overflow' | 'cols'> | null>(null);
+  const narrow = useNarrow();
+  const tabs = useMemo(() => tabsOf(card), [card]);
+  const [picked, setPicked] = useState<TabId | null>(null);
+  const tab = picked && tabs.includes(picked) ? picked : defaultTab(tabs);
+  const [page, setPage] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [over, setOver] = useState({ idea: false, apply: false });
+  const accent = useMemo(() => readableOn(book.accent), [book.accent]);
 
-  // The link that opened a section gets the focus back when the card does.
-  const was = useRef<SectionId | null>(null);
-  const [restore, setRestore] = useState<SectionId | null>(null);
+  const select = (t: TabId) => {
+    if (t === tab) return;
+    setPicked(t);
+    setPage(0);
+    setPages(1);
+  };
+  const onPages = useRef((n: number) => setPages((p) => (p === n ? p : n))).current;
+  const onOverflow = useRef((o: { idea: boolean; apply: boolean }) => setOver((p) => (p.idea === o.idea && p.apply === o.apply ? p : o))).current;
+  const last = Math.max(0, pages - 1);
+  const at = Math.min(page, last);
+
+  // ← and → switch tabs.
+  const tabRef = useRef({ tabs, tab });
+  tabRef.current = { tabs, tab };
   useEffect(() => {
-    if (was.current && !expanded) setRestore(was.current);
-    was.current = expanded;
-  }, [expanded]);
-  const restored = useRef(() => setRestore(null)).current;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey) return;
+      if ((e.target as HTMLElement | null)?.tagName === 'INPUT' || useStore.getState().boardOpen) return;
+      const { tabs: ts, tab: cur } = tabRef.current;
+      const next = stepTab(ts, cur, e.key === 'ArrowRight' ? 1 : -1);
+      if (next && next !== cur) {
+        setPicked(next);
+        setPage(0);
+        setPages(1);
+      }
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  // The conversation's first line is cut from the card at level 7; its view then starts there.
-  const wholeConversation = (plan?.level ?? 0) >= 7;
-
+  const Panel = tab ? PANELS[tab] : undefined;
+  const style = { '--accent': accent, '--accent-tint': rgba(accent, 0.09) } as CSSProperties;
+  const overflow = [over.idea && 'idea', over.apply && 'apply'].filter(Boolean).join(' ');
   return (
-    <div className="card" data-view={expanded ? 'section' : 'card'} data-level={plan?.level} data-overflow={!expanded && plan?.overflow ? '' : undefined} data-cols={plan?.cols}>
-      <div className="c-chips">
-        {concept.theses.map((k) => {
-          const t = themes.find((x) => x.key === k);
-          return (
-            <button key={k} className={`theme mini${k === activeTheme ? ' on' : ''}`} onClick={() => onTheme(k)} title={t?.title}>
-              {/^\d+$/.test(k) && <span className="k">{k}</span>}
-              <span className="t">{t?.title}</span>
-            </button>
-          );
-        })}
-      </div>
-      <h3 className="c-name">{concept.name}</h3>
-      <div className="c-books">
-        {(card?.sources ?? []).map((s, i) => (
-          <span key={s.book}>
-            {i > 0 && ' · '}
-            <em>{s.book}</em>
-          </span>
-        ))}
-      </div>
-      {expanded ? (
-        <SectionView key={expanded} card={card} sec={expanded} wholeConversation={wholeConversation} onBack={onBack} onSeek={onSeek} />
+    <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined} data-band-overflow={overflow || undefined} data-band-idea={over.idea ? '' : undefined} data-band-apply={over.apply ? '' : undefined}>
+      <header className="c-head">
+        <div className="c-titles">
+          <div className="c-by">
+            {book.cover && <img className="c-thumb" src={book.cover} alt="" />}
+            <span>
+              {book.title} · {book.author}
+            </span>
+          </div>
+          <h3 className="c-name">{concept.name}</h3>
+          <p className="c-sum">{concept.summary}</p>
+          <div className="c-chips">
+            {concept.theses.map((k) => {
+              const t = themes.find((x) => x.key === k);
+              return (
+                <button key={k} className={`theme mini${k === activeTheme ? ' on' : ''}`} onClick={() => onTheme(k)} title={t?.title}>
+                  {/^\d+$/.test(k) && <span className="k">{k}</span>}
+                  <span className="t">{t?.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="c-ctl">{controls}</div>
+      </header>
+      {card ? (
+        <>
+          <Band card={card} narrow={narrow} onOverflow={onOverflow} />
+          {tabs.length > 0 && (
+            <div className="c-tabs">
+              <div role="tablist" aria-label="Sections of the card">
+                {tabs.map((t) => (
+                  <button key={t} role="tab" type="button" aria-selected={t === tab} data-tab={t} className={t === tab ? 'on' : ''} onClick={() => select(t)}>
+                    {TAB_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+              {!narrow && pages > 1 && (
+                <span className="c-pager">
+                  <button type="button" onClick={() => setPage(Math.max(0, at - 1))} disabled={at === 0} aria-label="Previous page">
+                    ‹
+                  </button>
+                  {at + 1} / {pages}
+                  <button type="button" onClick={() => setPage(Math.min(last, at + 1))} disabled={at === last} aria-label="Next page">
+                    ›
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+          {Panel && (
+            <div className="c-panel" role="tabpanel" key={tab}>
+              <Panel card={card} narrow={narrow} page={at} onPages={onPages} onSeek={onSeek} />
+            </div>
+          )}
+        </>
       ) : (
-        <CardBody card={card} concept={concept} related={related} restore={restore} onRestored={restored} onMore={onMore} onSeek={onSeek} onOpen={onOpen} onPlan={setPlan} />
+        <p className="wip">Card in progress.</p>
       )}
-      <div className="c-foot">
+      <footer className="c-foot">
         <span className="status">
           {concept.status} {STATUS[concept.status] ?? ''}
         </span>
         <button className="pill pin" aria-pressed={pinned} onClick={onPin}>
           {pinned ? 'Pinned' : 'Pin to board'}
         </button>
-      </div>
+      </footer>
     </div>
   );
 }
