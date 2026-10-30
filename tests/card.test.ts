@@ -2,9 +2,6 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   band,
-  BAND_MAX,
-  BAND_MIN,
-  bandHeight,
   columnCount,
   defaultTab,
   limitsContent,
@@ -197,6 +194,45 @@ describe('packSteps', () => {
   });
 });
 
+describe('packSteps: no page ends with room for the next step', () => {
+  // Whether `steps` (a run of consecutive steps) go in two columns, split anywhere, each within `room`.
+  const fitsOnAPage = (h: number[], steps: number[], gap: number, room: number) => {
+    for (let s = 0; s <= steps.length; s++) {
+      if (stackHeight(h, steps.slice(0, s), gap) <= room && stackHeight(h, steps.slice(s), gap) <= room) return true;
+    }
+    return false;
+  };
+  it('puts the first step of the next page on this one when it fits in either column (Socrates, 1280x800)', () => {
+    // Measured: six steps, 175px under the intro; three in the left column come to 188.7px, so the page cannot be 3 + 3.
+    const h = [29.3, 55.7, 55.7, 29.3, 29.3, 55.7];
+    expect(packSteps(h, 24, 175, 219)).toEqual([{ left: [0, 1], right: [2, 3, 4] }, { left: [5], right: [] }]);
+    // With the tight gap all six fit on one page, ceil(n/2) to the left.
+    expect(packSteps(h, 16, 175, 219)).toEqual([{ left: [0, 1, 2], right: [3, 4, 5] }]);
+  });
+  it('holds for many heights, gaps and rooms: the first step of a page would not have fit on the one before', () => {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    for (let n = 0; n < 300; n++) {
+      const h = Array.from({ length: 1 + Math.floor(rnd() * 12) }, () => 20 + Math.floor(rnd() * 90));
+      const gap = [8, 16, 24][Math.floor(rnd() * 3)]!;
+      const first = 60 + Math.floor(rnd() * 200);
+      const room = first + Math.floor(rnd() * 80);
+      const pages = packSteps(h, gap, first, room);
+      expect(pages.flatMap((p) => [...p.left, ...p.right])).toEqual(h.map((_, i) => i));
+      pages.forEach((p, i) => {
+        const mine = [...p.left, ...p.right];
+        const r = i === 0 ? first : room;
+        if (mine.length > 0 && !(mine.length === 1 && (h[mine[0]!] ?? 0) > r)) {
+          expect(stackHeight(h, p.left, gap)).toBeLessThanOrEqual(r);
+          expect(stackHeight(h, p.right, gap)).toBeLessThanOrEqual(r);
+        }
+        const next = pages[i + 1]?.left[0] ?? pages[i + 1]?.right[0];
+        if (next !== undefined && mine.length > 0) expect(fitsOnAPage(h, [...mine, next], gap, r)).toBe(false);
+      });
+    }
+  });
+});
+
 describe('columnCount', () => {
   it('reads the number of columns off a multi-column box from its scroll width', () => {
     expect(columnCount(500, 238, 24)).toBe(2);
@@ -217,30 +253,6 @@ describe('subtitleOf', () => {
     expect(subtitleOf(card, 'The summary.')).toBe('The summary.');
     expect(subtitleOf({ ...card, subtitle: '  ' }, 'The summary.')).toBe('The summary.');
     expect(subtitleOf(undefined, 'The summary.')).toBe('The summary.');
-  });
-});
-
-describe('bandHeight', () => {
-  it('is the taller side, at least the minimum', () => {
-    expect(bandHeight(100, 120)).toBe(BAND_MIN);
-    expect(bandHeight(250, 200)).toBe(250);
-    expect(bandHeight(200, 300)).toBe(300);
-  });
-  it('stops at the maximum for Idea, which is cut there', () => {
-    expect(bandHeight(500, 200)).toBe(BAND_MAX);
-    expect(bandHeight(BAND_MAX, BAND_MAX)).toBe(BAND_MAX);
-  });
-  it('grows past the maximum for "With your agent", which is never cut', () => {
-    expect(bandHeight(200, 400)).toBe(400);
-    expect(bandHeight(900, 400)).toBe(400);
-    expect(bandHeight(0, 1000)).toBe(1000);
-  });
-  it('is cut short on a short window so the panel keeps its room, but never below "With your agent"', () => {
-    expect(bandHeight(340, 200, 260)).toBe(260);
-    expect(bandHeight(340, 200, 100)).toBe(200);
-    expect(bandHeight(340, 100, 100)).toBe(BAND_MIN);
-    expect(bandHeight(340, 300, 260)).toBe(300);
-    expect(bandHeight(200, 150, 260)).toBe(200);
   });
 });
 
@@ -309,16 +321,21 @@ describe('nextBreak', () => {
   it('has nothing to do when every paragraph is on one page', () => {
     expect(nextBreak([piece(0, 0, 0), piece(1, 0, 0), piece(2, 1, 1)])).toEqual({ at: null, stuck: 0 });
   });
-  it('moves a paragraph that runs over to the next page whole, to the start of the paragraph', () => {
-    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1)]);
+  it('moves a paragraph whose first sentence runs over to the next page whole, to the start of the paragraph', () => {
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1, { sentences: [sent(0, 1), sent(1, 1)] })]);
     expect(r.at).toEqual({ block: 1, sentence: 0 });
   });
   it('takes the heading over the paragraph with it', () => {
-    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 0, { label: true }), piece(2, 0, 1)]);
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 0, { label: true }), piece(2, 0, 1, { sentences: [sent(0, 1)] })]);
     expect(r.at).toEqual({ block: 1, sentence: 0 });
   });
+  it('cuts a paragraph that runs over before the sentence that crosses, so the sentences before it fill the page', () => {
+    // Not at the top of a page: its third sentence crosses into page 1, its first two stay on page 0.
+    const runs = piece(1, 0, 1, { sentences: [sent(0, 0), sent(0, 0), sent(0, 1), sent(1, 1)] });
+    expect(nextBreak([piece(0, 0, 0), runs]).at).toEqual({ block: 1, sentence: 2 });
+  });
   it('cuts a paragraph that is too long for one page before the sentence that crosses the page', () => {
-    // On its own page already (the one before ended earlier), 4 sentences: the third crosses into page 1.
+    // On its own page already (the one before ended earlier), 4 sentences: the third crosses into page 2.
     const long = piece(1, 1, 2, { sentences: [sent(1, 1), sent(1, 1), sent(1, 2), sent(2, 2)] });
     const r = nextBreak([piece(0, 0, 0), long]);
     expect(r.at).toEqual({ block: 1, sentence: 2 });
@@ -334,14 +351,14 @@ describe('nextBreak', () => {
   });
   it('counts a sentence longer than a page as stuck, and goes on to the next fault', () => {
     const huge = piece(0, 0, 2, { sentences: [sent(0, 2)] });
-    const run = piece(1, 2, 3);
+    const run = piece(1, 2, 3, { sentences: [sent(2, 3)] });
     const r = nextBreak([huge, run]);
     expect(r.stuck).toBe(1);
     expect(r.at).toEqual({ block: 1, sentence: 0 });
   });
   it('does not ask for a break it has already', () => {
     const have: PageBreak[] = [{ block: 1, sentence: 0, space: 10 }];
-    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1)], have);
+    const r = nextBreak([piece(0, 0, 0), piece(1, 0, 1, { sentences: [sent(0, 1)] })], have);
     expect(r).toEqual({ at: null, stuck: 1 });
   });
 });

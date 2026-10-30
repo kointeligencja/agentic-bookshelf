@@ -6,15 +6,17 @@ import { focusFx } from './FocusBook.tsx';
 
 /**
  * Restrained post: subtle SSAO for contact darkening, a gentle vignette, and depth of field that
- * only comes in while a book is pulled out.
+ * only comes in while a book is pulled out, and goes again as reading mode's walnut backdrop comes in: the backdrop is one flat
+ * colour, so there is nothing for the blur to do but gather the bright book into it, which showed as a halo and a row of stepped,
+ * dark blocks along the book's bottom edge (the bokeh kernel takes 64 widely spaced taps and a 16-tap maximum for the fill).
  */
 export function Effects() {
   const dof = useRef<DepthOfFieldEffect>(null);
   useFrame(() => {
     const d = dof.current;
     if (!d) return;
-    d.bokehScale = 5 * focusFx.amount;
-    d.target = focusFx.amount > 0.001 ? focusFx.position : null;
+    d.bokehScale = 5 * focusFx.amount * (1 - focusFx.read);
+    d.target = d.bokehScale > 0.001 ? focusFx.position : null;
   });
   return (
     <EffectComposer multisampling={4} enableNormalPass>

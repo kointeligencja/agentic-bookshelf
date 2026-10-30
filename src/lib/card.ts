@@ -122,10 +122,16 @@ export interface StepPage {
   right: number[];
 }
 
+/** The steps `from` to `to - 1` (indices). */
+const span = (from: number, to: number): number[] => Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i);
+
 /**
- * Cuts a method's steps into pages of two columns. Each page takes as many steps as fit, split ceil(k/2) left and the rest
- * right, in order. The first page has `first` px, the others `height` (the intro stands over the first); if not even one step
- * fits under a long intro, the first page is the intro alone. A step taller than a column still gets a page.
+ * Cuts a method's steps into pages of two columns, using the measured heights. A page takes as many steps as its two columns can
+ * hold in order: the left column the longest run that fits, the right column the longest run after it, so a step goes on the next
+ * page only when it would not fit under the last one on this page, whichever way the page is split. The k steps of a page are then
+ * split ceil(k/2) left and the rest right when both columns fit that way, else at the split with the shortest taller column.
+ * The first page has `first` px, the others `height` (the intro stands over the first); if not even one step fits under a long
+ * intro, the first page is the intro alone. A step taller than a column still gets a page of its own.
  */
 export function packSteps(heights: number[], gap: number, first: number, height = first): StepPage[] {
   const pages: StepPage[] = [];
@@ -137,18 +143,36 @@ export function packSteps(heights: number[], gap: number, first: number, height 
       pages.push({ left: [], right: [] });
       continue;
     }
-    const rest = heights.length - at;
-    let best = 1;
-    for (let k = 2; k <= rest; k++) {
-      const { left, right } = splitSteps(k);
-      const l = stackHeight(heights, left.map((i) => at + i), gap);
-      const r = stackHeight(heights, right.map((i) => at + i), gap);
-      if (Math.max(l, r) > room) break;
-      best = k;
+    // The longest run of steps from `from` that fits in a column.
+    const run = (from: number): number => {
+      let n = 0;
+      while (from + n < heights.length && stackHeight(heights, span(from, from + n + 1), gap) <= room) n++;
+      return n;
+    };
+    const nl = run(at);
+    if (nl === 0) {
+      pages.push({ left: [at], right: [] });
+      at += 1;
+      continue;
     }
-    const { left, right } = splitSteps(best);
-    pages.push({ left: left.map((i) => at + i), right: right.map((i) => at + i) });
-    at += best;
+    const k = nl + run(at + nl);
+    const cols = (s: number) => [stackHeight(heights, span(at, at + s), gap), stackHeight(heights, span(at + s, at + k), gap)] as const;
+    const fits = (s: number) => cols(s).every((h) => h <= room);
+    let split = Math.ceil(k / 2);
+    if (!fits(split)) {
+      // The feasible split with the shortest taller column (the later one on a tie).
+      let best = Infinity;
+      for (let s = 1; s <= nl; s++) {
+        if (!fits(s)) continue;
+        const tall = Math.max(...cols(s));
+        if (tall <= best) {
+          best = tall;
+          split = s;
+        }
+      }
+    }
+    pages.push({ left: span(at, at + split), right: span(at + split, at + k) });
+    at += k;
   }
   return pages;
 }
@@ -160,26 +184,6 @@ export function columnCount(scrollWidth: number, col: number, gap: number): numb
 
 /** Pages of two columns that `columns` columns come to. */
 export const pagesOf = (columns: number): number => Math.max(1, Math.ceil(columns / 2));
-
-// ---------------------------------------------------------------------------------------------------------------
-// The band
-
-/** The band "Idea | With your agent" is at least this tall, px. */
-export const BAND_MIN = 180;
-/** The Idea side is cut (and faded) at this height; "With your agent" never is. */
-export const BAND_MAX = 340;
-
-/** The tab panel keeps at least this much height, px: room for a heading and a quote with its source. */
-export const PANEL_MIN = 150;
-
-/**
- * The band's height from the height each side needs: the taller of the two, at least BAND_MIN, and at most BAND_MAX unless the
- * "With your agent" side needs more, since that is never cut: then the band grows to fit it. Idea text taller than the band is cut.
- * `room` is the height the band can have while the tab panel keeps PANEL_MIN (on a short window): Idea is cut there, "With your agent" is not.
- */
-export function bandHeight(idea: number, apply: number, room = Infinity): number {
-  return Math.max(BAND_MIN, apply, Math.min(BAND_MAX, idea, room));
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Sentences
@@ -256,10 +260,11 @@ export interface PieceFit extends SentenceFit {
 
 /**
  * Of running text laid out in columns, two to a page, finds the next place to start a page so that no page ends inside a
- * sentence. Only the first fault is looked at (the text after it moves when it is fixed), and the layout is measured again:
- * - a paragraph that begins on one page and ends on another moves whole to the next page (with a heading that stands over it);
- * - one that does not fit a page of its own is cut before the first sentence that crosses a page;
- * - a sentence longer than a page cannot be helped; those are counted in `stuck`.
+ * sentence and none ends with room for the next sentence. Only the first fault is looked at (the text after it moves when it is
+ * fixed), and the layout is measured again. A paragraph that runs from one page to the next is cut before the first sentence that
+ * crosses the page, so the sentences before it fill the page; if that is its first sentence, the paragraph (with the heading
+ * that stands over it) moves to the next page. A paragraph whose pages meet between two sentences is left as it is. A sentence
+ * longer than a page cannot be helped; those are counted in `stuck`.
  * Nothing to fix: `at` is null.
  */
 export function nextBreak(pieces: readonly PieceFit[], have: readonly PageBreak[] = []): { at: { block: number; sentence: number } | null; stuck: number } {
@@ -267,24 +272,23 @@ export function nextBreak(pieces: readonly PieceFit[], have: readonly PageBreak[
   const known = (b: { block: number; sentence: number }) => have.some((h) => h.block === b.block && h.sentence === b.sentence);
   for (let j = 0; j < pieces.length; j++) {
     const p = pieces[j]!;
-    if (p.start === p.end) continue;
-    let g = j;
-    while (g > 0 && pieces[g - 1]!.label) g--;
-    const top = g === 0 || pieces[g - 1]!.end < pieces[g]!.start;
-    if (!top) {
-      const q = pieces[g]!;
-      const at = { block: q.block, sentence: q.first };
+    if (p.start === p.end || p.label) continue;
+    // The first sentence that crosses a page (none: the pages meet between two sentences).
+    const i = p.sentences.findIndex((x) => x.start !== x.end);
+    if (i > 0) {
+      const at = { block: p.block, sentence: p.first + i };
       if (!known(at)) return { at, stuck };
       stuck++;
-    } else if (!p.label) {
-      // On a page of its own already: cut it before the first sentence that crosses a page (none: it breaks between two sentences).
-      const i = p.sentences.findIndex((x) => x.start !== x.end);
-      if (i === 0) stuck++;
-      else if (i > 0) {
-        const at = { block: p.block, sentence: p.first + i };
-        if (!known(at)) return { at, stuck };
-        stuck++;
-      }
+    } else if (i === 0 || p.sentences.length === 0) {
+      // The paragraph's first sentence crosses (or nothing is known of its sentences): move it, and the heading over it, to the next page,
+      // unless it already starts one.
+      let g = j;
+      while (g > 0 && pieces[g - 1]!.label) g--;
+      const top = g === 0 || pieces[g - 1]!.end < pieces[g]!.start;
+      const q = pieces[g]!;
+      const at = { block: q.block, sentence: q.first };
+      if (!top && !known(at)) return { at, stuck };
+      stuck++;
     }
   }
   return { at: null, stuck };

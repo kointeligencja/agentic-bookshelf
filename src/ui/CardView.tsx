@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentTy
 import { PAPER, readableOn, tintOf } from '../lib/accent.ts';
 import {
   band,
-  bandHeight,
   columnCount,
   defaultTab,
   limitsContent,
@@ -10,7 +9,6 @@ import {
   packColumn,
   packSteps,
   pagesOf,
-  PANEL_MIN,
   paragraphs,
   quotesContent,
   splitSentences,
@@ -32,13 +30,10 @@ import type { AgenticCard, AgenticConcept, AgenticThesis } from '../types.ts';
 
 /** Space between two columns, px (`--s3`). */
 const GAP = 24;
-/** Space between two steps, px (`--s3`); between two quotes (`--s2`). */
-const STEP_GAP = 24;
+/** Space between two paragraphs in a flow tab, px (`--s2`). */
 const ITEM_GAP = 16;
-/** A column's heading and the space under it, px (`--label-h`: 24px line + 4px). */
-const LABEL_H = 28;
-/** Space between a method's intro and its steps, px (`--s2`). */
-const HEAD_GAP = 16;
+/** The space between two method steps when they would not all fit on one page at the usual one (`--s3`), px (`--s2`). */
+const STEP_GAP_TIGHT = 16;
 /** Below this viewport width the page is one column and scrolls: no fixed regions, no pages. */
 const NARROW = '(max-width: 899px)';
 
@@ -70,17 +65,6 @@ function useBox(ref: RefObject<HTMLElement | null>): { w: number; h: number } {
     return () => ro.disconnect();
   }, [ref]);
   return box;
-}
-
-/** The window's inner height, kept current. */
-function useViewportHeight(): number {
-  const [h, setH] = useState(() => window.innerHeight);
-  useEffect(() => {
-    const on = () => setH(window.innerHeight);
-    window.addEventListener('resize', on);
-    return () => window.removeEventListener('resize', on);
-  }, []);
-  return h;
 }
 
 /** Counts up when the web fonts arrive, since the text moves a little then and has to be measured again. */
@@ -157,11 +141,13 @@ function FlowTab({ narrow, page, onPages, blocks }: { narrow: boolean; page: num
     // Balanced columns: it fits when they stay two, and there is nothing to cut.
     if (!breaks.length) {
       m.style.columnFill = 'balance';
+      m.classList.remove('paged');
       const n = columnCount(m.scrollWidth, col, GAP);
       if (n <= 2) return done(false, n);
     }
     // Otherwise the columns fill one after the other.
     m.style.columnFill = 'auto';
+    m.classList.add('paged');
     const mBox = m.getBoundingClientRect();
     const colAt = (r: DOMRect) => Math.max(0, Math.floor((r.left - mBox.left + 1) / (col + GAP)));
     const els = Array.from(m.querySelectorAll<HTMLElement>('[data-piece]'));
@@ -204,7 +190,7 @@ function FlowTab({ narrow, page, onPages, blocks }: { narrow: boolean; page: num
   const content = flowContent(blocks, sentences, breaks);
   return (
     <div className="tb" ref={region}>
-      <div className="mc" style={style}>
+      <div className={`mc${layout.paged ? ' paged' : ''}`} style={style}>
         {content}
       </div>
       {!narrow && (
@@ -311,7 +297,8 @@ function MethodTab({ card, narrow, page, onPages }: PanelProps) {
   const meas = useRef<HTMLDivElement>(null);
   const box = useBox(region);
   const tick = useFonts();
-  const [pages, setPages] = useState<StepPage[]>([]);
+  const [plan, setPlan] = useState<{ pages: StepPage[]; tight: boolean }>({ pages: [], tight: false });
+  const pages = plan.pages;
 
   const head = (
     <>
@@ -325,14 +312,23 @@ function MethodTab({ card, narrow, page, onPages }: PanelProps) {
   );
   const hasHead = !!m?.source || !!m?.intro;
 
+  // The steps are packed from what is measured: the region's height, the height of the intro and the gap under it, and each step's
+  // height in a column. If they do not all fit on one page at the usual gap between steps but do at the tight one, that is used.
   useLayoutEffect(() => {
     const root = meas.current;
     if (narrow || !root || !box.w || !box.h) return;
     const headH = root.querySelector('.m-head')?.getBoundingClientRect().height ?? 0;
     const heights = heightsOf(root.querySelector('.m-steps'));
-    const first = box.h - (headH ? headH + HEAD_GAP : 0);
-    setPages(packSteps(heights, STEP_GAP, first, box.h));
-  }, [narrow, box.w, box.h, tick, steps.length]);
+    const first = box.h - (headH ? headH + (parseFloat(getComputedStyle(region.current!).rowGap) || 0) : 0);
+    const gap = parseFloat(getComputedStyle(root.querySelector('.m-steps')!).rowGap) || 0;
+    let pages = packSteps(heights, gap, first, box.h);
+    let tight = false;
+    if (pages.length > 1) {
+      const t = packSteps(heights, STEP_GAP_TIGHT, first, box.h);
+      if (t.length === 1) [pages, tight] = [t, true];
+    }
+    setPlan((p) => (p.tight === tight && JSON.stringify(p.pages) === JSON.stringify(pages) ? p : { pages, tight }));
+  }, [narrow, box.w, box.h, tick, steps.length, hasHead]);
 
   const count = Math.max(1, pages.length);
   useEffect(() => onPages(narrow ? 1 : count), [narrow, count, onPages]);
@@ -348,7 +344,7 @@ function MethodTab({ card, narrow, page, onPages }: PanelProps) {
   const shown = pages[at] ?? (narrow ? undefined : { left: [], right: [] });
   const whole = splitSteps(steps.length);
   return (
-    <div className="tb method" ref={region}>
+    <div className={`tb method${plan.tight && !narrow ? ' tight' : ''}`} ref={region}>
       {(narrow || at === 0) && hasHead && <div className="m-head">{head}</div>}
       <div className={`m-cols${!narrow && shown && shown.right.length === 0 ? ' one' : ''}`}>{narrow ? col(whole.left.concat(whole.right)) : (
         <>
@@ -384,8 +380,12 @@ function QuotesTab({ card, narrow, page, onPages, onSeek }: PanelProps) {
   useLayoutEffect(() => {
     const root = meas.current;
     if (narrow || !root || !box.w || !box.h) return;
-    const room = box.h - LABEL_H;
-    setCut({ q: packColumn(heightsOf(root.querySelector('.q-quotes')), ITEM_GAP, room), l: packColumn(heightsOf(root.querySelector('.q-lines')), ITEM_GAP, room) });
+    // The room is the region less what stands over the list (its heading and the space under it), as laid out; the gap is the list's own.
+    const rect = region.current!.getBoundingClientRect();
+    const list = region.current!.querySelector('.q-col .label + .q-list');
+    const room = box.h - (list ? list.getBoundingClientRect().top - rect.top : 0);
+    const gap = parseFloat(getComputedStyle(root.querySelector('.q-list')!).rowGap) || 0;
+    setCut({ q: packColumn(heightsOf(root.querySelector('.q-quotes')), gap, room), l: packColumn(heightsOf(root.querySelector('.q-lines')), gap, room) });
   }, [narrow, box.w, box.h, tick, quotes.length, lines.length]);
 
   const count = Math.max(1, cut.q.length, cut.l.length);
@@ -395,7 +395,7 @@ function QuotesTab({ card, narrow, page, onPages, onSeek }: PanelProps) {
   const quote = (i: number) => {
     const q = quotes[i];
     return q ? (
-      <li className="q-quote" key={i}>
+      <li className="q-quote" key={i} data-i={i}>
         <p>“{q.text}”</p>
         <small>
           {q.source}
@@ -407,7 +407,7 @@ function QuotesTab({ card, narrow, page, onPages, onSeek }: PanelProps) {
   const line = (i: number, measure?: boolean) => {
     const l = lines[i];
     return l ? (
-      <li className="q-line" key={i}>
+      <li className="q-line" key={i} data-i={i}>
         <p>“{l.text}”</p>
         <small>
           {l.speaker}{' '}
@@ -454,49 +454,15 @@ const PANELS: Record<TabId, ComponentType<PanelProps>> = {
 // ---------------------------------------------------------------------------------------------------------------
 // The band
 
-/** The height a band side's content needs, px: from its top to the bottom of its last child and its own bottom padding. */
-function needOf(el: Element | null): number {
-  const last = el?.lastElementChild;
-  if (!el || !last) return 0;
-  return Math.ceil(last.getBoundingClientRect().bottom - el.getBoundingClientRect().top + parseFloat(getComputedStyle(el).paddingBottom));
-}
-
 /**
- * Idea (the first paragraph) on the left, "With your agent" on the right, half the width each. The band is as tall as the taller of
- * the two (180px at least, 340px at most; see bandHeight), and "With your agent" is never cut: if it needs more than 340px the
- * band grows to hold it. The Idea side, if it needs more than the band has, is cut and faded, and the card gets
- * `data-band-overflow="idea"` for the audit.
+ * Idea (the first paragraph) on the left, "With your agent" on the right, half the width each. Nothing in it is cut or faded: the band
+ * is as tall as the taller of the two texts (180px at least), and the tab panel gets what is left.
  */
-function Band({ card, narrow, onOverflow }: { card: AgenticCard; narrow: boolean; onOverflow: (idea: boolean) => void }) {
+function Band({ card }: { card: AgenticCard }) {
   const { idea, apply } = band(card);
-  const root = useRef<HTMLDivElement>(null);
-  const tick = useFonts();
-  const { w } = useBox(root);
-  const vh = useViewportHeight();
-  const [height, setHeight] = useState<number | undefined>(undefined);
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el || narrow) {
-      setHeight(undefined);
-      return onOverflow(false);
-    }
-    const need = { idea: needOf(el.querySelector('.b-idea')), apply: needOf(el.querySelector('.b-apply')) };
-    // What the band can have while the tab panel keeps PANEL_MIN: the card's height less its other parts and the gaps between them.
-    const card = el.closest('.card');
-    let room = Infinity;
-    if (card) {
-      const gap = parseFloat(getComputedStyle(card).rowGap) || 0;
-      const rest = Array.from(card.children).filter((c) => c !== el && !c.classList.contains('c-panel'));
-      const used = rest.reduce((sum, c) => sum + c.getBoundingClientRect().height, 0) + gap * (rest.length + 1) + 2 * 8;
-      room = card.clientHeight - used - PANEL_MIN;
-    }
-    const h = bandHeight(need.idea, need.apply, room);
-    setHeight(h);
-    onOverflow(need.idea > h + 1);
-  }, [narrow, w, vh, tick, idea, apply?.text, onOverflow]);
   if (!idea && !apply) return null;
   return (
-    <section className="band" ref={root} style={height ? { height } : undefined}>
+    <section className="band">
       {idea && (
         <div className="b-idea">
           <div className="label">Idea</div>
@@ -559,7 +525,6 @@ export function CardView({
   const tab = picked && tabs.includes(picked) ? picked : defaultTab(tabs);
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(1);
-  const [overIdea, setOverIdea] = useState(false);
   // The "With your agent" box is a light tint of the accent; the accent is darkened until it reads on that tint (and so on the paper).
   const tint = useMemo(() => tintOf(book.accent), [book.accent]);
   const accent = useMemo(() => readableOn(readableOn(book.accent, tint), PAPER), [book.accent, tint]);
@@ -571,7 +536,6 @@ export function CardView({
     setPages(1);
   };
   const onPages = useRef((n: number) => setPages((p) => (p === n ? p : n))).current;
-  const onOverflow = useRef((idea: boolean) => setOverIdea(idea)).current;
   const last = Math.max(0, pages - 1);
   const at = Math.min(page, last);
 
@@ -598,7 +562,7 @@ export function CardView({
   const Panel = tab ? PANELS[tab] : undefined;
   const style = { '--accent': accent, '--accent-tint': tint } as CSSProperties;
   return (
-    <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined} data-band-overflow={overIdea ? 'idea' : undefined}>
+    <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined}>
       <header className="c-head">
         <div className="c-titles">
           <div className="c-by">
@@ -625,7 +589,7 @@ export function CardView({
       </header>
       {card ? (
         <>
-          <Band card={card} narrow={narrow} onOverflow={onOverflow} />
+          <Band card={card} />
           {tabs.length > 0 && (
             <div className="c-tabs">
               <div role="tablist" aria-label="Sections of the card">
