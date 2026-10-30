@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { stepTo } from '../lib/board.ts';
+import type { SectionId } from '../lib/card.ts';
 import { useStore } from '../store.ts';
 import type { Agentic, Library } from '../types.ts';
 import { CardView } from './CardView.tsx';
@@ -18,6 +19,8 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
   const book = focused ? library.books.find((b) => b.id === focused.id) : undefined;
   const visible = !!book && !focused?.closing;
   const [menu, setMenu] = useState(false);
+  // The section opened in place of a card's body, if any, and the concept it belongs to.
+  const [more, setMore] = useState<{ concept: string; sec: SectionId } | null>(null);
 
   // This book's concepts, those of the active theme first.
   const list = useMemo(() => {
@@ -30,16 +33,34 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
 
   // The list closes with the book and when the book changes.
   useEffect(() => setMenu(false), [book?.id, visible]);
+  // A section opened in place goes back to its card when the concept or the book changes.
+  useEffect(() => setMore(null), [current?.id, book?.id, visible]);
 
   const menuOpen = useRef(false);
   menuOpen.current = menu;
+  const expanded = more && more.concept === current?.id ? more.sec : null;
+  const expandedRef = useRef<SectionId | null>(null);
+  expandedRef.current = expanded;
+
+  // Only for the card audit (scripts/card-audit.ts): opens a section without needing its link on screen.
+  useEffect(() => {
+    if (!import.meta.env.DEV || !current) return;
+    const w = window as unknown as { __more?: (sec: SectionId | null) => void };
+    w.__more = (sec) => setMore(sec ? { concept: current.id, sec } : null);
+    return () => {
+      delete w.__more;
+    };
+  }, [current]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const s = useStore.getState();
       if (e.key === 'Escape') {
-        if (menuOpen.current) setMenu(false);
-        else if (s.boardOpen) s.setBoardOpen(false);
+        // The board covers everything, so it goes first. Then, innermost first: a section opened in place, the
+        // concept list, the book.
+        if (s.boardOpen) s.setBoardOpen(false);
+        else if (expandedRef.current) setMore(null);
+        else if (menuOpen.current) setMenu(false);
         else s.close();
       } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && s.focused && !s.boardOpen && (e.target as HTMLElement | null)?.tagName !== 'INPUT') {
         const next = stepTo(list, s.concept ?? list[0]?.id, e.key === 'ArrowDown' ? 1 : -1);
@@ -122,16 +143,22 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
                 <CardView
                   key={current.id}
                   concept={current}
+                  concepts={data.concepts}
+                  bookId={book.id}
                   card={cards?.[current.id]}
                   themes={data.theses}
                   activeTheme={theme}
                   pinned={pins.includes(current.id)}
+                  expanded={expanded}
+                  onMore={(sec) => setMore({ concept: current.id, sec })}
+                  onBack={() => setMore(null)}
                   onPin={() => togglePin(current.id)}
                   onTheme={setTheme}
                   onSeek={(s) => {
                     close();
                     useStore.getState().seek(s);
                   }}
+                  onOpen={(id) => useStore.getState().openConcept(id)}
                 />
               )}
             </>

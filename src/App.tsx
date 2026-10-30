@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { categorySpot, computeLayout, type Layout } from './scene/layout.ts';
 import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
-import { cardWidth, panelWidth } from './lib/panel.ts';
+import { cardWidth, isReading, panelWidth, readingPanel } from './lib/panel.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import { CategoryNav } from './ui/CategoryNav.tsx';
 import { Board, BoardButton } from './ui/Board.tsx';
@@ -36,6 +36,9 @@ export function App() {
   const agentic = useStore((s) => s.agentic);
   const sort = useStore((s) => s.sort);
   const view = useStore((s) => s.view);
+  const [wide, setWide] = useState(() => isReading(window.innerWidth));
+  // Reading mode: a book is pulled out on a screen wide enough for the card beside it. The left column fades out.
+  const reading = useStore((s) => !!s.focused && !s.focused.closing) && wide;
   const [ready, setReady] = useState(false);
   const layout = useMemo(
     () => (library ? computeLayout(library.books, library.categories, sort, view) : null),
@@ -72,6 +75,10 @@ export function App() {
       const root = document.documentElement.style;
       root.setProperty('--panel-w', `${panelWidth(window.innerWidth)}px`);
       root.setProperty('--card-w', `${cardWidth(window.innerWidth)}px`);
+      const r = readingPanel(window.innerWidth);
+      root.setProperty('--read-left', `${r.left}px`);
+      root.setProperty('--strip-w', `${r.strip}px`);
+      setWide(isReading(window.innerWidth));
     };
     set();
     window.addEventListener('resize', set);
@@ -100,7 +107,7 @@ export function App() {
   }, [ready, library, layout]);
 
   return (
-    <main className={`app${ready ? ' ready' : ''}`}>
+    <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}`}>
       {library && layout && <Scene library={library} layout={layout} onReady={onReady} />}
       {library && layout && <CategoryNav layout={layout} library={library} />}
       {agentic && <ThemePanel data={agentic} />}

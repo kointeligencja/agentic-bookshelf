@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bookCounts, clock, litBooks, mapIds, themeAtTime, themeStart, timelineSegments } from '../src/lib/agentic.ts';
-import { cardWidth, panelWidth } from '../src/lib/panel.ts';
+import { cardWidth, isReading, panelWidth, readingPanel, stripWidth } from '../src/lib/panel.ts';
 import type { Agentic, AgenticThesis } from '../src/types.ts';
 
 const theses: AgenticThesis[] = [
@@ -93,9 +93,46 @@ describe('panelWidth', () => {
 });
 
 describe('cardWidth', () => {
-  it('is 55% of the space right of the left panel', () => {
-    expect(cardWidth(1280)).toBe(Math.round((1280 - 461) * 0.55));
-    expect(cardWidth(1440)).toBe(Math.round((1440 - 500) * 0.55));
+  it('is 55% of the space right of the left panel on a big screen', () => {
+    expect(cardWidth(1920)).toBe(Math.round((1920 - 500) * 0.55));
+    expect(cardWidth(2560)).toBe(Math.round((2560 - 500) * 0.55));
+  });
+  it('is at least 600 on a laptop screen, so a card gets two columns', () => {
+    expect(cardWidth(1280)).toBe(600);
+    expect(cardWidth(1440)).toBe(600);
+    expect(cardWidth(1512)).toBe(600);
+  });
+  it('leaves 200px for the book beside the left panel, down to 1100px wide', () => {
+    for (const w of [1100, 1200, 1280, 1440, 1600, 1920]) expect(w - panelWidth(w) - cardWidth(w), `${w}`).toBeGreaterThanOrEqual(200);
+    expect(cardWidth(1100)).toBe(704 - 200);
+  });
+  it('is the old 55% on a narrow screen', () => {
+    expect(cardWidth(800)).toBe(Math.round((800 - 360) * 0.55));
+  });
+});
+
+describe('reading mode', () => {
+  it('starts at 900px; narrower screens keep the single scrolling column', () => {
+    expect(isReading(900)).toBe(true);
+    expect(isReading(899)).toBe(false);
+  });
+  it('holds the book in a strip of 180 to 220px', () => {
+    expect(stripWidth(900)).toBe(180);
+    expect(stripWidth(1280)).toBe(192);
+    expect(stripWidth(1440)).toBe(216);
+    expect(stripWidth(1920)).toBe(220);
+    for (const w of [900, 1100, 1280, 1440, 1920, 2560]) expect(stripWidth(w)).toBeGreaterThanOrEqual(180);
+  });
+  it('puts the card 32px right of the strip and 24px from the right edge', () => {
+    const r = readingPanel(1280);
+    expect(r.left).toBe(24 + 192 + 32);
+    expect(r.left + r.width).toBe(1280 - 24);
+    expect(r.centre).toBe(24 + 96);
+  });
+  it('gives the card more room than the 2D layout on laptop screens', () => {
+    expect(readingPanel(1280).width).toBeGreaterThan(cardWidth(1280) + 350);
+    expect(readingPanel(1440).width).toBeGreaterThan(cardWidth(1440) + 450);
+    expect(readingPanel(900).width).toBeGreaterThanOrEqual(600);
   });
 });
 

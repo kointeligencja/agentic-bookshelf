@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { cardWidth, panelWidth } from '../lib/panel.ts';
+import { cardWidth, isReading, panelWidth, readingPanel } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
 
@@ -52,7 +52,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
   const homeD = useRef(DEFAULT_DISTANCE);
   const { camera, gl, invalidate, size } = useThree();
   const pointer = useRef(new THREE.Vector2());
-  const current = useRef<{ x: number; d: number; y: number; px: number; py: number; card: number } | null>(null);
+  const current = useRef<{ x: number; d: number; y: number; px: number; py: number; cx: number } | null>(null);
   const pose = useRef({ eye: new THREE.Vector3(), look: new THREE.Vector3() });
 
   useEffect(() => {
@@ -189,17 +189,19 @@ export function CameraRig({ layout }: { layout: Layout }) {
     const s = useStore.getState();
     const { width, height } = size;
     const ty = s.targetY === null ? lookHeight : Math.min(yRange[1], Math.max(yRange[0], s.targetY));
-    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0, card: 0 });
+    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0, cx: (panelWidth(width) + width) / 2 });
     const k = 1 - Math.exp(-Math.min(dt, 0.1) * 5);
     const kp = 1 - Math.exp(-Math.min(dt, 0.1) * 3);
     c.x += (s.targetX - c.x) * k;
     c.d += (s.distance - c.d) * k;
     c.y += (ty - c.y) * k;
     // The left panel takes the left of the screen, and a pulled-out book's panel the right: shift the picture
-    // so the scene is centred in the space between them.
-    const cardTarget = s.focused && !s.focused.closing ? cardWidth(width) : 0;
-    c.card += (cardTarget - c.card) * k;
-    if (camera instanceof THREE.PerspectiveCamera) camera.setViewOffset(width, height, -(panelWidth(width) - c.card) / 2, 0, width, height);
+    // so the scene is centred in the space between them. In reading mode the left column is gone and the book is
+    // held in a strip at the left edge, so the middle of the picture goes there.
+    const out = !!s.focused && !s.focused.closing;
+    const cxTarget = out && isReading(width) ? readingPanel(width).centre : (panelWidth(width) + width - (out ? cardWidth(width) : 0)) / 2;
+    c.cx += (cxTarget - c.cx) * k;
+    if (camera instanceof THREE.PerspectiveCamera) camera.setViewOffset(width, height, width / 2 - c.cx, 0, width, height);
     const still = s.focused ? 0.25 : 1;
     const px = pointer.current.x * 45 * still;
     const py = -pointer.current.y * 30 * still;
@@ -209,7 +211,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
     camera.position.set(eye.x + c.px, eye.y + c.py, eye.z);
     camera.lookAt(look);
     const moving =
-      Math.abs(s.targetX - c.x) > 0.3 || Math.abs(s.distance - c.d) > 0.3 || Math.abs(ty - c.y) > 0.3 || Math.abs(px - c.px) > 0.2 || Math.abs(py - c.py) > 0.2 || Math.abs(cardTarget - c.card) > 0.5;
+      Math.abs(s.targetX - c.x) > 0.3 || Math.abs(s.distance - c.d) > 0.3 || Math.abs(ty - c.y) > 0.3 || Math.abs(px - c.px) > 0.2 || Math.abs(py - c.py) > 0.2 || Math.abs(cxTarget - c.cx) > 0.5;
     if (moving) invalidate();
   });
 

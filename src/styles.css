@@ -206,6 +206,14 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .book-panel header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex: none; }
 .book-panel h2 { font: 500 clamp(19px, 2.8vh, 24px)/1.12 var(--serif); margin: 0; }
 .book-panel .by { font: 400 12.5px/1.3 var(--sans); color: var(--muted); margin-top: 2px; }
+/* Reading mode (a book is pulled out, 900px and wider): the left column fades out, the book is held in a strip at the left edge
+   and the card takes the rest of the width. The video stays in the page (hidden, not removed) so it keeps playing. */
+:root { --s4: 32px; --read-left: 248px; --strip-w: 192px; }
+.wall { transition: opacity 200ms ease, visibility 0s; }
+.app.reading .wall { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 200ms ease, visibility 0s 200ms; }
+.app.reading .wall > * { pointer-events: none; }
+.app.reading .credit { max-width: var(--strip-w); }
+.app.reading .book-panel { left: var(--read-left); right: 24px; bottom: 24px; width: auto; }
 .pill.icon { padding: 9px 11px; flex: none; }
 /* One line over the card: ‹ concept ▾ 1 / 10 ›. The list opens under it as a popover. */
 .cnav { position: relative; display: flex; align-items: center; gap: 4px; flex: none; margin-top: 4px; }
@@ -231,31 +239,46 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .clist button:hover { background: rgba(43, 38, 32, 0.05); }
 .clist button.sel { background: rgba(160, 125, 60, 0.15); }
 .clist button.inactive { color: var(--muted); }
-.clist button:focus-visible, .c-tabs button:focus-visible, .c-pager button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .tags { display: flex; gap: 3px; flex: none; }
 .tag { font: 600 9.5px/1 var(--sans); font-style: normal; padding: 3px 5px; border-radius: 4px; background: rgba(43, 38, 32, 0.08); color: #5a5046; }
 .tag.hot { background: #f2c66d; color: var(--ink); }
 
+/* A concept card is one screen: header, then a body that is a lead, two columns and, if room is left, "Read next".
+   Heights are measured in a hidden copy (.c-measure-wrap), so spacing is padding on the blocks and nothing scrolls. */
 .card { flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px; }
-.c-chips { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; flex: none; }
+.c-chips { display: flex; gap: 4px; flex-wrap: wrap; flex: none; }
 .theme.mini { min-height: 0; padding: 3px 8px 3px 4px; gap: 6px; min-width: 0; flex: 0 1 auto; }
-.theme.mini .k { width: 18px; height: 18px; font-size: 10px; }
-.theme.mini .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.theme.mini .k { width: 18px; height: 18px; font-size: 10px; flex: none; }
+.theme.mini .t { line-height: 1.2; }
 .c-name { font: 500 clamp(19px, 2.9vh, 24px)/1.12 var(--serif); margin: 6px 0 2px; flex: none; }
 .c-books { font: 400 12px/1.35 var(--sans); color: var(--muted); flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .c-books em { font: italic 13px var(--serif); color: var(--ink); }
-.c-tabs { display: flex; gap: 0; margin: 8px 0 0; border-bottom: 1px solid var(--line); flex: none; }
-.c-tabs button { border: 0; background: none; cursor: pointer; font: 500 11.5px/1 var(--sans); color: var(--muted); padding: 7px 8px 8px; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
-.c-tabs button.on { color: var(--ink); border-bottom-color: #a07d3c; }
-/* A fixed-height page. Blocks are measured in .c-measure, a hidden copy, and flowed into pages; nothing scrolls. */
-.c-content { flex: 1; min-height: 0; overflow: hidden; position: relative; }
-.c-content > .blk:first-child { padding-top: 6px; }
-.c-measure { position: absolute; left: 0; top: 0; width: 100%; visibility: hidden; pointer-events: none; }
+.clist button:focus-visible, .c-pager button:focus-visible, .more:focus-visible, .back:focus-visible, .c-nrow:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.c-body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; outline: none; }
+/* Narrow screens: one column, everything in it, and the body scrolls. */
+.c-body.scroll { overflow-y: auto; }
+.c-measure-wrap { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+.c-measure { position: absolute; left: 0; top: 0; }
+.c-probe i { position: absolute; white-space: nowrap; font: normal 400 13px var(--sans); }
+
+/* The lead: the first quote, large; or the summary. */
+.c-lead { flex: none; max-width: 28em; padding: 8px 0 6px; font: italic 400 20px/1.3 var(--serif); }
+.c-lead p { margin: 0; }
+.c-lead.quote p { padding-left: 12px; border-left: 2px solid #a07d3c; }
+.c-lead small { display: block; margin-top: 4px; font: normal 400 11px/1.3 var(--sans); color: var(--muted); }
+.c-lead.quote small { padding-left: 14px; }
+
+.c-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--n, 1), var(--colw, 100%)); grid-template-rows: minmax(0, 1fr); column-gap: 24px; justify-content: start; overflow: hidden; }
+.c-col { min-width: 0; min-height: 0; overflow: hidden; }
+.c-col > .blk:first-child { padding-top: 0; }
+.c-body.scroll .c-cols { display: block; flex: none; overflow: visible; }
+.c-body.scroll .c-col { overflow: visible; }
+.c-body.scroll .c-lead { padding-top: 6px; }
 .blk { display: flow-root; padding-top: 10px; }
 .blk.cont { padding-top: 4px; }
 .blk p { margin: 0; }
-.c-sum { font: 400 15.5px/1.4 var(--serif); }
-.c-body { font: 400 13px/1.48 var(--sans); }
+.c-text { font: 400 13px/1.46 var(--sans); }
 .c-sub { margin: 0 0 3px; }
 .c-sub em { font: italic 12px var(--serif); text-transform: none; letter-spacing: 0; }
 .c-step { display: flex; gap: 10px; font: 400 13px/1.45 var(--sans); }
@@ -264,15 +287,41 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .c-quote small { display: block; font: 400 11px/1.3 var(--sans); font-style: normal; color: var(--muted); margin-top: 3px; }
 .c-conv { font: italic 14px/1.4 var(--serif); }
 .c-conv small { font: 400 11px var(--sans); font-style: normal; color: var(--muted); }
-.c-try { background: #f4efe6; border-left: 3px solid #a07d3c; padding: 9px 12px; border-radius: 0 6px 6px 0; font: 400 13px/1.45 var(--sans); }
+.c-try { background: #f4efe6; border-left: 3px solid #a07d3c; padding: 8px 12px 9px; border-radius: 0 6px 6px 0; font: 400 13px/1.45 var(--sans); }
 .c-try .label { margin-bottom: 5px; color: #8a6a2c; }
+.c-try .label em { font: italic 12px var(--serif); text-transform: none; letter-spacing: 0; }
+/* "More ›" links: they end a cut block and open the whole section in place. */
+.more { margin: 0; padding: 0; border: 0; background: none; cursor: pointer; font: 500 12px/1.2 var(--sans); color: #8a6a2c; text-decoration: underline; text-decoration-color: rgba(138, 106, 44, 0.4); text-underline-offset: 3px; }
+.more:hover:not(:disabled) { text-decoration-color: currentColor; }
+.more:disabled { cursor: default; }
+.c-links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .wip { font: 400 12.5px/1.45 var(--sans); color: var(--muted); padding: 10px 12px; border: 1px dashed rgba(43, 38, 32, 0.2); border-radius: 6px; margin: 8px 0 0; }
+
+/* One section in full, in place of the body. */
+.c-xhead { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 0 8px; }
+.back { flex: none; border: 0; border-radius: 999px; padding: 6px 12px 6px 9px; background: rgba(43, 38, 32, 0.07); color: var(--ink); font: 500 12px/1 var(--sans); cursor: pointer; }
+.back:hover { background: rgba(43, 38, 32, 0.12); }
+.c-xhead h4 { margin: 0; font: 500 18px/1.15 var(--serif); outline: none; }
+.c-xhead .c-pager { margin-left: auto; }
+
+/* A card whose skeleton does not fit (listed by scripts/card-audit.ts, to be shortened in the data) is clipped; the fade says so. */
+.card[data-overflow] .c-col { -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
+
+/* Read next: under the columns, when there is room for at least one row. */
+.c-next { flex: none; border-top: 1px solid var(--line); padding-top: 7px; }
+.c-next .label { margin-bottom: 2px; }
+.c-nrow { display: flex; align-items: baseline; gap: 10px; width: 100%; min-width: 0; padding: 3px 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.c-nrow .nm { flex: none; font: 500 15px/1.25 var(--serif); color: var(--ink); text-decoration: underline transparent; text-underline-offset: 3px; transition: text-decoration-color 160ms ease; }
+.c-nrow:hover:not(:disabled) .nm { text-decoration-color: #a07d3c; }
+.c-nrow:disabled { cursor: default; }
+.c-nrow .sm { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 400 12px/1.25 var(--sans); color: var(--muted); }
+
 .c-foot { padding-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex: none; border-top: 1px solid var(--line); }
 .status { font: 400 11.5px/1.3 var(--sans); color: var(--muted); }
 .c-pager { font: 400 12px/1 var(--sans); color: var(--muted); display: flex; align-items: center; gap: 2px; }
 .c-pager button { border: 0; background: none; font-size: 18px; line-height: 1; padding: 2px 8px; cursor: pointer; color: var(--ink); }
 .c-pager button:disabled { opacity: 0.3; cursor: default; }
-.pin { padding: 9px 13px; flex: none; }
+.pin { padding: 8px 13px; flex: none; }
 .pin[aria-pressed='true'] { background: var(--ink); color: #fbf9f5; }
 
 /* The board: a corkboard over the room. */

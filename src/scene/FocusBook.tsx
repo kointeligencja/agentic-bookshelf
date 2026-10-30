@@ -2,6 +2,7 @@ import { useKTX2 } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { isReading, readingPanel } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import type { AtlasSheet, Category } from '../types.ts';
 import { placementPose } from './Books.tsx';
@@ -14,6 +15,8 @@ export const focusFx = { amount: 0, position: new THREE.Vector3() };
 
 const FOCUS_DISTANCE = 2300;
 const HOLD = 880; // mm in front of the camera
+/** In reading mode the book is held this far away at most, so it fits the strip at the left edge. */
+const MAX_HOLD = 2400;
 /** The dimming plane in front of the case. */
 const DIM_Z = 720;
 const OPEN_ANGLE = THREE.MathUtils.degToRad(-160);
@@ -79,8 +82,8 @@ function Focused({
   const group = useRef<THREE.Group>(null);
   const cover = useRef<THREE.Group>(null);
   const dim = useRef<THREE.MeshBasicMaterial>(null);
-  const { camera, invalidate } = useThree();
-  const state = useRef({ p: { x: 0, v: 0 }, o: { x: 0, v: 0 } });
+  const { camera, invalidate, size } = useThree();
+  const state = useRef({ p: { x: 0, v: 0 }, o: { x: 0, v: 0 }, read: 0 });
   const home = useMemo(() => homePose(placement), [placement]);
   const [pages, setPages] = useState<{ left: THREE.Texture; right: THREE.Texture } | null>(null);
 
@@ -155,6 +158,12 @@ function Focused({
     const f = useStore.getState().focused;
     const st = state.current;
     const opening = f?.phase === 'open' && !f.closing;
+    // Reading mode: the book steps back until it is as wide as the strip it is held in, and the room dims behind it.
+    const reading = !!f && !f.closing && isReading(size.width);
+    st.read += ((reading ? 1 : 0) - st.read) * (1 - Math.exp(-dt * 7));
+    const fovTan = Math.tan(THREE.MathUtils.degToRad(((camera as THREE.PerspectiveCamera).fov ?? 35) / 2));
+    const fit = (book.dims.w * size.height) / (2 * fovTan * Math.max(60, readingPanel(size.width).strip - 24));
+    const hold = THREE.MathUtils.lerp(HOLD, THREE.MathUtils.clamp(fit, HOLD * 0.8, MAX_HOLD), st.read);
     spring(st.p, f && !f.closing ? 1 : 0, dt);
     spring(st.o, opening ? 1 : 0, dt, 120, 21);
     const p = THREE.MathUtils.clamp(st.p.x, 0, 1.05);
@@ -165,7 +174,7 @@ function Focused({
     tmp.right.crossVectors(tmp.dir, camera.up).normalize();
     tmp.target
       .copy(camera.position)
-      .addScaledVector(tmp.dir, HOLD - o * 60)
+      .addScaledVector(tmp.dir, hold - o * 60)
       .addScaledVector(tmp.right, (book.dims.w / 2) * o);
     // Never hold it inside the case or behind the dimming plane, whatever the camera is doing.
     tmp.target.z = Math.max(tmp.target.z, DIM_Z + book.dims.w / 2 + 60);
@@ -181,7 +190,7 @@ function Focused({
     g.position.lerpVectors(tmp.out, tmp.target, smooth(0.3, 1, p));
     g.quaternion.slerpQuaternions(home.quaternion, tmp.q, smooth(0.32, 0.9, p));
     if (cover.current) cover.current.rotation.y = OPEN_ANGLE * o;
-    if (dim.current) dim.current.opacity = 0.16 * THREE.MathUtils.clamp(p, 0, 1);
+    if (dim.current) dim.current.opacity = (0.16 + 0.44 * st.read) * THREE.MathUtils.clamp(p, 0, 1);
 
     focusFx.amount = THREE.MathUtils.clamp(p, 0, 1);
     focusFx.position.copy(g.position);

@@ -124,6 +124,8 @@ export interface AgenticConcept {
   summary: string;
   /** How far the card was checked against the books: ✓ checked, ⚠ checked and corrected, ? not yet. */
   status: string;
+  /** A concept to read first on its theme (start_here in the source). */
+  startHere?: boolean;
 }
 
 /** A line of the conversation that bears on a concept, with where to find it in the video. */

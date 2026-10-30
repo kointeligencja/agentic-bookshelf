@@ -41,6 +41,7 @@ export interface SourceConcept {
   theses: string[];
   concept: string;
   status: string;
+  start_here?: boolean;
 }
 
 /** Swap our book slugs for the 3D library's ids. Throws on a slug with no id, so the build fails loudly. */

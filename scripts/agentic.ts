@@ -30,6 +30,7 @@ const out: Agentic = {
     theses: c.theses,
     summary: c.concept,
     status: c.status,
+    ...(c.start_here ? { startHere: true } : {}),
   })),
 };
 const cards = Object.fromEntries(src.concepts.map((c) => [c.id, c.card]));
