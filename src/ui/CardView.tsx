@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { readableOn, rgba } from '../lib/accent.ts';
+import { PAPER, readableOn, tintOf } from '../lib/accent.ts';
 import {
   band,
   columnCount,
@@ -27,8 +27,8 @@ const GAP = 24;
 /** Space between two steps, px (`--s3`); between two quotes (`--s2`). */
 const STEP_GAP = 24;
 const ITEM_GAP = 16;
-/** A column's label and the space under it, px (`--label-h`). */
-const LABEL_H = 24;
+/** A column's heading and the space under it, px (`--label-h`: 24px line + 4px). */
+const LABEL_H = 28;
 /** Space between a method's intro and its steps, px (`--s2`). */
 const HEAD_GAP = 16;
 /** Below this viewport width the page is one column and scrolls: no fixed regions, no pages. */
@@ -208,7 +208,10 @@ function Step({ n, text }: { n: number; text: string }) {
   );
 }
 
-/** The method: its source and intro, then the steps in two columns, ceil(n/2) on the left. Too many for the region: the steps are paged. */
+/**
+ * The method: its source and intro, then the steps in two columns, ceil(n/2) on the left. Too many for the region: the steps are paged.
+ * A page with one step (one too tall for half the width, or the last) has it across the full width, so it is never taller than measured.
+ */
 function MethodTab({ card, narrow, page, onPages }: PanelProps) {
   const m = card.method;
   const steps = m?.steps ?? [];
@@ -255,7 +258,7 @@ function MethodTab({ card, narrow, page, onPages }: PanelProps) {
   return (
     <div className="tb method" ref={region}>
       {(narrow || at === 0) && hasHead && <div className="m-head">{head}</div>}
-      <div className="m-cols">{narrow ? col(whole.left.concat(whole.right)) : (
+      <div className={`m-cols${!narrow && shown && shown.right.length === 0 ? ' one' : ''}`}>{narrow ? col(whole.left.concat(whole.right)) : (
         <>
           {col(shown?.left ?? [])}
           {col(shown?.right ?? [])}
@@ -389,7 +392,7 @@ function Band({ card, narrow, onOverflow }: { card: AgenticCard; narrow: boolean
       {apply && (
         <aside className="b-apply">
           <div className="label">
-            With your agent <em>{apply.label}</em>
+            With your agent <span className="cap">{apply.label}</span>
           </div>
           <p>{apply.text}</p>
         </aside>
@@ -443,7 +446,9 @@ export function CardView({
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(1);
   const [over, setOver] = useState({ idea: false, apply: false });
-  const accent = useMemo(() => readableOn(book.accent), [book.accent]);
+  // The "With your agent" box is a light tint of the accent; the accent is darkened until it reads on that tint (and so on the paper).
+  const tint = useMemo(() => tintOf(book.accent), [book.accent]);
+  const accent = useMemo(() => readableOn(readableOn(book.accent, tint), PAPER), [book.accent, tint]);
 
   const select = (t: TabId) => {
     if (t === tab) return;
@@ -477,7 +482,7 @@ export function CardView({
   }, []);
 
   const Panel = tab ? PANELS[tab] : undefined;
-  const style = { '--accent': accent, '--accent-tint': rgba(accent, 0.09) } as CSSProperties;
+  const style = { '--accent': accent, '--accent-tint': tint } as CSSProperties;
   const overflow = [over.idea && 'idea', over.apply && 'apply'].filter(Boolean).join(' ');
   return (
     <div className="card" style={style} data-tab={tab} data-pages={pages > 1 ? pages : undefined} data-band-overflow={overflow || undefined} data-band-idea={over.idea ? '' : undefined} data-band-apply={over.apply ? '' : undefined}>

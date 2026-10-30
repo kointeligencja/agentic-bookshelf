@@ -62,49 +62,51 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
   // The concept list, `‹ 1/3 ▾ ›`, and ✕, at the top right of the page.
   const controls = (
     <>
-      <div className="cnav">
-        <button className="step" onClick={() => go(-1)} disabled={index <= 0} aria-label="Previous concept">
-          ‹
-        </button>
-        <button className="pick" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="listbox" aria-label={`Concept ${index + 1} of ${list.length}: ${current?.name ?? ''}`} title={themeTitle ? `${inTheme} of ${list.length} for “${themeTitle}”` : undefined}>
-          <span className="count">
-            {index + 1}/{list.length}
-          </span>{' '}
-          <span className="caret">▾</span>
-        </button>
-        <button className="step" onClick={() => go(1)} disabled={index >= list.length - 1} aria-label="Next concept">
-          ›
-        </button>
-        {menu && (
-          <>
-            <div className="scrim" onClick={() => setMenu(false)} />
-            <ul className="clist pop" role="listbox" aria-label="Concepts in this book">
-              {list.map((c) => (
-                <li key={c.id}>
-                  <button
-                    role="option"
-                    aria-selected={c.id === current?.id}
-                    className={`${c.id === current?.id ? 'sel' : ''}${theme && !c.theses.includes(theme) ? ' inactive' : ''}`}
-                    onClick={() => {
-                      setConcept(c.id);
-                      setMenu(false);
-                    }}
-                  >
-                    <span>{c.name}</span>
-                    <span className="tags">
-                      {c.theses.map((k) => (
-                        <i key={k} className={`tag${k === theme ? ' hot' : ''}`}>
-                          {k}
-                        </i>
-                      ))}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+      {list.length > 1 && (
+        <div className="cnav">
+          <button className="step" onClick={() => go(-1)} disabled={index <= 0} aria-label="Previous concept">
+            ‹
+          </button>
+          <button className="pick" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="listbox" aria-label={`Concept ${index + 1} of ${list.length}: ${current?.name ?? ''}`} title={themeTitle ? `${inTheme} of ${list.length} for “${themeTitle}”` : undefined}>
+            <span className="count">
+              {index + 1}/{list.length}
+            </span>{' '}
+            <span className="caret">▾</span>
+          </button>
+          <button className="step" onClick={() => go(1)} disabled={index >= list.length - 1} aria-label="Next concept">
+            ›
+          </button>
+          {menu && (
+            <>
+              <div className="scrim" onClick={() => setMenu(false)} />
+              <ul className="clist pop" role="listbox" aria-label="Concepts in this book">
+                {list.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      role="option"
+                      aria-selected={c.id === current?.id}
+                      className={`${c.id === current?.id ? 'sel' : ''}${theme && !c.theses.includes(theme) ? ' inactive' : ''}`}
+                      onClick={() => {
+                        setConcept(c.id);
+                        setMenu(false);
+                      }}
+                    >
+                      <span>{c.name}</span>
+                      <span className="tags">
+                        {c.theses.map((k) => (
+                          <i key={k} className={`tag${k === theme ? ' hot' : ''}`}>
+                            {k}
+                          </i>
+                        ))}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
       <button className="page-close" onClick={close} aria-label="Put back">
         ✕
       </button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrast, luminance, MIN_CONTRAST, PAPER, parseHex, readableOn, rgba, toHex } from '../src/lib/accent.ts';
+import { contrast, luminance, MIN_CONTRAST, PAPER, parseHex, readableOn, rgba, tintOf, toHex } from '../src/lib/accent.ts';
 
 describe('contrast', () => {
   it('is 21 for black on white and 1 for a colour on itself', () => {
@@ -55,5 +55,25 @@ describe('readableOn', () => {
     const { readFileSync } = await import('node:fs');
     const lib = JSON.parse(readFileSync('public/data/books.json', 'utf8')) as { books: { id: string; palette: { accent: string } }[] };
     for (const b of lib.books) expect(contrast(readableOn(b.palette.accent), PAPER), b.id).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  });
+});
+
+describe('tintOf', () => {
+  it('is a light colour of the same hue, not grey', () => {
+    const [r, , b] = parseHex(tintOf('#1d93e1'));
+    expect(b).toBeGreaterThan(r + 15);
+    expect(luminance(tintOf('#1d93e1'))).toBeGreaterThan(0.8);
+  });
+  it('every book accent reads on its own tint, and so does the ink', async () => {
+    const { readFileSync } = await import('node:fs');
+    const lib = JSON.parse(readFileSync('public/data/books.json', 'utf8')) as { books: { id: string; palette: { accent: string } }[] };
+    for (const b of lib.books) {
+      const tint = tintOf(b.palette.accent);
+      // As the card makes it: readable on the tint, then on the paper.
+      const accent = readableOn(readableOn(b.palette.accent, tint), PAPER);
+      expect(contrast(accent, tint), b.id).toBeGreaterThanOrEqual(MIN_CONTRAST);
+      expect(contrast(accent, PAPER), b.id).toBeGreaterThanOrEqual(MIN_CONTRAST);
+      expect(contrast('#2b2620', tint), b.id).toBeGreaterThanOrEqual(MIN_CONTRAST);
+    }
   });
 });

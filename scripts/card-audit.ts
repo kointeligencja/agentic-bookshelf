@@ -1,6 +1,7 @@
 // Opens every concept card at each viewport and checks the fixed template: the page does not scroll, every tab's content is inside
 // its region (on every page of a paged tab), the band's text fits. Lists the cards with `data-band-overflow` and the tabs that
-// needed pages. Writes /tmp/card-audit.json and prints a summary. No screenshots.
+// needed pages, the band's heights (180 to 240px) and the longest line of running text, in characters. Writes /tmp/card-audit.json and
+// prints a summary. No screenshots.
 // Usage: npx tsx scripts/card-audit.ts [baseUrl] [WxH,WxH,...]   (needs `npx vite --port 5181` running)
 // Env: CHROME_BIN = a Chromium executable to use instead of Playwright's own; OUT = the JSON file;
 // ONLY = comma-separated concept ids to audit (default all); QUICK=1 reads the band only (no tabs).
@@ -9,7 +10,7 @@ import { chromium, type Page } from 'playwright';
 import type { Agentic } from '../src/types.ts';
 
 const base = process.argv[2] ?? 'http://localhost:5181';
-const sizes = (process.argv[3] ?? '1440x900,1280x800').split(',').map((s) => s.split('x').map(Number) as [number, number]);
+const sizes = (process.argv[3] ?? '1280x800,1440x900,2000x1150').split(',').map((s) => s.split('x').map(Number) as [number, number]);
 const out = process.env.OUT ?? '/tmp/card-audit.json';
 const quick = process.env.QUICK === '1';
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
@@ -28,12 +29,38 @@ interface Row {
   need?: { idea: number; apply: number; page: number };
   tabs: TabRow[];
   failures: string[];
+  /** The longest line of running text on any tab, in characters, and where. */
+  cpl?: { n: number; where: string };
 }
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 
 /** What the page says about the card on screen. Runs in the page. */
 const READ = `(() => {
+  // The longest line of running text on screen, in characters: each character's box is grouped into lines.
+  const longest = () => {
+    let best = { n: 0, where: '' };
+    for (const el of document.querySelectorAll('.card .c-sum, .card .b-idea p, .card .b-apply p, .card .mc:not(.tb-measure) p, .card .m-intro, .card .m-step span, .card .q-quote p, .card .q-line p')) {
+      if (el.closest('.tb-measure')) continue;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const boxes = [];
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+        const r = document.createRange();
+        for (let i = 0; i < t.length; i++) {
+          r.setStart(t, i); r.setEnd(t, i + 1);
+          const b = r.getClientRects()[0];
+          if (b && b.width > 0) boxes.push((b.top + b.bottom) / 2);
+        }
+      }
+      let n = 0, y = -1e9;
+      for (const c of boxes) {
+        if (Math.abs(c - y) > 8) { n = 0; y = c; }
+        n++;
+        if (n > best.n) best = { n, where: el.className || el.tagName.toLowerCase() };
+      }
+    }
+    return best;
+  };
   const q = (s) => document.querySelector(s);
   const doc = document.documentElement;
   const card = q('.card');
@@ -56,6 +83,8 @@ const READ = `(() => {
     band: band ? Math.round(band.getBoundingClientRect().height) : 0,
     need: { idea: q('.b-idea p') ? Math.round(q('.b-idea p').getBoundingClientRect().bottom - q('.b-idea').getBoundingClientRect().top) : 0, apply: q('.b-apply p') ? Math.round(q('.b-apply p').getBoundingClientRect().bottom - q('.b-apply').getBoundingClientRect().top + 16) : 0, page: card ? Math.round(card.getBoundingClientRect().height) : 0 },
     tabs: Array.from(document.querySelectorAll('.c-tabs [role=tab]')).map((t) => t.dataset.tab),
+    cpl: longest(),
+    bandBox: band ? [Math.round(band.getBoundingClientRect().height), Math.round(q('.b-apply') ? q('.b-apply').getBoundingClientRect().height : 0)] : [0, 0],
     chips: Array.from(document.querySelectorAll('.c-chips .t')).every((t) => t.scrollWidth <= t.clientWidth + 1),
   };
 })()`;
@@ -87,6 +116,7 @@ for (const [w, h] of sizes) {
     await settle(page);
     const first = (await page.evaluate(READ)) as any;
     const tabs: TabRow[] = [];
+    let cpl = first.cpl as { n: number; where: string };
     for (const t of quick ? [] : (first.tabs as string[])) {
       const f: string[] = [];
       await page.click(`.c-tabs [role=tab][data-tab="${t}"]`);
@@ -94,6 +124,7 @@ for (const [w, h] of sizes) {
       let r = (await page.evaluate(READ)) as any;
       const pages = r.pages as number;
       for (let p = 0; p < pages; p++) {
+        if (r.cpl.n > cpl.n) cpl = { n: r.cpl.n, where: `${t}: ${r.cpl.where}` };
         if (r.docScroll > 0) f.push(`page ${p + 1}: document scrolls by ${r.docScroll}px`);
         if (r.panelOver > 0) f.push(`page ${p + 1}: panel overflows by ${r.panelOver}px`);
         if (r.below > 1) f.push(`page ${p + 1}: content ${r.below}px below its region`);
@@ -109,7 +140,8 @@ for (const [w, h] of sizes) {
     }
     if (!first.tabs.length) failures.push('no tabs');
     if (!first.chips) failures.push('a theme chip is truncated');
-    rows.push({ id: c.id, name: c.name, bandOverflow: first.bandOverflow, need: first.need, tabs, failures });
+    if (first.band < 180 || first.band > 240) failures.push(`band is ${first.band}px, outside 180 to 240`);
+    rows.push({ id: c.id, name: c.name, bandOverflow: first.bandOverflow, need: first.need, tabs, failures, cpl });
   }
   if (errors.length) rows.push({ id: '(page errors)', name: errors.slice(0, 3).join(' | '), bandOverflow: '', tabs: [], failures: errors.slice(0, 3) });
   result.push({ viewport: vp, cards: rows });
@@ -127,6 +159,10 @@ for (const { viewport, cards: rows } of result) {
   console.log(`\n${viewport} (${rows.length} cards)`);
   console.log(`  data-band-overflow (${over.length}): ${over.map((r) => `${r.id}[${r.bandOverflow}]`).join(', ') || 'none'}`);
   console.log(`  paged tabs (${paged.length}): ${paged.join(', ') || 'none'}`);
+  const need = rows.flatMap((r) => (r.need ? [r.need.idea, r.need.apply] : []));
+  const top = rows.reduce((a, r) => (r.cpl && r.cpl.n > a.n ? { n: r.cpl.n, id: r.id, where: r.cpl.where } : a), { n: 0, id: '', where: '' });
+  const bandOnly = rows.filter((r) => r.need).length;
+  console.log(`  longest line: ${top.n} characters (${top.id}, ${top.where}); cards over 75: ${rows.filter((r) => (r.cpl?.n ?? 0) > 75).length}; band text needs up to ${Math.max(0, ...need)}px (${bandOnly} cards)`);
   console.log(`  failures: ${bad.length} cards`);
   for (const r of bad.slice(0, 30)) console.log(`    ${r.id}: ${[...r.failures, ...r.tabs.flatMap((t) => t.failures.map((x) => `${t.tab}: ${x}`))].join('; ')}`);
 }

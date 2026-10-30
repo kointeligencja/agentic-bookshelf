@@ -69,3 +69,9 @@ export function rgba(hex: string, alpha: number): string {
   const [r, g, b] = parseHex(hex);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+/** The light tint of a colour for a box on the paper: its hue and saturation at 93% lightness (a mix with the paper would turn grey). */
+export function tintOf(hex: string, lightness = 0.93): string {
+  const [h, s] = toHsl(parseHex(hex));
+  return toHex(fromHsl(h, s, lightness));
+}

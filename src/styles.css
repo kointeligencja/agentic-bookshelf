@@ -19,6 +19,13 @@
   --t-head: 20px;
   --t-body: 14px;
   --t-caption: 12px;
+  /* The card's reading size, outside the four-size UI scale above: Idea, With your agent, Why, Story, method steps, Limits, quotes
+     and conversation lines. UI chrome, captions, tabs and chips stay on the scale. A reading line is at most --measure wide. */
+  --t-read: 17px;
+  --lh-read: 1.55;
+  --measure: 50ch;
+  /* The card's content (header, band, tabs, panel, footer) is no wider than this, left-aligned on the page. */
+  --card-max: 1100px;
   /* The category nav, the board button, the search pill and the view toggle are this high. */
   --pill-h: 40px;
   /* The footer is one caption line at the bottom left, inside the outer margin. */
@@ -59,7 +66,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .board-btn { position: absolute; top: var(--s3); right: var(--s3); z-index: 6; padding: 0 var(--s2); cursor: pointer; transition: background 200ms ease; }
 .board-btn:hover { background: rgba(251, 249, 245, 0.92); }
 
-/* The credits: one caption line, no pill. Light when the room is dark (books lit); in reading mode it keeps to the strip and is cut. */
+/* The credits: one caption line, no pill. Light when the room is dark (books lit); hidden in reading mode (the strip is too narrow for it). */
 .credit {
   position: absolute; bottom: var(--s3); left: var(--s3); max-width: calc(100vw - 2 * var(--s3) - 180px); margin: 0;
   font: 400 var(--t-caption)/var(--footer-h) var(--sans); color: var(--ink); letter-spacing: 0.01em; pointer-events: none;
@@ -245,7 +252,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .wall { transition: opacity 200ms ease, visibility 0s; }
 .app.reading .wall { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 200ms ease, visibility 0s 200ms; }
 .app.reading .wall > * { pointer-events: none; }
-.app.reading .credit { max-width: calc(var(--strip-w) - 2 * var(--s3)); color: rgba(246, 239, 227, 0.86); }
+.app.reading .credit { display: none; }
 .page-close {
   flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; cursor: pointer; background: rgba(43, 38, 32, 0.07);
   font: 400 var(--t-caption)/1 var(--sans); color: var(--ink); transition: background 200ms ease;
@@ -279,20 +286,29 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .tag { font: 600 var(--t-caption)/1 var(--sans); font-style: normal; padding: 3px 5px; border-radius: 4px; background: rgba(43, 38, 32, 0.08); color: #4a4239; }
 .tag.hot { background: #f2c66d; color: var(--ink); }
 
-/* A concept card is a fixed template, the same for every card: header, band, tabs, the tab's panel, footer. The band has one height
-   (a share of the page) and the panel takes what is left; nothing scrolls on a wide screen. --accent is the book's colour, darkened
-   to 4.5:1 on the paper (src/lib/accent.ts). */
-.card { --accent: var(--gold); --accent-tint: rgba(160, 125, 60, 0.09); --band: 28%; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s2); }
-.card .label { margin: 0 0 var(--s1); }
-.card .label em { font: italic 400 var(--t-caption)/16px var(--sans); text-transform: none; letter-spacing: 0; }
+/* A concept card is a fixed template, the same for every card: header, band, tabs, the tab's panel, footer. The band is as tall as its
+   taller text (180 to 240px) and the panel takes what is left; nothing scrolls on a wide screen. The card is --card-max wide at most,
+   left-aligned in the page. --accent is the book's colour, darkened to 4.5:1 on the "With your agent" box, which is
+   a light tint of the accent, not grey (src/lib/accent.ts). */
+.card { --accent: var(--gold); --accent-tint: #efe6d4; width: 100%; max-width: var(--card-max); flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s2); }
+/* Headings inside the card (Idea, With your agent, In the book, From …): normal case, semibold, at the reading size. Only the
+   book · author line at the top stays in small caps. */
+.card .label { margin: 0 0 4px; font: 600 var(--t-read)/24px var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink); }
+.card .label em { font-style: italic; font-weight: 500; }
+.card .label .cap { margin-left: var(--s1); font: italic 400 var(--t-caption)/16px var(--sans); color: var(--muted); }
 .c-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s3); flex: none; }
 .c-titles { min-width: 0; }
 .c-by { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-caption)/16px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
 .c-thumb { display: none; width: 32px; height: auto; border-radius: 2px; box-shadow: 0 1px 4px rgba(43, 38, 32, 0.3); }
 .c-name { font: 500 var(--t-title)/1.1 var(--serif); margin: 6px 0 0; }
-.c-sum { font: italic 400 var(--t-head)/1.3 var(--serif); margin: 6px 0 0; max-width: 44em; }
+.c-sum { font: italic 400 var(--t-head)/1.3 var(--serif); margin: 6px 0 0; max-width: var(--measure); }
 .c-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: var(--s2); }
 .c-ctl { display: flex; align-items: center; gap: var(--s1); flex: none; }
+/* Wide: ‹ 1/3 ▾ › and ✕ stay at the top right corner of the page, whatever the card's width; the book line and the name leave room. */
+@media (min-width: 900px) {
+  .c-ctl { position: absolute; top: var(--s4); right: var(--s4); }
+  .c-by, .c-name { padding-right: 184px; }
+}
 /* The theme chips in a card's header: the full title, never cut. Themes 1 to 10 carry their number; T, C and M only their name. */
 .theme.mini {
   display: flex; gap: 6px; align-items: center; text-align: left; border: 0; border-radius: 8px; padding: 3px 8px;
@@ -309,12 +325,13 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .theme.mini.on .k { background: var(--gold); color: #fff; }
 .wip { font: 400 var(--t-body)/1.4 var(--sans); color: var(--muted); padding: var(--s1) 12px; border: 1px dashed rgba(43, 38, 32, 0.2); border-radius: 6px; margin: 0; }
 
-/* The band: Idea on the left, With your agent on the right, one height on every card. Text that does not fit is faded, and the card
-   carries data-band-overflow (scripts/card-audit.ts lists them) so the data can be shortened. */
-.band { flex: none; height: var(--band); min-height: 0; margin: var(--s1) 0; display: grid; grid-template-columns: 58fr 42fr; column-gap: var(--s4); }
+/* The band: Idea on the left, With your agent on the right. It is as tall as the taller of the two, between 180 and 240px. Text that
+   does not fit in 240px is faded, and the card carries data-band-overflow (scripts/card-audit.ts lists them) so the data can be
+   shortened. The "With your agent" box is as tall as its own text, within the band. */
+.band { flex: none; min-height: 180px; max-height: 240px; margin: var(--s1) 0; display: grid; grid-template-columns: 58fr 42fr; grid-template-rows: minmax(0, 1fr); column-gap: var(--s4); }
 .b-idea, .b-apply { min-width: 0; min-height: 0; overflow: hidden; }
-.b-idea p, .b-apply p { margin: 0; font: 400 var(--t-body)/1.5 var(--sans); }
-.b-apply { background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: var(--s2); }
+.b-idea p, .b-apply p { margin: 0; max-width: var(--measure); font: 400 var(--t-read)/var(--lh-read) var(--sans); }
+.b-apply { align-self: start; max-height: 100%; background: var(--accent-tint); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: var(--s2); }
 .b-apply .label { color: var(--accent); }
 .card[data-band-idea] .b-idea, .card[data-band-apply] .b-apply { -webkit-mask-image: linear-gradient(#000 calc(100% - 24px), transparent); mask-image: linear-gradient(#000 calc(100% - 24px), transparent); }
 
@@ -336,24 +353,25 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .tb { flex: 1; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
 .tb-measure { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
 .mc { column-count: 2; column-gap: var(--s3); width: 100%; }
-.mc p { margin: 0 0 var(--s2); font: 400 var(--t-body)/1.5 var(--sans); }
+.mc p { margin: 0 0 var(--s2); max-width: var(--measure); font: 400 var(--t-read)/var(--lh-read) var(--sans); }
 .mc .label { break-after: avoid; }
 .mc .label:not(:first-child) { margin-top: var(--s2); }
 .mc .story + .story { margin-top: var(--s3); }
 .method { display: flex; flex-direction: column; gap: var(--s2); }
 .m-head { display: flow-root; }
-.m-head .label, .m-head .m-intro { max-width: 60em; }
-.m-intro { margin: 0; font: 400 var(--t-body)/1.5 var(--sans); }
+.m-head .m-intro { max-width: var(--measure); }
+.m-intro { margin: 0; font: 400 var(--t-read)/var(--lh-read) var(--sans); }
 .m-cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s3); align-items: start; }
+.m-cols.one { grid-template-columns: 1fr; }
 .m-col, .m-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
 .m-step { display: grid; grid-template-columns: 40px 1fr; column-gap: var(--s2); align-items: start; }
 .m-step b { font: 500 var(--t-title)/1 var(--serif); color: var(--accent); }
-.m-step span { font: 400 var(--t-body)/1.5 var(--sans); padding-top: 4px; }
+.m-step span { max-width: var(--measure); font: 400 var(--t-read)/var(--lh-read) var(--sans); padding-top: 3px; }
 .q-cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s3); align-items: start; }
 .q-col { min-width: 0; }
 .q-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .q-quote { border-left: 2px solid var(--accent); padding-left: var(--s2); }
-.q-quote p, .q-line p { margin: 0; font: italic 400 var(--t-body)/1.5 var(--sans); }
+.q-quote p, .q-line p { margin: 0; max-width: var(--measure); font: italic 400 var(--t-read)/var(--lh-read) var(--sans); }
 .q-quote small, .q-line small { display: block; margin-top: 4px; font: 400 var(--t-caption)/1.3 var(--sans); font-style: normal; color: var(--muted); }
 .card .ts { color: var(--accent); font-weight: 600; }
 .card .ts:disabled { cursor: default; }
@@ -364,11 +382,18 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .pin { padding: var(--s1) 12px; flex: none; }
 .pin[aria-pressed='true'] { background: var(--ink); color: #fbf9f5; }
 
+/* Short windows (1280x800): a little less margin above and below the page, so the panel keeps room for a long step or quote. */
+@media (min-width: 900px) and (max-height: 820px) {
+  .book-panel { padding-top: var(--s3); padding-bottom: var(--s3); }
+  .c-ctl { top: var(--s3); }
+}
+
 /* Narrower than 900px: the page fills the screen and scrolls; one column, a small cover in the header, no fixed regions or pages. */
 @media (max-width: 899px) {
   .book-panel { left: 0; padding: var(--s3) var(--s2); overflow-y: auto; box-shadow: none; }
   .card { flex: none; }
-  .band { height: auto; grid-template-columns: 1fr; row-gap: var(--s2); }
+  .band { min-height: 0; max-height: none; grid-template-columns: 1fr; grid-template-rows: auto; row-gap: var(--s2); }
+  .b-apply { max-height: none; }
   .c-thumb { display: block; }
   .c-panel { flex: none; }
   .tb { overflow: visible; }

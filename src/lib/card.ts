@@ -118,14 +118,19 @@ export interface StepPage {
 
 /**
  * Cuts a method's steps into pages of two columns. Each page takes as many steps as fit, split ceil(k/2) left and the rest
- * right, in order. The first page has `first` px, the others `height` (the intro stands over the first). A step taller than
- * a column still gets a page.
+ * right, in order. The first page has `first` px, the others `height` (the intro stands over the first); if not even one step
+ * fits under a long intro, the first page is the intro alone. A step taller than a column still gets a page.
  */
 export function packSteps(heights: number[], gap: number, first: number, height = first): StepPage[] {
   const pages: StepPage[] = [];
   let at = 0;
   while (at < heights.length) {
     const room = pages.length === 0 ? first : height;
+    // Not even the first step fits under the intro: the intro has the first page to itself.
+    if (pages.length === 0 && first < height && (heights[at] ?? 0) > first) {
+      pages.push({ left: [], right: [] });
+      continue;
+    }
     const rest = heights.length - at;
     let best = 1;
     for (let k = 2; k <= rest; k++) {

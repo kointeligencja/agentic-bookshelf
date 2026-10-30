@@ -174,6 +174,14 @@ describe('packSteps', () => {
     expect(packSteps([], 10, 100)).toEqual([]);
     expect(packSteps([500, 20], 10, 100)).toEqual([{ left: [0], right: [] }, { left: [1], right: [] }]);
   });
+  it('gives a long intro a page of its own when not even one step fits under it', () => {
+    // 30px left under the intro, steps of 40: the steps start on page 2.
+    const pages = packSteps(same(4), 10, 30, 100);
+    expect(pages[0]).toEqual({ left: [], right: [] });
+    expect(pages.slice(1).flatMap((p) => [...p.left, ...p.right])).toEqual([0, 1, 2, 3]);
+    // With no intro (first === height) a step that is too tall still gets its own page, not an empty one before it.
+    expect(packSteps([500], 10, 100)).toEqual([{ left: [0], right: [] }]);
+  });
   it('keeps every step once, in order, each column within the height', () => {
     const h = Array.from({ length: 23 }, (_, i) => 20 + (i % 5) * 9);
     const pages = packSteps(h, 12, 150);
