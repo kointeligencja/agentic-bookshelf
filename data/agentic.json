@@ -3299,7 +3299,7 @@
      "text": "Before an agent starts debugging or planning a broad change, ask it to list the possible causes or areas as a tree with no overlaps and an explicit \"other\" branch. Then have it check one branch at a time. This keeps it from settling on the first plausible hypothesis."
     },
     "depth": "full",
-    "subtitle": "Split a problem into parts that do not overlap and together cover the whole"
+    "subtitle": "Avoids duplicated work and makes sure the real answer is somewhere in your analysis"
    }
   },
   {
@@ -4304,7 +4304,7 @@
      "text": "Make the required step a condition for finishing. For example, the agent may not mark a task done until the test or check command has run and its output is attached. Where a step must never be skipped, enforce it in the tool settings or a script instead of asking in the prompt."
     },
     "depth": "full",
-    "subtitle": "Make a step required before you can go on, or make an error physically impossible"
+    "subtitle": "Stops easy-to-forget steps from being skipped once the main task feels done"
    }
   },
   {
@@ -4401,7 +4401,7 @@
      "text": "Keep a short checklist the agent must complete before it hands work back: files changed, checks run, anything it did not verify. Follow the Pronovost design. Give the person or process downstream the authority to stop the work when a step is missing."
     },
     "depth": "full",
-    "subtitle": "A checklist makes you pause and verify the required steps before complex or high-stakes work"
+    "subtitle": "Catches the basic steps that even experts skip under stress and fatigue"
    }
   },
   {
@@ -6847,7 +6847,7 @@
       "verified": true
      }
     ],
-    "subtitle": "Plan and test for a long time while changes are cheap, then deliver quickly"
+    "subtitle": "Moves the learning to where changes are cheap and keeps the costly phase short"
    }
   },
   {
@@ -7173,7 +7173,7 @@
       "verified": true
      }
     ],
-    "subtitle": "Build cheap rough versions and test them with real users before committing money"
+    "subtitle": "Shows what works on a few real cases before the full cost is on the line"
    }
   },
   {
@@ -7518,7 +7518,7 @@
       "verified": true
      }
     ],
-    "subtitle": "Ask experts for the variables and process behind their judgment instead of a single recommendation"
+    "subtitle": "Gives you reasoning you can reuse in your own situation, beyond one person's verdict"
    }
   },
   {
@@ -7662,7 +7662,7 @@
       "verified": true
      }
     ],
-    "subtitle": "Document one expert's best way of working so ordinary people get predictable results"
+    "subtitle": "Lets the work run well without the one person who knows how to do it"
    }
   },
   {
@@ -7853,7 +7853,7 @@
      "text": "After a long agent session, ask the agent to list where you corrected it and what in the setup would have prevented each correction. Add the useful ones to your instruction file, and ask a colleague what they saw in the same work."
     },
     "depth": "short",
-    "subtitle": "After a piece of work, review it with yourself, your team, your client and your peers"
+    "subtitle": "Keeps the lessons of a finished job from staying with one person and getting lost"
    }
   },
   {
@@ -8151,7 +8151,7 @@
       "verified": true
      }
     ],
-    "subtitle": "Write high-level documentation only for the 20 percent of processes that produce 80 percent of results"
+    "subtitle": "Keeps documentation short enough to be read and free of rules that outlived their reason"
    }
   },
   {
@@ -8310,7 +8310,7 @@
      "text": "When you give an agent a vague rule such as 'keep functions small', ask it for the cases where the rule would give a bad result, then rewrite the rule with those cases in it. The same loop works in the other direction: have the agent question your definition until the gaps in it show."
     },
     "depth": "full",
-    "subtitle": "Test a rule against counterexamples until its hidden assumptions show and the definition needs refining"
+    "subtitle": "Shows where a confident rule breaks before it fails you in practice"
    }
   },
   {
@@ -8504,7 +8504,7 @@
      "text": "When an agent gives a recommendation, ask it to write down the conclusion, each reason, and the assumption that links them, labelled as value or descriptive. Check the descriptive ones against the repository or the logs before you accept the recommendation."
     },
     "depth": "full",
-    "subtitle": "Reasons support a conclusion only through unstated assumptions, so find them and judge whether they hold"
+    "subtitle": "Lets you judge whether an argument holds by surfacing what it quietly relies on"
    }
   },
   {
@@ -8700,7 +8700,7 @@
      "text": "Check your prompt for built-in answers, such as 'why is this code wrong?' or 'wasn't this a regression?'. Rewrite it as 'what does this code do in this case?'. The agent will often accept the premise in your wording."
     },
     "depth": "full",
-    "subtitle": "Avoid questions that carry a judgment or a built-in answer, since your questions steer the group"
+    "subtitle": "Keeps your questions from steering people toward the answer you already had"
    }
   },
   {
