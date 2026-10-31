@@ -99,7 +99,8 @@ export const MEASURE = `((mode) => {
     if (cs.webkitLineClamp && cs.webkitLineClamp !== 'none' && e.scrollHeight > e.clientHeight + 1) clipped.push({ sel: sel(e), why: 'line clamp ' + cs.webkitLineClamp + ' cuts ' + (e.scrollHeight - e.clientHeight) + 'px' });
     if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && e.scrollWidth > e.clientWidth + 1) scrollers.push(sel(e) + ' (x: ' + e.scrollWidth + ' in ' + e.clientWidth + ')');
     if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && e.scrollHeight > e.clientHeight + 1) scrollers.push(sel(e) + ' (y: ' + e.scrollHeight + ' in ' + e.clientHeight + ')');
-    if (cs.maskImage && cs.maskImage !== 'none') clipped.push({ sel: sel(e), why: 'masked' });
+    // The category nav's edge fade is intended (it marks a row that scrolls); the home audit checks that it is on exactly when the row scrolls.
+    if (cs.maskImage && cs.maskImage !== 'none' && !e.matches('.chips.fade-l, .chips.fade-r')) clipped.push({ sel: sel(e), why: 'masked' });
   }
   // Text cut by an ancestor that clips it.
   const cut = [];

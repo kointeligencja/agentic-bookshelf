@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { clampedLeft } from '../src/lib/caseAxis.ts';
-import { eyeHeight, frameBetween, screenRow } from '../src/lib/framing.ts';
+import { eyeHeight, frameBetween, frameWhole, screenRow } from '../src/lib/framing.ts';
 
 const FOV = 35;
 
@@ -70,5 +70,61 @@ describe('clampedLeft', () => {
   });
   it('is centred in the room while the point is not known yet', () => {
     expect(clampedLeft(Number.NaN, 200, 100, 1100)).toBe(500);
+  });
+});
+
+describe('frameWhole', () => {
+  /** The case's front corners on screen (px), from a real three.js camera posed the way cameraPose does, looking at the case's middle line. */
+  function corners(width: number, height: number, z: number, d: number, look: number, vw: number, vh: number) {
+    const cam = new THREE.PerspectiveCamera(FOV, vw / vh, 10, 50000);
+    cam.position.set(width / 2, eyeHeight(d, look), d);
+    cam.lookAt(width / 2, look, 0);
+    cam.updateMatrixWorld();
+    const pts = [
+      [0, 0],
+      [width, 0],
+      [0, height],
+      [width, height],
+    ].map(([x, y]) => new THREE.Vector3(x, y, z).project(cam));
+    const xs = pts.map((p) => ((p.x + 1) / 2) * vw);
+    const ys = pts.map((p) => ((1 - p.y) / 2) * vh);
+    return { left: Math.min(...xs), right: vw - Math.max(...xs), top: Math.min(...ys), bottom: vh - Math.max(...ys) };
+  }
+  const base = { width: 1512, height: 2154, z: 320, fovDeg: FOV, margin: 8, min: 1100, max: 6000 };
+
+  it('keeps the margin at both sides when the view is narrower than the case is wide', () => {
+    for (const [vw, vh] of [
+      [375, 536],
+      [390, 557],
+      [430, 615],
+    ] as const) {
+      const { d, look } = frameWhole({ ...base, viewWidth: vw, viewHeight: vh });
+      const m = corners(base.width, base.height, base.z, d, look, vw, vh);
+      // The widest corner (the camera is tilted) is the margin from the edge, the case is centred sideways.
+      expect(Math.abs(m.left - base.margin), `${vw} left`).toBeLessThan(0.5);
+      expect(Math.abs(m.right - base.margin), `${vw} right`).toBeLessThan(0.5);
+      expect(m.top, `${vw} top`).toBeGreaterThan(0);
+      expect(m.bottom, `${vw} bottom`).toBeGreaterThan(0);
+    }
+  });
+  it('is bound by the height in a view wider than the case, with the margin above and below', () => {
+    const { d, look } = frameWhole({ ...base, viewWidth: 768, viewHeight: 676 });
+    const m = corners(base.width, base.height, base.z, d, look, 768, 676);
+    expect(m.top).toBeCloseTo(8, 0);
+    expect(m.bottom).toBeCloseTo(8, 0);
+    expect(m.left).toBeGreaterThan(60);
+  });
+  it('shows the whole case in a wide short case too (covers view)', () => {
+    const wide = { ...base, width: 2192, height: 2314 };
+    const { d, look } = frameWhole({ ...wide, viewWidth: 390, viewHeight: 557 });
+    const m = corners(wide.width, wide.height, wide.z, d, look, 390, 557);
+    expect(Math.min(m.left, m.right, m.top, m.bottom)).toBeGreaterThan(6);
+    // The case is centred up and down.
+    expect(Math.abs(m.top - m.bottom)).toBeLessThan(2);
+  });
+  it('goes back for a narrower view', () => {
+    const a = frameWhole({ ...base, viewWidth: 430, viewHeight: 615 });
+    const b = frameWhole({ ...base, viewWidth: 340, viewHeight: 615 });
+    expect(b.d).toBeGreaterThan(a.d);
   });
 });

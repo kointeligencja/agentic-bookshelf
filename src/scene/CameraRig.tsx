@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { setCaseCx } from '../lib/caseAxis.ts';
-import { distanceToFit, EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameBetween } from '../lib/framing.ts';
+import { EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameBetween, frameWhole } from '../lib/framing.ts';
 import { cardWidth, isNarrow, isReading, readingPanel, wallWidth } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
@@ -14,6 +14,8 @@ export const MIN_DISTANCE = 1100;
 export const MAX_DISTANCE = 6000;
 export const DEFAULT_DISTANCE = EYE_REF_DISTANCE;
 export const FOV = 35;
+/** On a phone the case is framed with this much space between it and the edges of the shelf's block, px. */
+export const PHONE_MARGIN = 8;
 
 /** Camera position and look-at point for a dolly position x and wall distance d. */
 export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Vector3; look: THREE.Vector3 }) {
@@ -26,13 +28,14 @@ export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Ve
 /**
  * The opening view: the case from its left edge, as much as fits in the space right of the panel. With `wall` (the rows of
  * the search pill's top and the theme card's bottom, in a window `viewHeight` high) the case's top and bottom edges are put on
- * those two rows, so the bookcase lines up with the left column; without `wall` (a narrow screen, the shelf is a block of its own) the case is
- * shown from top to bottom, as close as that allows.
+ * those two rows, so the bookcase lines up with the left column; without `wall` (a narrow screen, the shelf is a block of its own, `view` px
+ * big) the whole case is framed inside the block, centred, with PHONE_MARGIN px to spare on every side.
  */
 export function homeView(
   layout: Layout,
   aspect: number,
   wall?: { top: number; bottom: number; viewHeight: number },
+  view?: { width: number; height: number },
 ): { x: number; d: number; look: number } {
   const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
   const H = caseHeight(layout.bookcase);
@@ -42,8 +45,11 @@ export function homeView(
   let look = H / 2 + 40;
   let d: number;
   if (!wall) {
-    // No left column to line up with (a narrow screen): the case from top to bottom in the shelf's block, as close as that allows.
-    d = THREE.MathUtils.clamp(distanceToFit(H, FOV, 1.1), MIN_DISTANCE, MAX_DISTANCE);
+    // No left column to line up with (a narrow screen): the whole case, both columns and both side panels, inside the shelf's block.
+    const c = layout.bookcase;
+    const w = view ?? { width: H * aspect, height: H };
+    ({ d, look } = frameWhole({ width: caseWidth(c), height: H, z: c.depth, viewWidth: w.width, viewHeight: w.height, fovDeg: FOV, margin: PHONE_MARGIN, min: MIN_DISTANCE, max: MAX_DISTANCE }));
+    return { x: c.x0 + caseWidth(c) / 2, d, look };
   } else if (wall.bottom - wall.top > 100) {
     ({ d, look } = frameBetween({
       top: H,
@@ -215,7 +221,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
     // Until the column is measured: its top is the title block's height down, its bottom above the footer. On a narrow screen the column
     // is not beside the shelf, so the case is framed in the shelf's own block.
     const wall = isNarrow(size.width) ? undefined : (wallBox ?? { top: 112, bottom: size.height - 48 });
-    const home = homeView(layout, aspect, wall && { ...wall, viewHeight: size.height });
+    const home = homeView(layout, aspect, wall && { ...wall, viewHeight: size.height }, size);
     lookHeight = home.look;
     homeD.current = home.d;
     const last = lastHome.current;

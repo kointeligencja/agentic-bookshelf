@@ -6,6 +6,8 @@
 //    bottom of the page.
 //  - Three sample cards (Socrates, commander-intent, escalation) also at 375, 430 and 768 (tablet).
 //  - The home page at 375, 390, 430 and 768: the same checks, the page scrolls (not sideways), the shelf is 55 to 75% of the window high.
+//    Stage 4B: order title, search, video, category nav, shelf, theme index, toggle, footer; no timeline; theme index and "also" entries one per row (>= 44px, titles whole);
+//    the whole bookcase inside the canvas width (>= 4px margin each side); the nav's edge fades are on exactly where the row has more to scroll to.
 //  - Touch flow at 390: tap a book on the shelf, the card opens, the video's player stays the same element, ✕ puts the book back.
 //  - The board with three pins at 390 (full-screen sheet).
 // Prints a summary and exits 1 on any failure. Needs `npx vite --port 5181` running. Env: CHROME_BIN; ONLY=id,id limits the cards; QUICK=1 skips the sample widths.
@@ -185,15 +187,62 @@ async function homeAt(w: number, h: number, dsf: number) {
     if (share < 0.55 || share > 0.75) fail(where, `the shelf is ${Math.round(share * 100)}% of the window high`);
     if (stage[2] !== m.vw) fail(where, `the shelf is ${stage[2]}px wide in ${m.vw}px`);
   }
-  // The column is above the shelf, not beside it.
-  const wall = (await page.evaluate(`(() => { const e = document.querySelector('.wall'); const b = e.getBoundingClientRect(); return [b.left, b.right, b.bottom + scrollY]; })()`)) as number[];
-  if (stage && wall[2]! > stage[1] + 1) fail(where, 'the left column runs into the shelf');
-  if (wall[1]! > w + 0.5) fail(where, 'the left column sticks out');
-  // The category nav scrolls inside its own row; every chip can be brought into view.
-  const chips = (await page.evaluate(`(() => { const e = document.querySelector('.chips'); return [e.scrollWidth, e.clientWidth, e.getBoundingClientRect().right]; })()`)) as number[];
-  if (chips[2]! > w + 0.5) fail(where, 'the category nav sticks out');
+  // Stage 4B: the order down the page is title, search, video, category nav, shelf, theme index, then the view toggle and the footer; nothing sticks out.
+  const order = (await page.evaluate(`(() => {
+    const names = [['.wall-head', 'title'], ['.search-wrap', 'search'], ['.frame', 'video'], ['.chips', 'nav'], ['[data-stage]', 'shelf'], ['.plaque', 'themes'], ['.view-toggle', 'toggle'], ['.credit', 'footer']];
+    return names.map(([s, n]) => { const b = document.querySelector(s).getBoundingClientRect(); return { n, top: b.top + scrollY, bottom: b.bottom + scrollY, left: b.left, right: b.right }; });
+  })()`)) as { n: string; top: number; bottom: number; left: number; right: number }[];
+  for (let i = 1; i < order.length; i++) if (order[i]!.top < order[i - 1]!.bottom - 0.5) fail(where, `${order[i]!.n} is not below ${order[i - 1]!.n}`);
+  for (const o of order) if (o.right > w + 0.5 || o.left < -0.5) fail(where, `${o.n} sticks out (${Math.round(o.left)}..${Math.round(o.right)}px)`);
+  const navTop = order.find((o) => o.n === 'nav')!;
+  const shelfTop = order.find((o) => o.n === 'shelf')!;
+  if (shelfTop.top - navTop.bottom > 24) fail(where, `the category nav is ${Math.round(shelfTop.top - navTop.bottom)}px above the shelf`);
+  // The timeline under the video is gone.
+  if (await page.evaluate(`getComputedStyle(document.querySelector('.timeline')).display !== 'none'`)) fail(where, 'the timeline is shown');
+  // The theme index: one column, one theme per row, at least 44px, no cut title; "also" rows likewise.
+  const rows = (await page.evaluate(`(() => {
+    const rect = (e) => e.getBoundingClientRect();
+    const idx = Array.from(document.querySelectorAll('.idx'));
+    const also = Array.from(document.querySelectorAll('.also button'));
+    const cut = idx.filter((e) => { const t = e.querySelector('.t'); return t.scrollWidth > t.clientWidth + 1 || getComputedStyle(t).textOverflow === 'ellipsis' && t.scrollWidth > t.clientWidth; }).length;
+    return {
+      idxN: idx.length, idxLefts: new Set(idx.map((e) => Math.round(rect(e).left))).size, idxTops: new Set(idx.map((e) => Math.round(rect(e).top))).size, idxMin: Math.min(...idx.map((e) => rect(e).height)),
+      idxLines: idx.map((e) => { const t = e.querySelector('.t'); return Math.round(rect(t).height / parseFloat(getComputedStyle(t).lineHeight)); }), cut,
+      alsoN: also.length, alsoLefts: new Set(also.map((e) => Math.round(rect(e).left))).size, alsoTops: new Set(also.map((e) => Math.round(rect(e).top))).size, alsoMin: Math.min(...also.map((e) => rect(e).height)),
+    };
+  })()`)) as { idxN: number; idxLefts: number; idxTops: number; idxMin: number; idxLines: number[]; cut: number; alsoN: number; alsoLefts: number; alsoTops: number; alsoMin: number };
+  if (rows.idxN !== 10 || rows.idxLefts !== 1 || rows.idxTops !== rows.idxN) fail(where, `the theme index is not one column of one theme per row: ${JSON.stringify(rows)}`);
+  if (rows.idxMin < 43.5) fail(where, `an index row is ${rows.idxMin}px high`);
+  if (rows.cut) fail(where, `${rows.cut} index titles are cut`);
+  if (rows.alsoN < 1 || rows.alsoLefts !== 1 || rows.alsoTops !== rows.alsoN) fail(where, `"Also in the conversation" is not one entry per row: ${JSON.stringify(rows)}`);
+  if (rows.alsoMin < 43.5) fail(where, `an "also" entry is ${rows.alsoMin}px high`);
+  // The whole bookcase is inside the canvas width (front face projected), both sides, with a small margin.
+  const cm = (await page.evaluate(`(() => { const cv = document.querySelector('canvas').getBoundingClientRect(); const c = window.__case;
+    const p = [[0, 0], [c.width, 0], [0, c.height], [c.width, c.height]].map(([x, y]) => window.__project(x, y, c.depth));
+    const xs = p.map((q) => q.x), ys = p.map((q) => q.y);
+    return { left: Math.min(...xs), right: cv.width - Math.max(...xs), top: Math.min(...ys), bottom: cv.height - Math.max(...ys) }; })()`)) as Record<string, number>;
+  if (cm.left! < 4 || cm.right! < 4 || cm.top! < 0 || cm.bottom! < 0) fail(where, `the bookcase is cut: margins ${JSON.stringify(cm)}`);
+  if (cm.left! > 0.2 * w && cm.top! > 0.2 * h) fail(where, `the bookcase is small in its block: margins ${JSON.stringify(cm)}`);
+  // The category nav scrolls inside its own row; the edges with more chips fade (none when everything fits).
+  const chips = (await page.evaluate(`(() => { const e = document.querySelector('.chips'); const f = (e.className.match(/fade-[lr]/g) || []).sort().join(' '); return [e.scrollWidth, e.clientWidth, e.getBoundingClientRect().right, f]; })()`)) as [number, number, number, string];
+  if (chips[2] > w + 0.5) fail(where, 'the category nav sticks out');
+  const want = chips[0] > chips[1] + 2 ? 'fade-r' : '';
+  if (chips[3] !== want) fail(where, `the nav fade at the start is "${chips[3]}", expected "${want}"`);
+  if (chips[0] > chips[1] + 2) {
+    const fades: string[] = [];
+    for (const pos of [(chips[0] - chips[1]) / 2, chips[0]]) {
+      await page.evaluate(`document.querySelector('.chips').scrollLeft = ${pos}`);
+      await page.waitForTimeout(250);
+      fades.push((await page.evaluate(`(document.querySelector('.chips').className.match(/fade-[lr]/g) || []).sort().join(' ')`)) as string);
+    }
+    if (fades[0] !== 'fade-l fade-r') fail(where, `the nav fade in the middle is "${fades[0]}"`);
+    if (fades[1] !== 'fade-l') fail(where, `the nav fade at the end is "${fades[1]}"`);
+    await page.evaluate(`document.querySelector('.chips').scrollLeft = 0`);
+    await page.waitForTimeout(250);
+    if ((await page.evaluate(`(document.querySelector('.chips').className.match(/fade-[lr]/g) || []).join('')`)) !== 'fade-r') fail(where, 'the nav fade did not come back at the start');
+  }
   errors.slice(0, 3).forEach((e) => fail(where, `page error: ${e}`));
-  report.home.push({ w, docScrollH: m.docScrollH, shelf: stage, chips: chips.slice(0, 2), targets: m.targetCount });
+  report.home.push({ w, docScrollH: m.docScrollH, shelf: stage, chips: chips.slice(0, 2), caseMargins: cm, index: rows, targets: m.targetCount });
   await ctx.close();
 }
 

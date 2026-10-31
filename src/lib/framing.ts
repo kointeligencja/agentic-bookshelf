@@ -85,3 +85,62 @@ export function frameBetween(i: FrameInput): { d: number; look: number } {
 export function distanceToFit(height: number, fovDeg: number, margin = 1.1): number {
   return (height * margin) / (2 * Math.tan((fovDeg * Math.PI) / 360));
 }
+
+/** Where the middle of the span between the case's top and bottom edges lands on screen is `height / 2` for this look-at height (mm). */
+function centredLook(top: number, bottom: number, z: number, d: number, fovDeg: number, height: number): number {
+  return solve((look) => (screenRow(top, z, d, look, fovDeg, height) + screenRow(bottom, z, d, look, fovDeg, height)) / 2, height / 2, -6000, 12000);
+}
+
+export interface WholeInput {
+  /** Width and height of the case (mm) and the depth of its front face, which is the part that sticks out furthest on screen. */
+  width: number;
+  height: number;
+  z: number;
+  /** Size of the view, px. */
+  viewWidth: number;
+  viewHeight: number;
+  fovDeg: number;
+  /** Space kept free between the case and each edge of the view, px. */
+  margin: number;
+  /** Limits of the distance, mm. */
+  min: number;
+  max: number;
+}
+
+/**
+ * The distance and the look-at height that show the whole case, front face included, inside the view with `margin` px to spare at the
+ * sides, top and bottom, and centred on the page's vertical axis (the caller looks at the case's middle line). The tighter of the two
+ * limits decides: a view narrower than the case is as wide as the case allows, a wide one is as high.
+ */
+export function frameWhole(i: WholeInput): { d: number; look: number } {
+  const tanH = Math.tan((i.fovDeg * Math.PI) / 360) * (i.viewWidth / i.viewHeight);
+  // How far a front corner of the case is from the middle of the view, as a share of half the view's width (1 is the edge). The camera is tilted
+  // down a little, so the corner that is nearer along the line of sight (the top one or the bottom one) is the widest.
+  const reach = (d: number) => {
+    const look = centredLook(i.height, 0, i.z, d, i.fovDeg, i.viewHeight);
+    const eyeY = eyeHeight(d, look);
+    let fy = look - eyeY;
+    let fz = -d;
+    const n = Math.hypot(fy, fz);
+    fy /= n;
+    fz /= n;
+    return Math.max(...[0, i.height].map((y) => i.width / 2 / (((y - eyeY) * fy + (i.z - d) * fz) * tanH)));
+  };
+  const room = 1 - (2 * i.margin) / i.viewWidth;
+  // The reach shrinks as the camera goes back.
+  const dWidth = solve((d) => -reach(d), -room, i.min, i.max);
+  const byHeight = frameBetween({
+    top: i.height,
+    bottom: 0,
+    z: i.z,
+    topRow: i.margin,
+    bottomRow: i.viewHeight - i.margin,
+    height: i.viewHeight,
+    fovDeg: i.fovDeg,
+    min: i.min,
+    max: i.max,
+  });
+  if (dWidth <= byHeight.d) return byHeight;
+  const d = Math.min(i.max, dWidth);
+  return { d, look: centredLook(i.height, 0, i.z, d, i.fovDeg, i.viewHeight) };
+}

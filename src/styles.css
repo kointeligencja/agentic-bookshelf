@@ -452,13 +452,17 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
   body:has(.app.held) { overflow: hidden; }
   .app {
     position: relative; inset: auto; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--s2); align-content: start;
-    grid-template-areas: 'wall wall' 'nav board' 'stage stage' 'view view' 'credit credit';
+    /* Title, search, video, then the shelf (with its category nav and the board button directly above it), then the theme index, then the rest. */
+    grid-template-areas: 'head head' 'search search' 'video video' 'nav board' 'stage stage' 'themes themes' 'view view' 'credit credit';
   }
   .stage { grid-area: stage; position: relative; inset: auto; height: clamp(420px, 66svh, 760px); min-width: 0; }
   .app canvas { touch-action: pan-y; }
-  .wall {
-    grid-area: wall; position: static; width: auto; height: auto; margin: var(--s3) var(--s2) 0; gap: var(--s2); min-width: 0;
-  }
+  /* The column's blocks are items of the page's grid, so that the shelf can sit between the video and the theme index. */
+  .wall { display: contents; }
+  .wall > .wall-head { grid-area: head; margin: var(--s3) var(--s2) 0; min-width: 0; }
+  .wall > .search-wrap { grid-area: search; margin: 0 var(--s2); min-width: 0; }
+  .wall > .frame { grid-area: video; margin: 0 var(--s2); min-width: 0; }
+  .wall > .plaque { grid-area: themes; margin: 0 var(--s2); min-width: 0; }
   .wall.dim h1 { color: var(--ink); }
   .wall.dim .sub, .wall.dim .qnote.hint { color: #4a4239; }
   .wall.dim .timeline .track { background: rgba(43, 38, 32, 0.1); }
@@ -470,30 +474,38 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
   .search input { height: 48px; font-size: var(--t-read); }
   .search .x { top: 2px; right: 2px; width: 44px; height: 44px; font-size: var(--t-body); }
   .qnote.hint { position: static; margin: var(--s1) var(--s2) 0; white-space: normal; font-size: var(--t-body); line-height: 1.4; }
-  .frame { width: 100%; }
-  /* The video's own controls do the seeking here; the timeline's marks are too thin to touch. */
-  .timeline .seg { pointer-events: none; }
+  /* The video's own controls do the seeking here. The timeline under it (marks 4 to 16px wide) is not touchable and does not fit a narrow screen's rhythm: gone. */
+  .timeline { display: none; }
   .plaque { flex: none; overflow: visible; }
   .pane { padding: var(--s1) var(--s2) var(--s2); }
   .pane.off { display: none; }
-  .index { grid-template-rows: repeat(5, minmax(44px, auto)); grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s1); }
-  .idx { height: auto; min-height: 44px; gap: var(--s1); font-size: 16px; line-height: 1.2; white-space: normal; text-align: left; }
+  /* One theme per row: the number and the full title on a line (the title wraps if it must), rows at least 44px. */
+  .index { grid-auto-flow: row; grid-template-rows: none; grid-auto-rows: minmax(44px, auto); grid-template-columns: minmax(0, 1fr); justify-content: stretch; }
+  .idx { height: auto; min-height: 44px; gap: var(--s1); font-size: 16px; line-height: 1.25; white-space: normal; text-align: left; padding: 6px 0; border-top: 1px solid var(--line); }
+  .idx:first-child { border-top: 0; }
   .idx .k { width: 28px; height: 28px; font-size: var(--t-body); }
   .idx .t { overflow: visible; text-overflow: clip; }
   .also .label { line-height: 44px; }
-  .also .row { line-height: 1; }
-  .also button { height: auto; min-height: 44px; padding: 0 var(--s1); font-size: 16px; line-height: 1.2; text-align: left; }
+  .also .row { flex-direction: column; align-items: stretch; line-height: 1; }
+  .also button { display: block; width: 100%; height: auto; min-height: 44px; padding: 6px 0; font-size: 16px; line-height: 1.25; text-align: left; }
   .also .dot { display: none; }
-  .also .row > span { display: inline-flex; }
+  .also .row > span { display: block; border-top: 1px solid var(--line); }
   .now h2 { font-size: var(--t-head); line-height: 1.2; margin-top: 4px; }
   .now p { display: block; font-size: var(--t-read); line-height: var(--lh-read); overflow: visible; }
   .now .meta { font-size: var(--t-body); line-height: 1.4; }
   .now .ts { min-height: 44px; min-width: 44px; font-size: var(--t-body); justify-content: center; }
   .chips {
     grid-area: nav; position: static; max-width: none; height: 52px; margin-left: var(--s2); padding: 4px; min-width: 0; overflow-x: auto; overflow-y: hidden;
-    scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; scroll-padding-inline: 4px; --fade-w: 36px;
   }
   .chips::-webkit-scrollbar { display: none; }
+  /* When the row scrolls, the edge that has more chips behind it fades out (set from CategoryNav: .fade-l, .fade-r), so it reads as swipeable. */
+  .chips.fade-l { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-w)); mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-w)); }
+  .chips.fade-r { -webkit-mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-w)); mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-w)); }
+  .chips.fade-l.fade-r {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-w), #000 calc(100% - var(--fade-w)), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-w), #000 calc(100% - var(--fade-w)), transparent 100%);
+  }
   .chip { flex: none; height: 44px; padding: 0 var(--s2); font-size: var(--t-body); scroll-snap-align: start; }
   .board-btn { grid-area: board; position: static; height: 52px; min-width: 44px; margin-right: var(--s2); padding: 0 var(--s2); font-size: var(--t-body); }
   .view-toggle { grid-area: view; position: static; justify-self: end; margin: 0 var(--s2); height: 52px; padding: 4px; }
@@ -509,8 +521,8 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 @media (min-width: 600px) and (max-width: 899px) {
   .book-panel { padding-left: var(--s4); padding-right: var(--s4); }
   .c-ctl { margin: 0 calc(-1 * var(--s4)); padding: 6px var(--s4); }
-  .wall, .chips, .credit { margin-left: var(--s4); }
-  .wall { margin-right: var(--s4); }
+  .wall > .wall-head, .wall > .search-wrap, .wall > .frame, .wall > .plaque { margin-left: var(--s4); margin-right: var(--s4); }
+  .chips, .credit { margin-left: var(--s4); }
   .board-btn, .view-toggle { margin-right: var(--s4); }
   .credit { margin-right: var(--s4); }
 }

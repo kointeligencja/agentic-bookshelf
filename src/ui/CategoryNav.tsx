@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { scrollFades } from '../lib/scrollFades.ts';
 import { clampedLeft, getCaseCx, subscribeCaseCx } from '../lib/caseAxis.ts';
 import { categorySpot, type Layout } from '../scene/layout.ts';
 import { useStore } from '../store.ts';
@@ -23,6 +24,8 @@ export function CategoryNav({ layout, library }: { layout: Layout; library: Libr
   const cx = useSyncExternalStore(subscribeCaseCx, getCaseCx);
   const nav = useRef<HTMLElement>(null);
   const [left, setLeft] = useState<number | null>(null);
+  // On a narrow screen the row scrolls sideways; the edge with more chips behind it fades (the style is in a narrow-screen media query).
+  const [fade, setFade] = useState({ start: false, end: false });
   useLayoutEffect(() => {
     const el = nav.current;
     if (!el) return;
@@ -41,6 +44,26 @@ export function CategoryNav({ layout, library }: { layout: Layout; library: Libr
       ro.disconnect();
     };
   }, [cx, wallBox, library]);
+  useLayoutEffect(() => {
+    const el = nav.current;
+    if (!el) return;
+    const update = () => {
+      const next = scrollFades(el.scrollLeft, el.clientWidth, el.scrollWidth);
+      setFade((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    window.addEventListener('resize', update);
+    void document.fonts?.ready.then(update);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [library]);
   const fly = (x: number, y: number | null, d: number, hash: string) => {
     setTargetX(Math.min(layout.maxX, Math.max(layout.minX, x)));
     setTargetY(y);
@@ -48,7 +71,7 @@ export function CategoryNav({ layout, library }: { layout: Layout; library: Libr
     history.replaceState(null, '', `${location.search}${hash}`);
   };
   return (
-    <nav ref={nav} className={`chips${focused ? ' hidden' : ''}`} aria-label="Categories" style={left === null ? undefined : { left }}>
+    <nav ref={nav} className={`chips${focused ? ' hidden' : ''}${fade.start ? ' fade-l' : ''}${fade.end ? ' fade-r' : ''}`} aria-label="Categories" style={left === null ? undefined : { left }}>
       {library.categories
         .map((c) => ({ c, spot: categorySpot(layout, c.slug) }))
         .filter((e): e is { c: (typeof library.categories)[number]; spot: { x: number; y: number } } => e.spot !== null)
