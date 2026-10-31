@@ -2,8 +2,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { setCaseCx } from '../lib/caseAxis.ts';
-import { EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameBetween } from '../lib/framing.ts';
-import { cardWidth, isReading, panelWidth, readingPanel } from '../lib/panel.ts';
+import { distanceToFit, EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameBetween } from '../lib/framing.ts';
+import { cardWidth, isNarrow, isReading, readingPanel, wallWidth } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
 
@@ -26,7 +26,8 @@ export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Ve
 /**
  * The opening view: the case from its left edge, as much as fits in the space right of the panel. With `wall` (the rows of
  * the search pill's top and the theme card's bottom, in a window `viewHeight` high) the case's top and bottom edges are put on
- * those two rows, so the bookcase lines up with the left column; without it the case is framed in the window with some margin.
+ * those two rows, so the bookcase lines up with the left column; without `wall` (a narrow screen, the shelf is a block of its own) the case is
+ * shown from top to bottom, as close as that allows.
  */
 export function homeView(
   layout: Layout,
@@ -40,7 +41,10 @@ export function homeView(
   const right = caseWidth(layout.bookcase) + 250;
   let look = H / 2 + 40;
   let d: number;
-  if (wall && wall.bottom - wall.top > 100) {
+  if (!wall) {
+    // No left column to line up with (a narrow screen): the case from top to bottom in the shelf's block, as close as that allows.
+    d = THREE.MathUtils.clamp(distanceToFit(H, FOV, 1.1), MIN_DISTANCE, MAX_DISTANCE);
+  } else if (wall.bottom - wall.top > 100) {
     ({ d, look } = frameBetween({
       top: H,
       bottom: 0,
@@ -123,7 +127,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
       const rect = el.getBoundingClientRect();
       const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
       // The panel pushes the middle of the view to the right (see the view offset below).
-      const nx = ((clientX - rect.left - panelWidth(rect.width) / 2) / rect.width) * 2 - 1;
+      const nx = ((clientX - rect.left - wallWidth(rect.width) / 2) / rect.width) * 2 - 1;
       const ny = 1 - ((clientY - rect.top) / rect.height) * 2;
       const halfH = s.distance * tan;
       const k = 1 - d / s.distance;
@@ -149,7 +153,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
       pointer.current.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
       if (drag && e.buttons === 1) {
         const s = useStore.getState();
-        const mmPerPx = (2 * s.distance * Math.tan(THREE.MathUtils.degToRad(FOV / 2))) / window.innerHeight;
+        const mmPerPx = (2 * s.distance * Math.tan(THREE.MathUtils.degToRad(FOV / 2))) / el.clientHeight;
         s.setTargetX(clampX(drag.tx - (e.clientX - drag.x) * mmPerPx));
         // Vertical drag only once the camera is close enough that the case doesn't fit.
         if (s.distance < homeD.current * 0.9) s.setTargetY(clampY(drag.ty + (e.clientY - drag.y) * mmPerPx));
@@ -188,6 +192,18 @@ export function CameraRig({ layout }: { layout: Layout }) {
     };
   }, [gl, invalidate, minX, maxX, yRange]);
 
+  // On a narrow screen the shelf is a block in a page that scrolls: vertical swipes belong to the page while the whole case is in view,
+  // and to the camera once it is zoomed in (then the swipe moves up and down the case).
+  useEffect(() => {
+    const el = gl.domElement;
+    const set = () => {
+      const zoomed = useStore.getState().distance < homeD.current * 0.9;
+      el.style.touchAction = isNarrow(el.clientWidth) && !zoomed ? 'pan-y' : 'none';
+    };
+    set();
+    return useStore.subscribe(set);
+  }, [gl]);
+
   // Frame the room for this layout on first load and after switching views or resizing; otherwise keep the target in range.
   // The case is framed between the left column's search pill and theme card (the store's `wallBox`). The framing is only
   // redone while the visitor has not moved the camera, so that late font loads or a resize do not undo what they did.
@@ -195,10 +211,11 @@ export function CameraRig({ layout }: { layout: Layout }) {
   const lastHome = useRef<{ x: number; d: number } | null>(null);
   useEffect(() => {
     const s = useStore.getState();
-    const aspect = camera instanceof THREE.PerspectiveCamera ? (size.width - panelWidth(size.width)) / size.height : 1.6;
-    // Until the column is measured: its top is the title block's height down, its bottom above the footer.
-    const wall = wallBox ?? { top: 112, bottom: size.height - 48 };
-    const home = homeView(layout, aspect, { ...wall, viewHeight: size.height });
+    const aspect = camera instanceof THREE.PerspectiveCamera ? (size.width - wallWidth(size.width)) / size.height : 1.6;
+    // Until the column is measured: its top is the title block's height down, its bottom above the footer. On a narrow screen the column
+    // is not beside the shelf, so the case is framed in the shelf's own block.
+    const wall = isNarrow(size.width) ? undefined : (wallBox ?? { top: 112, bottom: size.height - 48 });
+    const home = homeView(layout, aspect, wall && { ...wall, viewHeight: size.height });
     lookHeight = home.look;
     homeD.current = home.d;
     const last = lastHome.current;
@@ -228,7 +245,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
     const s = useStore.getState();
     const { width, height } = size;
     const ty = s.targetY === null ? lookHeight : Math.min(yRange[1], Math.max(yRange[0], s.targetY));
-    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0, cx: (panelWidth(width) + width) / 2 });
+    const c = (current.current ??= { x: s.targetX, d: s.distance, y: ty, px: 0, py: 0, cx: (wallWidth(width) + width) / 2 });
     const k = 1 - Math.exp(-Math.min(dt, 0.1) * 5);
     const kp = 1 - Math.exp(-Math.min(dt, 0.1) * 3);
     c.x += (s.targetX - c.x) * k;
@@ -238,10 +255,11 @@ export function CameraRig({ layout }: { layout: Layout }) {
     // so the scene is centred in the space between them. In reading mode the left column is gone and the book is
     // held in a strip at the left edge, so the middle of the picture goes there.
     const out = !!s.focused && !s.focused.closing;
-    const cxTarget = out && isReading(width) ? readingPanel(width).bookCentre : (panelWidth(width) + width - (out ? cardWidth(width) : 0)) / 2;
+    // On a narrow screen there is no column and the page covers the whole screen: the middle of the picture is the middle of the shelf's block.
+    const cxTarget = out && isReading(width) ? readingPanel(width).bookCentre : isNarrow(width) ? width / 2 : (wallWidth(width) + width - (out ? cardWidth(width) : 0)) / 2;
     c.cx += (cxTarget - c.cx) * k;
     if (camera instanceof THREE.PerspectiveCamera) camera.setViewOffset(width, height, width / 2 - c.cx, 0, width, height);
-    const still = s.focused ? 0.25 : 1;
+    const still = s.focused ? 0.25 : isNarrow(width) ? 0 : 1;
     const px = pointer.current.x * 45 * still;
     const py = -pointer.current.y * 30 * still;
     c.px += (px - c.px) * kp;

@@ -567,8 +567,10 @@ export function CardView({
         <div className="c-titles">
           <div className="c-by">
             {book.cover && <img className="c-thumb" src={book.cover} alt="" />}
-            <span>
-              {book.title} · {book.author}
+            <span className="c-bt-wrap">
+              <span className="c-bt">{book.title}</span>
+              <span className="c-sep"> · </span>
+              <span className="c-ba">{book.author}</span>
             </span>
           </div>
           <h3 className="c-name">{concept.name}</h3>

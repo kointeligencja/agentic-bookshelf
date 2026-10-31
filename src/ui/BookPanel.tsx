@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { stepTo } from '../lib/board.ts';
+import { isNarrow } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
 import type { Agentic, Library } from '../types.ts';
 import { CardView } from './CardView.tsx';
@@ -147,6 +148,8 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
             onSeek={(s) => {
               close();
               useStore.getState().seek(s);
+              // On a narrow screen the video is in the page, above the shelf: bring it into view.
+              if (isNarrow(window.innerWidth)) document.querySelector('.frame')?.scrollIntoView({ block: 'center' });
             }}
           />
         ))}

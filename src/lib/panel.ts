@@ -40,3 +40,12 @@ export function readingPanel(viewport: number): { strip: number; left: number; w
   const strip = stripWidth(viewport);
   return { strip, left: strip, width: viewport - strip, book: Math.round(Math.max(60, strip * BOOK_SHARE)), bookCentre: strip / 2 };
 }
+
+/** Below this width the page is a phone or tablet layout: one column, the page scrolls, the shelf is a block of its own (the same limit as `isReading`). */
+export const isNarrow = (viewport: number): boolean => viewport < READING_MIN;
+
+/**
+ * Width in CSS pixels of the left column that the shelf's camera makes room for: `panelWidth` on a desktop screen, 0 on a narrow one,
+ * where the column is stacked above the shelf and the shelf has the whole width of its own block.
+ */
+export const wallWidth = (viewport: number): number => (isNarrow(viewport) ? 0 : panelWidth(viewport));

@@ -41,6 +41,8 @@ export function App() {
   const reading = useStore((s) => !!s.focused && !s.focused.closing) && wide;
   // With books lit the room is dark, and the footer (which has no pill behind it) turns light.
   const dim = useStore((s) => !s.focused && Object.keys(s.lit).length > 0);
+  // A book is pulled out (or going back): on a narrow screen its card covers the page, which then must not scroll behind it.
+  const held = useStore((s) => !!s.focused);
   const [ready, setReady] = useState(false);
   const layout = useMemo(
     () => (library ? computeLayout(library.books, library.categories, sort, view) : null),
@@ -108,8 +110,11 @@ export function App() {
   }, [ready, library, layout]);
 
   return (
-    <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}${dim ? ' dim' : ''}`}>
-      {library && layout && <Scene library={library} layout={layout} onReady={onReady} />}
+    <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}${dim ? ' dim' : ''}${held ? ' held' : ''}`}>
+      {/* The shelf's block: the whole window beside and under the other parts on a desktop screen, a block of the page on a narrow one. */}
+      <div className="stage" data-stage>
+        {library && layout && <Scene library={library} layout={layout} onReady={onReady} />}
+      </div>
       {library && layout && <CategoryNav layout={layout} library={library} />}
       {agentic && <ThemePanel data={agentic} />}
       {library && <ViewToggle />}

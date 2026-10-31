@@ -77,3 +77,11 @@ export function frameBetween(i: FrameInput): { d: number; look: number } {
   }
   return { d, look: lookFor(d) };
 }
+
+/**
+ * The distance (mm) at which a camera with vertical field of view `fovDeg` sees `height` mm of the wall, times `margin` (1.1: a tenth to spare).
+ * Used for a shelf block of its own on a narrow screen, where the whole case is shown from top to bottom.
+ */
+export function distanceToFit(height: number, fovDeg: number, margin = 1.1): number {
+  return (height * margin) / (2 * Math.tan((fovDeg * Math.PI) / 360));
+}
