@@ -113,6 +113,15 @@ export interface WholeInput {
  * limits decides: a view narrower than the case is as wide as the case allows, a wide one is as high.
  */
 export function frameWhole(i: WholeInput): { d: number; look: number } {
+  const dWidth = widthDistance(i);
+  const byHeight = heightFrame(i);
+  if (dWidth <= byHeight.d) return byHeight;
+  const d = Math.min(i.max, dWidth);
+  return { d, look: centredLook(i.height, 0, i.z, d, i.fovDeg, i.viewHeight) };
+}
+
+/** The distance at which the case's widest front corner is `margin` px from the side of the view, the case centred up and down. */
+function widthDistance(i: WholeInput): number {
   const tanH = Math.tan((i.fovDeg * Math.PI) / 360) * (i.viewWidth / i.viewHeight);
   // How far a front corner of the case is from the middle of the view, as a share of half the view's width (1 is the edge). The camera is tilted
   // down a little, so the corner that is nearer along the line of sight (the top one or the bottom one) is the widest.
@@ -128,8 +137,12 @@ export function frameWhole(i: WholeInput): { d: number; look: number } {
   };
   const room = 1 - (2 * i.margin) / i.viewWidth;
   // The reach shrinks as the camera goes back.
-  const dWidth = solve((d) => -reach(d), -room, i.min, i.max);
-  const byHeight = frameBetween({
+  return solve((d) => -reach(d), -room, i.min, i.max);
+}
+
+/** The distance and look-at height that put the case's top and bottom `margin` px from the top and bottom of the view. */
+function heightFrame(i: WholeInput): { d: number; look: number } {
+  return frameBetween({
     top: i.height,
     bottom: 0,
     z: i.z,
@@ -140,7 +153,34 @@ export function frameWhole(i: WholeInput): { d: number; look: number } {
     min: i.min,
     max: i.max,
   });
-  if (dWidth <= byHeight.d) return byHeight;
-  const d = Math.min(i.max, dWidth);
-  return { d, look: centredLook(i.height, 0, i.z, d, i.fovDeg, i.viewHeight) };
+}
+
+export interface StageInput extends Omit<WholeInput, 'viewHeight'> {
+  /** Limits of the block's height, px. */
+  minHeight: number;
+  maxHeight: number;
+}
+
+/**
+ * The height of a shelf block `viewWidth` px wide that fits the case: the one at which the case is `margin` px from the sides and
+ * from the top and bottom at once, so no wall or floor is left over above and below. A taller block would leave the case as wide as
+ * the width allows with more room above and below; a shorter one would make the height the limit and shrink the case. Clamped to
+ * [minHeight, maxHeight]; at the upper limit the height decides and the case has more room at the sides.
+ */
+export function stageHeight(i: StageInput): number {
+  // Taller blocks need the camera further back to keep the case inside the width, and nearer to fill the height: the two meet once.
+  const tooLow = (h: number) => {
+    const w = { ...i, viewHeight: h };
+    return widthDistance(w) < heightFrame(w).d;
+  };
+  let lo = i.minHeight;
+  let hi = i.maxHeight;
+  if (!tooLow(lo)) return lo;
+  if (tooLow(hi)) return hi;
+  for (let n = 0; n < 40; n++) {
+    const mid = (lo + hi) / 2;
+    if (tooLow(mid)) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
 }

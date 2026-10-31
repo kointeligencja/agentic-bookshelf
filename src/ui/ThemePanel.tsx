@@ -2,7 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { bookCounts, clock, conceptCount, themeAtTime, themeStart, timelineSegments } from '../lib/agentic.ts';
 import { createPlayer, PLAYING, type YTPlayer } from './youtube.ts';
 import { SearchResults } from './SearchResults.tsx';
+import { useNarrow } from './useNarrow.ts';
 import { useSearch } from './useSearch.ts';
+import { scrollToShelf } from './scrollToShelf.ts';
 import { useStore } from '../store.ts';
 import type { Agentic } from '../types.ts';
 
@@ -63,9 +65,12 @@ export function ThemePanel({ data }: { data: Agentic }) {
   };
   // The book panel's timestamps seek through here.
   useEffect(() => setSeek(seek), [setSeek]);
+  const narrow = useNarrow();
   const pick = (key: string) => {
     if (key === theme) return setTheme(null);
     setTheme(key);
+    // On a narrow screen the index is below the shelf: bring the shelf up so the books that light are in view.
+    if (narrow) scrollToShelf();
     const start = themeStart(data.theses.find((t) => t.key === key)!);
     if (start !== null) seek(start);
   };
@@ -111,6 +116,9 @@ export function ThemePanel({ data }: { data: Agentic }) {
   const shown = useRef(search.state);
   if (search.state.active) shown.current = search.state;
   const results = search.state.active;
+  // On a narrow screen the results are under the search box, in the page's flow, and the themes stay in their card.
+  const stacked = narrow && results;
+  const inCard = !narrow && results;
 
   return (
     <aside ref={wall} className={`wall${dim ? ' dim' : ''}`} aria-label="The conversation">
@@ -143,6 +151,7 @@ export function ThemePanel({ data }: { data: Agentic }) {
         </div>
         {/* Out of the flow, so the picture below never moves when the note appears. */}
         {search.state.note && !search.state.active && <div className="qnote hint">{search.state.note}</div>}
+        {stacked && <SearchResults data={data} state={search.state} stacked />}
       </div>
       <figure className="frame">
         <div className="video">
@@ -151,7 +160,7 @@ export function ThemePanel({ data }: { data: Agentic }) {
       </figure>
       <Timeline data={data} theme={theme} getTime={getTime} onPlay={playClip} />
       <section className="plaque" aria-label="Themes">
-        <div className={`pane${results ? ' off' : ''}`} aria-hidden={results} inert={results}>
+        <div className={`pane${inCard ? ' off' : ''}`} aria-hidden={inCard} inert={inCard}>
           <div className="index" role="group" aria-label="Themes">
             {numbered.map((t) => (
               <button
@@ -206,8 +215,8 @@ export function ThemePanel({ data }: { data: Agentic }) {
             )}
           </div>
         </div>
-        <div className={`pane${results ? '' : ' off'}`} aria-hidden={!results} inert={!results}>
-          <SearchResults data={data} state={shown.current} />
+        <div className={`pane${inCard ? '' : ' off'}`} aria-hidden={!inCard} inert={!inCard}>
+          {!narrow && <SearchResults data={data} state={shown.current} />}
         </div>
       </section>
     </aside>

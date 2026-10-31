@@ -455,7 +455,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
     /* Title, search, video, then the shelf (with its category nav and the board button directly above it), then the theme index, then the rest. */
     grid-template-areas: 'head head' 'search search' 'video video' 'nav board' 'stage stage' 'themes themes' 'view view' 'credit credit';
   }
-  .stage { grid-area: stage; position: relative; inset: auto; height: clamp(420px, 66svh, 760px); min-width: 0; }
+  .stage { grid-area: stage; position: relative; inset: auto; height: var(--stage-h, clamp(420px, 66svh, 760px)); min-width: 0; }
   .app canvas { touch-action: pan-y; }
   /* The column's blocks are items of the page's grid, so that the shelf can sit between the video and the theme index. */
   .wall { display: contents; }
@@ -474,6 +474,14 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
   .search input { height: 48px; font-size: var(--t-read); }
   .search .x { top: 2px; right: 2px; width: 44px; height: 44px; font-size: var(--t-body); }
   .qnote.hint { position: static; margin: var(--s1) var(--s2) 0; white-space: normal; font-size: var(--t-body); line-height: 1.4; }
+  /* A search's results sit right under the search pill, in the flow: they push the video and the shelf down. Rows at least 56px (44 asked), the whole row taps. */
+  .results.stacked { flex: none; overflow: visible; margin: var(--s1) 0 0; padding: 0 var(--s1); }
+  .results.stacked .qnote { margin: 0; padding: var(--s1) 0; font-size: var(--t-body); line-height: 1.4; }
+  .results.stacked .res { height: auto; min-height: 56px; padding: var(--s1) 0; gap: 2px var(--s2); }
+  .results.stacked .res b { font-size: 16px; line-height: 20px; }
+  .results.stacked .res .pct { font-size: 16px; line-height: 20px; }
+  .results.stacked .res small { font-size: 16px; line-height: 1.3; white-space: normal; overflow: visible; text-overflow: clip; }
+  .wall.dim .results.stacked .qnote { color: var(--muted); }
   /* The video's own controls do the seeking here. The timeline under it (marks 4 to 16px wide) is not touchable and does not fit a narrow screen's rhythm: gone. */
   .timeline { display: none; }
   .plaque { flex: none; overflow: visible; }

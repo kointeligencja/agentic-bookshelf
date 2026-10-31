@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { categorySpot, computeLayout, type Layout } from './scene/layout.ts';
 import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
-import { isReading, panelWidth, readingPanel } from './lib/panel.ts';
+import { stageHeight } from './lib/framing.ts';
+import { isNarrow, isReading, panelWidth, readingPanel } from './lib/panel.ts';
+import { FOV, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/CameraRig.tsx';
+import { caseHeight, caseWidth } from './scene/layout.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import { CategoryNav } from './ui/CategoryNav.tsx';
 import { Board, BoardButton } from './ui/Board.tsx';
@@ -10,6 +13,11 @@ import { BookPanel } from './ui/BookPanel.tsx';
 import { ThemePanel } from './ui/ThemePanel.tsx';
 import { Tooltip } from './ui/Tooltip.tsx';
 import { ViewToggle } from './ui/ViewToggle.tsx';
+
+/** Limits of the shelf block's height on a narrow screen, px: the least, the most, and the most on a phone held sideways. */
+const STAGE_MIN = 300;
+const STAGE_MAX = 760;
+const STAGE_MAX_LANDSCAPE = 420;
 
 /** `#book/{id}` opens a book pulled out, `#book/{id}/{conceptId}` with one of its cards; `#category/{slug}` flies to a bay. */
 function applyHash(library: Library, layout: Layout) {
@@ -87,6 +95,41 @@ export function App() {
     window.addEventListener('resize', set);
     return () => window.removeEventListener('resize', set);
   }, []);
+
+  // On a narrow screen the shelf is a block of the page, as high as the case needs: the one at which the case is PHONE_MARGIN from every edge.
+  // Worked out from the case and the page's width, again when the window is resized or turned.
+  useEffect(() => {
+    if (!layout) return;
+    const root = document.documentElement.style;
+    const set = () => {
+      const width = document.documentElement.clientWidth;
+      if (!isNarrow(width)) return root.removeProperty('--stage-h');
+      const c = layout.bookcase;
+      // A phone on its side is not tall enough for a block that high: it keeps the height the old rule gave it.
+      const maxHeight = window.innerWidth > window.innerHeight ? STAGE_MAX_LANDSCAPE : STAGE_MAX;
+      const h = stageHeight({
+        width: caseWidth(c),
+        height: caseHeight(c),
+        z: c.depth,
+        viewWidth: width,
+        fovDeg: FOV,
+        margin: PHONE_MARGIN,
+        min: MIN_DISTANCE,
+        max: MAX_DISTANCE,
+        minHeight: STAGE_MIN,
+        maxHeight,
+      });
+      root.setProperty('--stage-h', `${Math.round(h)}px`);
+    };
+    set();
+    window.addEventListener('resize', set);
+    window.addEventListener('orientationchange', set);
+    return () => {
+      window.removeEventListener('resize', set);
+      window.removeEventListener('orientationchange', set);
+      root.removeProperty('--stage-h');
+    };
+  }, [layout]);
 
   const onReady = useCallback(() => setReady(true), []);
 

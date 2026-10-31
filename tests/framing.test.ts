@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { clampedLeft } from '../src/lib/caseAxis.ts';
-import { eyeHeight, frameBetween, frameWhole, screenRow } from '../src/lib/framing.ts';
+import { eyeHeight, frameBetween, frameWhole, screenRow, stageHeight } from '../src/lib/framing.ts';
+import { scrollTargetFor } from '../src/lib/shelfScroll.ts';
 
 const FOV = 35;
 
@@ -126,5 +127,65 @@ describe('frameWhole', () => {
     const a = frameWhole({ ...base, viewWidth: 430, viewHeight: 615 });
     const b = frameWhole({ ...base, viewWidth: 340, viewHeight: 615 });
     expect(b.d).toBeGreaterThan(a.d);
+  });
+});
+
+describe('stageHeight', () => {
+  const base = { width: 1512, height: 2154, z: 320, fovDeg: FOV, margin: 8, min: 1100, max: 6000, minHeight: 300, maxHeight: 2000 };
+  /** Margins (px) of the case's front corners in a view, as framed by frameWhole. */
+  function margins(c: { width: number; height: number; z: number }, vw: number, vh: number) {
+    const { d, look } = frameWhole({ ...base, ...c, viewWidth: vw, viewHeight: vh });
+    const cam = new THREE.PerspectiveCamera(FOV, vw / vh, 10, 50000);
+    cam.position.set(c.width / 2, eyeHeight(d, look), d);
+    cam.lookAt(c.width / 2, look, 0);
+    cam.updateMatrixWorld();
+    const pts = [
+      [0, 0],
+      [c.width, 0],
+      [0, c.height],
+      [c.width, c.height],
+    ].map(([x, y]) => new THREE.Vector3(x, y, c.z).project(cam));
+    const xs = pts.map((p) => ((p.x + 1) / 2) * vw);
+    const ys = pts.map((p) => ((1 - p.y) / 2) * vh);
+    return { left: Math.min(...xs), right: vw - Math.max(...xs), top: Math.min(...ys), bottom: vh - Math.max(...ys) };
+  }
+  it('leaves the margin on all four sides of the case', () => {
+    for (const [vw, c] of [
+      [375, base],
+      [390, base],
+      [430, base],
+      [390, { width: 2192, height: 2314, z: 320 }],
+      [768, base],
+    ] as const) {
+      const h = stageHeight({ ...base, ...c, viewWidth: vw });
+      const m = margins(c, vw, h);
+      for (const side of ['left', 'right', 'top', 'bottom'] as const) expect(Math.abs(m[side] - 8), `${vw} ${side}`).toBeLessThan(0.6);
+    }
+  });
+  it('is taller for a taller case and for a wider block', () => {
+    const a = stageHeight({ ...base, viewWidth: 390 });
+    expect(stageHeight({ ...base, height: 2500, viewWidth: 390 })).toBeGreaterThan(a);
+    expect(stageHeight({ ...base, viewWidth: 430 })).toBeGreaterThan(a);
+  });
+  it('stays inside its limits, and then the case still fits', () => {
+    const tall = stageHeight({ ...base, viewWidth: 768, maxHeight: 400 });
+    expect(tall).toBe(400);
+    const m = margins(base, 768, tall);
+    expect(m.top).toBeCloseTo(8, 0);
+    expect(m.left).toBeGreaterThan(8);
+    expect(stageHeight({ ...base, viewWidth: 390, minHeight: 900, maxHeight: 1000 })).toBe(900);
+  });
+});
+
+describe('scrollTargetFor', () => {
+  it('puts the block at the top of the window with the gap', () => {
+    expect(scrollTargetFor(1500, 0, 8, 3000)).toBe(1492);
+  });
+  it('leaves room for something that sticks to the top', () => {
+    expect(scrollTargetFor(1500, 56, 8, 3000)).toBe(1436);
+  });
+  it('never goes above the top of the page or past the end of it', () => {
+    expect(scrollTargetFor(4, 0, 8, 3000)).toBe(0);
+    expect(scrollTargetFor(2900, 0, 8, 2000)).toBe(2000);
   });
 });

@@ -8,12 +8,18 @@
 //  - The home page at 375, 390, 430 and 768: the same checks, the page scrolls (not sideways), the shelf is 55 to 75% of the window high.
 //    Stage 4B: order title, search, video, category nav, shelf, theme index, toggle, footer; no timeline; theme index and "also" entries one per row (>= 44px, titles whole);
 //    the whole bookcase inside the canvas width (>= 4px margin each side); the nav's edge fades are on exactly where the row has more to scroll to.
+//    Stage 4C: the shelf block is as high as the case needs (case margin above and below at most 16px at 375/390/430, the least that fits at 768);
+//    search results (mocked API) right under the search pill and above the video, rows >= 44px, a tap opens the card, clearing removes the list,
+//    the quiet "not connected" / "nothing fits" lines under the pill too; a theme tapped in the index (or "also") scrolls the shelf block to the top
+//    of the window and lights the books, tapping it again does not scroll, a deep link (?t=8) does not scroll, reduced motion jumps; the block is
+//    refitted when the window is resized or turned.
 //  - Touch flow at 390: tap a book on the shelf, the card opens, the video's player stays the same element, ✕ puts the book back.
 //  - The board with three pins at 390 (full-screen sheet).
 // Prints a summary and exits 1 on any failure. Needs `npx vite --port 5181` running. Env: CHROME_BIN; ONLY=id,id limits the cards; QUICK=1 skips the sample widths.
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium, type Browser, type Page } from 'playwright';
 import { MEASURE, type Measure } from './mobile-measure.ts';
+import { mockSearch, MOCK_IDS, type SearchMock } from './mobile-search-mock.ts';
 import type { Agentic } from '../src/types.ts';
 
 const base = process.argv[2] ?? 'http://localhost:5181';
@@ -103,7 +109,7 @@ async function newPhone(w: number, h: number, dsf = 3) {
   return { ctx, page, errors };
 }
 
-const report = { cards: 0, tabs: 0, targets: 0, home: [] as unknown[], samples: [] as unknown[], touch: '' };
+const report = { cards: 0, tabs: 0, targets: 0, home: [] as unknown[], samples: [] as unknown[], touch: '', search: [] as unknown[], themeScroll: [] as unknown[], resize: [] as unknown[] };
 
 /** Every card (or the sample ones) at one width. */
 async function cards(w: number, h: number, ids: string[]) {
@@ -182,11 +188,7 @@ async function homeAt(w: number, h: number, dsf: number) {
   if (m.docScrollH <= m.vh) fail(where, 'the page does not scroll');
   const stage = m.blocks['[data-stage]'];
   if (!stage) fail(where, 'no shelf block');
-  else {
-    const share = stage[3] / h;
-    if (share < 0.55 || share > 0.75) fail(where, `the shelf is ${Math.round(share * 100)}% of the window high`);
-    if (stage[2] !== m.vw) fail(where, `the shelf is ${stage[2]}px wide in ${m.vw}px`);
-  }
+  else if (stage[2] !== m.vw) fail(where, `the shelf is ${stage[2]}px wide in ${m.vw}px`);
   // Stage 4B: the order down the page is title, search, video, category nav, shelf, theme index, then the view toggle and the footer; nothing sticks out.
   const order = (await page.evaluate(`(() => {
     const names = [['.wall-head', 'title'], ['.search-wrap', 'search'], ['.frame', 'video'], ['.chips', 'nav'], ['[data-stage]', 'shelf'], ['.plaque', 'themes'], ['.view-toggle', 'toggle'], ['.credit', 'footer']];
@@ -222,7 +224,9 @@ async function homeAt(w: number, h: number, dsf: number) {
     const xs = p.map((q) => q.x), ys = p.map((q) => q.y);
     return { left: Math.min(...xs), right: cv.width - Math.max(...xs), top: Math.min(...ys), bottom: cv.height - Math.max(...ys) }; })()`)) as Record<string, number>;
   if (cm.left! < 4 || cm.right! < 4 || cm.top! < 0 || cm.bottom! < 0) fail(where, `the bookcase is cut: margins ${JSON.stringify(cm)}`);
-  if (cm.left! > 0.2 * w && cm.top! > 0.2 * h) fail(where, `the bookcase is small in its block: margins ${JSON.stringify(cm)}`);
+  // Stage 4C: the block is fitted to the case: at most 16px of wall above and 16px of floor below (the case fills the width on phones;
+  // on the tablet the block is at its height limit and the case is as high as the block allows).
+  if (cm.top! > 16.5 || cm.bottom! > 16.5) fail(where, `empty wall/floor around the bookcase: margins ${JSON.stringify(cm)}`);
   // The category nav scrolls inside its own row; the edges with more chips fade (none when everything fits).
   const chips = (await page.evaluate(`(() => { const e = document.querySelector('.chips'); const f = (e.className.match(/fade-[lr]/g) || []).sort().join(' '); return [e.scrollWidth, e.clientWidth, e.getBoundingClientRect().right, f]; })()`)) as [number, number, number, string];
   if (chips[2] > w + 0.5) fail(where, 'the category nav sticks out');
@@ -232,6 +236,8 @@ async function homeAt(w: number, h: number, dsf: number) {
     const fades: string[] = [];
     for (const pos of [(chips[0] - chips[1]) / 2, chips[0]]) {
       await page.evaluate(`document.querySelector('.chips').scrollLeft = ${pos}`);
+      // The class follows the scroll event: wait for it to settle (a loaded machine can take longer than a fixed pause).
+      await page.waitForFunction(`document.querySelector('.chips').className.includes('fade-l')`, undefined, { timeout: 3000 }).catch(() => undefined);
       await page.waitForTimeout(250);
       fades.push((await page.evaluate(`(document.querySelector('.chips').className.match(/fade-[lr]/g) || []).sort().join(' ')`)) as string);
     }
@@ -243,6 +249,204 @@ async function homeAt(w: number, h: number, dsf: number) {
   }
   errors.slice(0, 3).forEach((e) => fail(where, `page error: ${e}`));
   report.home.push({ w, docScrollH: m.docScrollH, shelf: stage, chips: chips.slice(0, 2), caseMargins: cm, index: rows, targets: m.targetCount });
+  await ctx.close();
+}
+
+/** The case's front face on screen, relative to the canvas: the margins on the four sides, px. */
+const CASE_MARGINS = `(() => { const cv = document.querySelector('canvas').getBoundingClientRect(); const c = window.__case;
+  const p = [[0, 0], [c.width, 0], [0, c.height], [c.width, c.height]].map(([x, y]) => window.__project(x, y, c.depth));
+  const xs = p.map((q) => q.x), ys = p.map((q) => q.y);
+  return { left: Math.min(...xs), right: cv.width - Math.max(...xs), top: Math.min(...ys), bottom: cv.height - Math.max(...ys), h: cv.height }; })()`;
+
+/** Stage 4C: the results of a search (mocked) under the search pill; and the quiet lines. */
+async function searchAt(w: number, h: number) {
+  const where = `search ${w}`;
+  const box = (sel: string) => `(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, left: b.left, right: b.right, h: b.height }; })()`;
+  type Box = { top: number; bottom: number; left: number; right: number; h: number } | null;
+
+  // 1. Results.
+  {
+    const { ctx, page, errors } = await newPhone(w, h);
+    await mockSearch(page, 'results');
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    await page.waitForSelector('.app.ready', { timeout: 60000 });
+    await page.waitForTimeout(2500);
+    const frameBefore = (await page.evaluate(box('.frame'))) as Box;
+    await tap(page, '.search input');
+    await page.fill('.search input', 'agent drift');
+    await page.keyboard.press('Enter');
+    try {
+      await page.waitForSelector('.search-wrap .results.stacked .res', { timeout: 8000 });
+    } catch {
+      fail(where, 'no results under the search box');
+      await ctx.close();
+      return;
+    }
+    await page.waitForTimeout(600);
+    const pill = (await page.evaluate(box('.search'))) as Box;
+    const list = (await page.evaluate(box('.results.stacked'))) as Box;
+    const frame = (await page.evaluate(box('.frame'))) as Box;
+    const rows = (await page.evaluate(`Array.from(document.querySelectorAll('.results.stacked .res')).map((e) => { const b = e.getBoundingClientRect(); return { h: b.height, l: b.left, r: b.right }; })`)) as { h: number; l: number; r: number }[];
+    if (!pill || !list || !frame || !frameBefore) return fail(where, 'missing boxes');
+    if (list.top < pill.bottom - 0.5 || list.top - pill.bottom > 24) fail(where, `the list starts ${Math.round(list.top - pill.bottom)}px below the search pill`);
+    if (frame.top < list.bottom - 0.5) fail(where, 'the video is not below the list');
+    if (frame.top - frameBefore.top < list.h - 2) fail(where, `the list did not push the video down (${Math.round(frame.top - frameBefore.top)}px for ${Math.round(list.h)}px)`);
+    if (rows.length !== 4) fail(where, `${rows.length} result rows, expected the 4 above the 30% bar`);
+    if (rows.some((r) => r.h < 44)) fail(where, `a result row is ${Math.min(...rows.map((r) => r.h))}px high`);
+    if (rows.some((r) => r.l < -0.5 || r.r > w + 0.5)) fail(where, 'a result row sticks out of the screen');
+    if (await page.$('.plaque .results')) fail(where, 'the results are also in the theme card');
+    if (!(await page.$('.plaque .pane:not(.off) .index'))) fail(where, 'the theme index is not shown while the results are under the search box');
+    if (!(await page.$('.app.dim'))) fail(where, 'the books do not glow while the list is shown');
+    const m = (await page.evaluate(`${MEASURE}('home')`)) as Measure;
+    judge(`${where} (results)`, m);
+    report.search.push({ w, pill, list, frameBefore: frameBefore.top, frame: frame.top, rows: rows.map((r) => r.h) });
+    // A tap on a row opens the card, in the right concept.
+    await page.tap('.results.stacked .res:nth-child(2)');
+    try {
+      await page.waitForFunction(`document.querySelector('.book-panel.visible .c-name')?.textContent !== undefined && document.querySelector('.book-panel.visible .c-name').textContent.length > 0`, undefined, { timeout: 15000 });
+    } catch {
+      fail(where, 'tapping a result did not open the card');
+    }
+    const name = await page.textContent('.book-panel.visible .c-name').catch(() => null);
+    const want = data.concepts.find((c) => c.id === MOCK_IDS[1])!.name;
+    if (name !== want) fail(where, `tapping the second result opened "${name}", expected "${want}"`);
+    await page.waitForTimeout(700);
+    await tap(page, '.page-close');
+    await page.waitForFunction(`!document.querySelector('.book-panel.visible')`, undefined, { timeout: 10000 }).catch(() => fail(where, '✕ did not close the card'));
+    await page.waitForTimeout(1200);
+    if (!(await page.$('.results.stacked .res'))) fail(where, 'the list is gone after the card was closed');
+    // Clearing removes it, and the video is back where it was.
+    await page.evaluate(`window.scrollTo(0, 0)`);
+    await page.waitForTimeout(200);
+    await page.tap('.search .x');
+    await page.waitForTimeout(500);
+    if (await page.$('.results')) fail(where, 'clearing the search left the list');
+    const frameAfter = (await page.evaluate(box('.frame'))) as Box;
+    if (frameAfter && Math.abs(frameAfter.top - frameBefore.top) > 1) fail(where, `the video did not return after clearing (${frameBefore.top} -> ${frameAfter.top})`);
+    if (await page.$('.app.dim')) fail(where, 'the books still glow after clearing');
+    errors.slice(0, 3).forEach((e) => fail(where, `page error: ${e}`));
+    await ctx.close();
+  }
+
+  // 2. The quiet lines: "nothing fits" (in the list's place) and "not connected" (under the pill, as before), both above the video.
+  for (const [mode, text] of [['nothing', 'Nothing here fits'], ['no_key', 'not connected']] as [SearchMock, string][]) {
+    const { ctx, page } = await newPhone(w, h);
+    await mockSearch(page, mode);
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    await page.waitForSelector('.app.ready', { timeout: 60000 });
+    await page.waitForTimeout(2500);
+    await tap(page, '.search input');
+    await page.fill('.search input', 'something unrelated to anything');
+    await page.keyboard.press('Enter');
+    try {
+      await page.waitForFunction(`document.querySelector('.search-wrap .qnote')?.textContent.includes(${JSON.stringify(text)})`, undefined, { timeout: 8000 });
+    } catch {
+      fail(`${where} ${mode}`, `no "${text}" line under the search box`);
+      await ctx.close();
+      continue;
+    }
+    const pill = (await page.evaluate(box('.search'))) as Box;
+    const note = (await page.evaluate(box('.search-wrap .qnote'))) as Box;
+    const frame = (await page.evaluate(box('.frame'))) as Box;
+    if (!pill || !note || !frame) fail(`${where} ${mode}`, 'missing boxes');
+    else {
+      if (note.top < pill.bottom - 0.5 || note.top - pill.bottom > 24) fail(`${where} ${mode}`, `the line is ${Math.round(note.top - pill.bottom)}px below the pill`);
+      if (frame.top < note.bottom) fail(`${where} ${mode}`, 'the video is not below the line');
+      if (note.right > w + 0.5) fail(`${where} ${mode}`, 'the line sticks out of the screen');
+    }
+    await ctx.close();
+  }
+}
+
+/** Stage 4C: picking a theme scrolls the shelf block to the top of the window. */
+async function themeScrollAt(w: number, h: number) {
+  const where = `theme scroll ${w}`;
+  const stageTop = `document.querySelector('[data-stage]').getBoundingClientRect().top`;
+  const idx = (k: string) => `.idx:nth-child(${k})`;
+  const run = async (reduced: boolean) => {
+    const tag = reduced ? `${where} (reduced motion)` : where;
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+    const page = await ctx.newPage();
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    await page.waitForSelector('.app.ready', { timeout: 60000 });
+    await page.waitForTimeout(2500);
+    // From the theme index, which is below the shelf.
+    await page.evaluate(`document.querySelector('${idx('8')}').scrollIntoView({ block: 'center' })`);
+    await page.waitForTimeout(300);
+    const y0 = (await page.evaluate(`scrollY`)) as number;
+    await page.tap(idx('8'));
+    if (reduced) {
+      await page.waitForTimeout(120);
+      const top = (await page.evaluate(stageTop)) as number;
+      if (Math.abs(top - 8) > 2) fail(tag, `with reduced motion the shelf block is ${Math.round(top)}px from the top right after the tap (expected a jump to 8)`);
+    } else {
+      await page.waitForTimeout(60);
+      const mid = (await page.evaluate(`scrollY`)) as number;
+      if (Math.abs(mid - y0) < 1) fail(tag, 'the page did not start to scroll');
+      await page.waitForTimeout(1600);
+    }
+    const top = (await page.evaluate(stageTop)) as number;
+    const y1 = (await page.evaluate(`scrollY`)) as number;
+    if (top < 0 || top > 16) fail(tag, `after the tap the shelf block's top is ${Math.round(top)}px from the top of the window`);
+    if (y1 >= y0) fail(tag, `the page did not scroll up to the shelf (${y0} -> ${y1})`);
+    const on = await page.getAttribute(idx('8'), 'aria-pressed');
+    if (on !== 'true') fail(tag, 'theme 8 is not selected');
+    if (!(await page.$('.app.dim'))) fail(tag, 'the books are not lit after the tap');
+    const stage = (await page.evaluate(`(() => { const b = document.querySelector('[data-stage]').getBoundingClientRect(); return [b.top, b.bottom, innerHeight]; })()`)) as number[];
+    if (stage[1]! > stage[2]! + 0.5) fail(tag, `the shelf block does not fit in the window (${Math.round(stage[1]!)} > ${stage[2]})`);
+    if (!reduced) report.themeScroll.push({ w, from: y0, to: y1, stageTop: Math.round(top * 10) / 10 });
+    // Tapping the active theme again turns it off and does not scroll.
+    await page.evaluate(`document.querySelector('${idx('8')}').scrollIntoView({ block: 'center' })`);
+    await page.waitForTimeout(400);
+    const y2 = (await page.evaluate(`scrollY`)) as number;
+    await page.tap(idx('8'));
+    await page.waitForTimeout(1200);
+    const y3 = (await page.evaluate(`scrollY`)) as number;
+    if (Math.abs(y3 - y2) > 1) fail(tag, `turning the theme off scrolled the page (${y2} -> ${y3})`);
+    if ((await page.getAttribute(idx('8'), 'aria-pressed')) !== 'false') fail(tag, 'the second tap did not turn the theme off');
+    // A theme under "Also in the conversation" scrolls too.
+    if (!reduced) {
+      await page.evaluate(`document.querySelector('.also .row button').scrollIntoView({ block: 'center' })`);
+      await page.waitForTimeout(400);
+      const y4 = (await page.evaluate(`scrollY`)) as number;
+      await page.tap('.also .row button');
+      await page.waitForTimeout(1800);
+      const top2 = (await page.evaluate(stageTop)) as number;
+      if (top2 < 0 || top2 > 16) fail(tag, `"also": the shelf block's top is ${Math.round(top2)}px from the top of the window after the tap`);
+      if (((await page.evaluate(`scrollY`)) as number) >= y4) fail(tag, '"also": the page did not scroll up');
+    }
+    await ctx.close();
+  };
+  await run(false);
+  await run(true);
+  // A theme set without a tap (the deep link here; the video's follow loop calls the same setter and not the tap handler) does not scroll.
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  await page.goto(`${base}/?t=8`, { waitUntil: 'load' });
+  await page.waitForSelector('.app.ready', { timeout: 60000 });
+  await page.waitForTimeout(3000);
+  if ((await page.evaluate(`scrollY`)) !== 0) fail(where, 'a theme set from the link scrolled the page');
+  if (!(await page.$('.app.dim'))) fail(where, 'the link theme does not light the books');
+  await ctx.close();
+}
+
+/** Stage 4C: the block is refitted when the window is resized or turned. */
+async function resizeAt() {
+  const { ctx, page } = await newPhone(390, 844);
+  await page.goto(`${base}/`, { waitUntil: 'load' });
+  await page.waitForSelector('.app.ready', { timeout: 60000 });
+  await page.waitForTimeout(2500);
+  const seen: unknown[] = [];
+  for (const [w, h, name] of [[390, 844, 'portrait 390'], [430, 932, 'resized to 430'], [375, 812, 'resized to 375'], [844, 390, 'turned: landscape 844x390'], [390, 844, 'turned back']] as [number, number, string][]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(2500);
+    const cm = (await page.evaluate(CASE_MARGINS)) as Record<string, number>;
+    seen.push({ name, ...Object.fromEntries(Object.entries(cm).map(([k, v]) => [k, Math.round(v * 10) / 10])) });
+    if (cm.left! < 4 || cm.right! < 4 || cm.top! < 0 || cm.bottom! < 0) fail(`resize ${name}`, `the bookcase is cut: ${JSON.stringify(cm)}`);
+    if (w < 500 && h > w && (cm.top! > 16.5 || cm.bottom! > 16.5)) fail(`resize ${name}`, `empty wall/floor after the resize: ${JSON.stringify(cm)}`);
+    if (w > h && (cm.top! > 16.5 || cm.bottom! > 16.5)) fail(`resize ${name}`, `empty wall/floor: ${JSON.stringify(cm)}`);
+  }
+  report.resize = seen;
   await ctx.close();
 }
 
@@ -322,6 +526,12 @@ if (!process.env.QUICK) {
 await conceptNav(390, 844);
 await conceptNav(375, 812);
 for (const [w, h, d] of [[375, 812, 3], [390, 844, 3], [430, 932, 3], [768, 1024, 2]] as [number, number, number][]) await homeAt(w, h, d);
+await searchAt(390, 844);
+await searchAt(375, 812);
+await themeScrollAt(390, 844);
+await themeScrollAt(375, 812);
+await themeScrollAt(768, 1024);
+await resizeAt();
 await touchFlow(390, 844);
 await board(390, 844);
 await board(768, 1024);
