@@ -41,9 +41,9 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
         <Loose layout={layout} atlas={library.atlas} />
         <FocusBook layout={layout} atlas={library.atlas} categories={library.categories} />
         <ShadowRefresh layout={layout} />
+        <DprGovernor />
         <Ready onReady={onReady} />
       </Suspense>
-      <DprGovernor />
       <StarLightDriver />
       <CameraRig layout={layout} />
       <DevProbe layout={layout} />

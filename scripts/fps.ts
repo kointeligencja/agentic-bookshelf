@@ -8,7 +8,7 @@
 import { mkdir } from 'node:fs/promises';
 import { chromium, type Page } from 'playwright';
 
-const base = (process.argv[2] ?? 'http://localhost:5181/').replace(/\/?$/, '/');
+const base = (process.argv[2] ?? 'http://localhost:5181/').replace(/^([^?]*?)\/?(\?.*)?$/, '$1/$2');
 const [W, H] = (process.argv[3] ?? '2000x1150').split('x').map(Number) as [number, number];
 const runs = Number(process.env.RUNS ?? 2);
 const only = process.env.ONLY ? new RegExp(process.env.ONLY) : null;
@@ -91,6 +91,28 @@ async function hitches() {
     console.log(`h-book dpr${dpr} | pull-out (DoF mounts), click to +2.5 s: ${await gapsAfter(page, tc, tc + 2500)}`);
     await ctx.close();
   }
+}
+/** Logs every change of the canvas backing-store width (a pixel ratio change reallocates it) from load, through 10 s of mouse movement. */
+async function dprLog() {
+  const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await page.addInitScript(`(() => { window.__w = []; const t0 = performance.now(); const seen = new WeakSet();
+    new MutationObserver(() => { for (const c of document.querySelectorAll('canvas')) { if (!seen.has(c)) { seen.add(c); new MutationObserver(() => window.__w.push([Math.round(performance.now() - t0), c.width])).observe(c, { attributes: true, attributeFilter: ['width'] }); window.__w.push([Math.round(performance.now() - t0), c.width]); } } }).observe(document, { childList: true, subtree: true }); })()`);
+  await page.goto(base, { waitUntil: 'load' });
+  await page.waitForTimeout(9000);
+  const before = ((await page.evaluate('window.__w')) as number[][]).length;
+  const t0 = (await page.evaluate('performance.now()')) as number;
+  await wiggle(page, 10000);
+  await page.waitForTimeout(2500);
+  const log = (await page.evaluate('window.__w')) as number[][];
+  console.log(`canvas width changes (ms since load, px): ${JSON.stringify(log)}`);
+  console.log(`changes during the 10 s wiggle and 2.5 s after: ${log.length - before} (at ${Math.round(t0)} ms the wiggle started)`);
+  await ctx.close();
+}
+if (process.env.DPRLOG) {
+  await dprLog();
+  await browser.close();
+  process.exit(0);
 }
 if (process.env.HITCH) {
   await hitches();
