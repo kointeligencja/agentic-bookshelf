@@ -6,20 +6,17 @@ import type { Library } from '../types.ts';
 import { Bookcase } from './Bookcase.tsx';
 import { Books } from './Books.tsx';
 import { CameraRig, EYE_HEIGHT, FOV } from './CameraRig.tsx';
-import { DprGovernor } from './DprGovernor.tsx';
+import { DprGovernor, initialDpr } from './DprGovernor.tsx';
 import { FocusBook } from './FocusBook.tsx';
 import { caseHeight, caseWidth, type Layout, type Placement } from './layout.ts';
 import { Loose } from './Loose.tsx';
 import { Room } from './Room.tsx';
 import { StarLightDriver } from './starLight.ts';
 
-/** Until the governor has chosen a ratio: the screen's own, up to 2. */
-const DPR_RANGE: [number, number] = [1, 2];
-
 export function Scene({ library, layout, onReady }: { library: Library; layout: Layout; onReady: () => void }) {
   const setHovered = useStore((s) => s.setHovered);
   const right = caseWidth(layout.bookcase);
-  const [dpr, setDpr] = useState<number | [number, number]>(DPR_RANGE);
+  const [dpr, setDpr] = useState(initialDpr);
 
   return (
     <Canvas
