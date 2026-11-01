@@ -57,6 +57,7 @@ function SheetBooks({
   const material = useMemo(() => createBookMaterial(texture, mode, shelfLight), [texture, mode, shelfLight]);
   const geo = useMemo(() => geometry.clone(), []);
   const invalidate = useThree((s) => s.invalidate);
+  const gl = useThree((s) => s.gl);
   const start = useRef(performance.now());
   const composed = useRef<boolean[]>([]);
   const introDone = useRef(false);
@@ -94,8 +95,9 @@ function SheetBooks({
     start.current = performance.now();
     composed.current = [];
     introDone.current = false;
+    gl.shadowMap.needsUpdate = true;
     invalidate();
-  }, [placements, geo, highlight, invalidate, mode]);
+  }, [placements, geo, highlight, invalidate, gl, mode]);
 
   // A new set of lit books rewrites the per-instance attribute; nothing is rebuilt.
   useEffect(() => {
@@ -194,6 +196,8 @@ function SheetBooks({
       highlight.setX(i, a.glow);
       composed.current[i] = !hidden;
       mesh.instanceMatrix.needsUpdate = true;
+      // The shadow map is only redrawn when a book has moved (see Scene).
+      gl.shadowMap.needsUpdate = true;
       highlight.needsUpdate = true;
     });
     // Raycasting uses a bounding sphere over all instances; refresh it once everything has landed.

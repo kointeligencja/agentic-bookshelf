@@ -25,7 +25,13 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
       camera={{ fov: FOV, near: 60, far: 30000, position: [0, EYE_HEIGHT, 3500] }}
       gl={{ antialias: false, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 1.05 }}
       onPointerMissed={() => setHovered(null)}
-      onCreated={({ gl }) => gl.setClearColor('#eeeae3')}
+      onCreated={({ gl }) => {
+        gl.setClearColor('#eeeae3');
+        // The room and the furniture never move, and the key light is fixed: the shadow map is redrawn only when a book moves
+        // (Books sets needsUpdate), not on every frame the camera parallax renders.
+        gl.shadowMap.autoUpdate = false;
+        gl.shadowMap.needsUpdate = true;
+      }}
     >
       <Room x0={layout.minX - 4000} x1={right + 4000} focusX0={layout.minX} focusX1={right} />
       <Suspense fallback={null}>
@@ -33,6 +39,7 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
         <Books atlas={library.atlas} coverAtlas={library.coverAtlas} placements={layout.placements} bookcase={layout.bookcase} />
         <Loose layout={layout} atlas={library.atlas} />
         <FocusBook layout={layout} atlas={library.atlas} categories={library.categories} />
+        <ShadowRefresh layout={layout} />
         <Ready onReady={onReady} />
       </Suspense>
       <StarLightDriver />
@@ -102,6 +109,16 @@ function DevProbe({ layout }: { layout: Layout }) {
       return best?.id ?? null;
     };
   }, [camera, size, layout, invalidate]);
+  return null;
+}
+
+/** Redraws the shadow map once the furniture and the books have loaded (or the layout changed). */
+function ShadowRefresh({ layout }: { layout: Layout }) {
+  const { gl, invalidate } = useThree();
+  useEffect(() => {
+    gl.shadowMap.needsUpdate = true;
+    invalidate();
+  }, [gl, invalidate, layout]);
   return null;
 }
 
