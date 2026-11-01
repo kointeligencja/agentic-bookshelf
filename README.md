@@ -34,14 +34,12 @@ Would you rather have Claude Code build your own version from scratch? [PROMPT.m
 
 As in a library, every category starts in a compartment of its own and every compartment carries a label naming it. Compartments fill down each column, top to bottom, then the next column; spare compartments go to the fullest categories, so there's room to grow. Volumes of a series (numbered series, annual anthologies) stand together in order. The bookcase grows a column when the library outgrows it; no compartment ever takes more books than fit.
 
-Getting around:
+Getting around: the camera stands still and shows the whole bookcase, so the books stay sharp and the canvas only draws while something moves.
 
 | | |
 | --- | --- |
-| Along the wall | Horizontal scroll or shift + scroll, drag, ← → |
-| Up and down the case | Scroll once zoomed in, vertical drag, Page Up / Page Down |
-| Zoom | Pinch or ctrl/⌘ + scroll (towards the cursor), double-click to zoom in on a spot, ↑ ↓ |
 | A book | Hover to tip it out, click to pull it out, click again to open it; Esc or click outside to put it back |
+| A category | Click its chip above the shelf to light its books (click again to turn it off); `#category/<slug>` opens with one on |
 
 Vite + React + TypeScript, react-three-fiber, drei, zustand. A Node pipeline turns the Goodreads CSV export into `public/data/books.json`, cover images and a KTX2 spine atlas. The site itself is static.
 

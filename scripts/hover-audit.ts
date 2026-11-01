@@ -8,7 +8,7 @@ const base = process.argv[2] ?? 'http://localhost:5317';
 const out = path.resolve(process.argv[3] ?? 'screenshots');
 await mkdir(out, { recursive: true });
 const library = JSON.parse(await readFile('public/data/books.json', 'utf8')) as Library;
-const browser = await chromium.launch({ args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1512, height: 900 }, deviceScaleFactor: 1 });
 const wait = (ms: number) => page.waitForTimeout(ms);
 const clean = (t: string) => t.replace(/\s*\(.*?\)\s*$/, '');

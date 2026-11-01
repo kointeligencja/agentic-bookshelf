@@ -12,7 +12,7 @@ const RING = 16;
 const PAPER = [0xf5, 0xef, 0xe4];
 const cases = (process.argv[2] ?? '1280x800x1,1440x900x1,1600x900x1,1920x1080x1,2000x1150x1,2560x1440x1,1440x900x2,1536x864x1.25,1277x799x1,1601x901x1').split(',').map((s) => s.split('x').map(Number) as [number, number, number]);
 const books: [string, string][] = [['900000043', 'commander-intent'], ['900000017', 'socratic-method']];
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 let failed = 0;
 for (const [w, h, dpr] of cases) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: dpr });

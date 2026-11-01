@@ -29,7 +29,7 @@ const data = JSON.parse(await readFile('public/data/agentic.json', 'utf8')) as A
 const MAX_CPL = 75;
 const STRIP_MAX = 120;
 
-const browser: Browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser: Browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const failures: string[] = [];
 const fail = (where: string, what: string) => failures.push(`${where}: ${what}`);
 

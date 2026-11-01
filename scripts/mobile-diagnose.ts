@@ -23,7 +23,7 @@ const SCREENS = [
   { id: 'escalation', hash: '#book/900000028/escalation', tab: null },
 ];
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const results: Record<string, Measure & Record<string, unknown>> = {};
 
 /** The card's own facts: tabs, the agent box, the pager, the concept nav, the book on screen. */

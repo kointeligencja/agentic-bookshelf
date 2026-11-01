@@ -8,7 +8,7 @@ import { mockSearch } from './mobile-search-mock.ts';
 const dir = process.argv[2] ?? '/tmp/shots-4c';
 const base = process.argv[3] ?? 'http://localhost:5181';
 await mkdir(dir, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 
 async function open(search = false) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });

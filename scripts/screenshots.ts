@@ -11,7 +11,7 @@ const out = path.resolve(process.argv[3] ?? 'screenshots');
 const only = process.env.SHOTS?.split(',');
 
 const library = JSON.parse(await readFile('public/data/books.json', 'utf8')) as Library;
-const browser = await chromium.launch({ args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1512, height: 900 }, deviceScaleFactor: 2 });
 const logs: string[] = [];
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));

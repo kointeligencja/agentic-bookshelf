@@ -29,7 +29,7 @@ const BOOK_ORDER = 6;
 /**
  * The plane in front of the case. Out of reading mode it is the dim (a flat colour, mostly transparent). In reading mode it fades
  * to opaque walnut, lighter round the book (a glow in screen space, `uCentre` and `uRadius` in drawing-buffer pixels), so no shelf
- * shows behind the left quarter of the screen. Colours are linear, as the composer expects.
+ * shows behind the left quarter of the screen. Colours are linear; the shader tone maps and converts them to the screen's colour space itself (it is not a built-in material).
  *
  * The plane stands at DIM_Z in the world, but the room reaches in front of it (the floor runs 6000mm out): with a low book, seen
  * from above, the floor was drawn over the bottom of the walnut. So the backdrop ignores the depth of the room: it is drawn in the
@@ -63,6 +63,8 @@ function backdropMaterial() {
         float k = 1.0 - smoothstep(0.0, uRadius, distance(gl_FragCoord.xy, uCentre));
         gl_FragColor = vec4(mix(uDim, mix(uEdge, uGlow, k), uRead), uOpacity);
         gl_FragDepth = uDepth;
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
       }`,
   });
 }

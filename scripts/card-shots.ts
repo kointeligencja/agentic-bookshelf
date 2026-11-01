@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 const [bookId, conceptId, tabArg = 'default', sizeArg = '1440x900', outDir = '/tmp/shots3d', prefix = `3a-${conceptId}`] = process.argv.slice(2);
 if (!bookId || !conceptId) throw new Error('usage: card-shots.ts <bookId> <conceptId> <tabs> <sizes> [outDir] [prefix]');
 const base = process.env.BASE ?? 'http://localhost:5181';
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 for (const size of sizeArg.split(',')) {
   const [w, h] = size.split('x').map(Number) as [number, number];
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });

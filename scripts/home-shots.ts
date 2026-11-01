@@ -15,7 +15,7 @@ const SIZES: [number, number, number][] = [
   [768, 1024, 2],
 ];
 await mkdir(dir, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const result: Record<string, unknown> = {};
 
 const MEASURE = `(() => {

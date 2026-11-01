@@ -45,7 +45,7 @@ async function shoot(page: Page, blocks: string[], fonts: string[]): Promise<Sho
 }
 
 async function record(out: string, base: string) {
-  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
   const rec: Rec = {};
   for (const [w, h] of SIZES) {
     const open = async (hash: string) => {

@@ -59,7 +59,7 @@ export function useCaseMaterials() {
       walnut: [walnut('walnut-a', '#ffffff'), walnut('walnut-b', '#f4eeea')],
       // The back panel is a single book-matched veneer, a shade darker.
       back: walnut('walnut-back', '#d9cdc6'),
-      ao: new THREE.MeshBasicMaterial({ map: compartmentAOTexture(), color: '#000', transparent: true, opacity: 0.55, depthWrite: false }),
+      ao: new THREE.MeshBasicMaterial({ map: compartmentAOTexture(), color: '#000', transparent: true, opacity: AO_OPACITY, depthWrite: false }),
       aluminium: new THREE.MeshStandardMaterial({ color: '#c9cbcc', roughness: 0.32, metalness: 0.85 }),
       brass: new THREE.MeshStandardMaterial({ color: '#c3a064', roughness: 0.3, metalness: 1 }),
       labelCard: new THREE.MeshStandardMaterial({ color: '#efe6d2', roughness: 0.85 }),
@@ -432,6 +432,12 @@ function ShelfLighting({ layout, mats }: { layout: Layout; mats: Mats }) {
     </group>
   );
 }
+
+/**
+ * Opacity of the baked contact-AO layers (black, alpha blended). Blending now happens in the screen's colour space (the post-processing
+ * chain blended in linear light, which is lighter): 1 - (1 - 0.55)^(1/2.2) gives the same darkening as the 0.55 it had there.
+ */
+const AO_OPACITY = 0.3;
 
 export function Bookcase({ layout }: { layout: Layout }) {
   const mats = useCaseMaterials();

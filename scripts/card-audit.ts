@@ -52,7 +52,7 @@ interface Row {
   cpl?: { n: number; where: string };
 }
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 
 /** What the page says about the card on screen. Runs in the page. */
 const READ = `(() => {
