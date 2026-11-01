@@ -44,6 +44,11 @@ async function once(net: string) {
   await page.goto(base + '/', { waitUntil: 'commit' });
   await page.waitForFunction(`performance.getEntriesByName('bs:intro-done').length > 0 || document.querySelector('.app.ready') && performance.now() > 40000`, null, { timeout: 120000 });
   await page.waitForTimeout(500);
+  const cs = await ctx.newCDPSession(page);
+  await cs.send('Performance.enable');
+  const cdpm = await cs.send('Performance.getMetrics').catch(() => ({ metrics: [] }));
+  const cpu: Record<string, number> = {};
+  for (const m of (cdpm as { metrics: { name: string; value: number }[] }).metrics) if (['ThreadTime', 'ScriptDuration', 'LayoutDuration', 'RecalcStyleDuration', 'TaskDuration'].includes(m.name)) cpu[m.name] = Math.round(m.value * 1000);
   const data = (await page.evaluate(`(() => {
     const marks = {};
     for (const m of performance.getEntriesByType('mark')) if (m.name.startsWith('bs:')) marks[m.name.slice(3)] = m.startTime;
@@ -57,7 +62,7 @@ async function once(net: string) {
     const f = fetched.find((x) => re.test(x.url));
     if (f) files[name] = { start: Math.round(f.start - data.origin), end: Math.round(f.end - data.origin), kb: Math.round(f.size / 1024) };
   }
-  return { ...data, files };
+  return { ...data, files, cpu };
 }
 
 const result: Record<string, unknown[]> = {};
