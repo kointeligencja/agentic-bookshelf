@@ -32,7 +32,11 @@
   --footer-h: 16px;
   /* Set from the window's size (src/App.tsx). */
   --panel-w: 440px;
-  --wall-w: min(calc(var(--panel-w) - 44px), 34vw, 54vh);
+  /* The desktop home group (src/lib/homeGroup.ts, set in App.tsx): the column's width and left edge, and the group's right edge as a distance from the window's right. */
+  --col-w: clamp(380px, 26vw, 520px);
+  --group-l: var(--s3);
+  --group-r: var(--s3);
+  --wall-w: var(--col-w);
   --walnut: #5d3c27;
   --paper: #f5efe4;
   --read-left: 240px;
@@ -71,12 +75,12 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .chip:hover { background: rgba(43, 38, 32, 0.07); }
 .chip.on, .chip.on:hover { background: var(--ink); color: #fbf9f5; }
 .chip:focus-visible, .board-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
-.board-btn { position: absolute; top: var(--s3); right: var(--s3); z-index: 6; padding: 0 var(--s2); cursor: pointer; transition: background 200ms ease; }
+.board-btn { position: absolute; top: var(--s3); right: var(--group-r); z-index: 6; padding: 0 var(--s2); cursor: pointer; transition: background 200ms ease; }
 .board-btn:hover { background: rgba(251, 249, 245, 0.92); }
 
 /* The credits: one caption line, no pill. Light when the room is dark (books lit); hidden in reading mode (the strip is too narrow for it). */
 .credit {
-  position: absolute; bottom: var(--s3); left: var(--s3); max-width: calc(100vw - 2 * var(--s3) - 180px); margin: 0;
+  position: absolute; bottom: var(--s3); left: var(--group-l); max-width: calc(100vw - var(--group-l) - var(--group-r) - 140px); margin: 0;
   font: 400 var(--t-caption)/var(--footer-h) var(--sans); color: var(--ink); letter-spacing: 0.01em; pointer-events: none;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 500ms ease;
 }
@@ -93,6 +97,12 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 }
 .app.ready .loading { opacity: 0; }
 .chips { transition: opacity 300ms ease, transform 300ms ease; }
+/* A small desktop window: the group is only about 1080px wide, so the nav (beside the board button on the same row) and the view toggle (beside the footer line)
+   get a little less padding to fit. */
+@media (min-width: 900px) and (max-width: 1359px) {
+  .chip { padding: 0 7px; }
+  .view-toggle button { padding: 0 10px; }
+}
 .chips.hidden { opacity: 0; pointer-events: none; transform: translateY(-8px); }
 
 .tooltip {
@@ -118,7 +128,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .pill:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .view-toggle {
-  position: absolute; right: var(--s3); bottom: var(--s3); height: var(--pill-h); display: flex; align-items: center; padding: 0 4px; gap: 2px;
+  position: absolute; right: var(--group-r); bottom: var(--s3); height: var(--pill-h); display: flex; align-items: center; padding: 0 4px; gap: 2px;
   background: rgba(239, 233, 223, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--line); border-radius: 999px; transition: opacity 300ms ease;
 }
@@ -134,7 +144,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
    timeline, and a label card. No panel behind them. The camera leaves room for the column (see lib/panel.ts).
    Every block has the column's width and left edge, and the blocks are --s2 apart. */
 .wall {
-  position: absolute; top: var(--s3); left: var(--s3); bottom: calc(var(--s3) + var(--footer-h) + var(--s1)); width: var(--wall-w);
+  position: absolute; top: var(--s3); left: var(--group-l); bottom: calc(var(--s3) + var(--footer-h) + var(--s1)); width: var(--wall-w);
   display: flex; flex-direction: column; gap: var(--s2); pointer-events: none;
 }
 .wall > * { pointer-events: auto; margin: 0; }
@@ -168,16 +178,17 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .timeline .seg:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .timeline .head { position: absolute; top: 1px; width: 2px; height: 14px; margin-left: -1px; border-radius: 1px; background: var(--ink); pointer-events: none; }
 
-/* The label card under the picture. It fills what is left of the column, down to the bottom margin. The themes and the
+/* The label card under the picture. Its height is its content's (the search results make it fill what is left of the column, down to the bottom margin). The themes and the
    search results are two panes in the same frame, one over the other; the one not shown fades out (150 ms). */
 .plaque {
-  position: relative; flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden;
+  position: relative; flex: 0 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden;
   background: rgba(251, 249, 245, 0.96); border-radius: 5px; box-shadow: 0 0 0 1px var(--line), 0 8px 20px -6px rgba(43, 38, 32, 0.22);
 }
 .pane {
   grid-area: 1 / 1; min-height: 0; min-width: 0; padding: var(--s1); display: flex; flex-direction: column; overflow: hidden;
   opacity: 1; visibility: visible; transition: opacity 150ms ease, visibility 0s linear 0s;
 }
+.plaque.with-results { flex: 1 1 0; }
 .pane.off { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 150ms ease, visibility 0s linear 150ms; }
 /* The ten themes: two columns of five on one row height. Each column is as wide as its longest title, so none is cut. */
 .index { display: grid; grid-auto-flow: column; grid-template-rows: repeat(5, 24px); grid-template-columns: max-content max-content; justify-content: space-between; flex: none; }
@@ -206,7 +217,15 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .also button.on { text-decoration-color: var(--gold); text-decoration-thickness: 2px; }
 .also .dot { padding: 0 var(--s1); }
 .label { font: 600 var(--t-caption)/16px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.now { flex: none; margin-top: auto; padding-top: var(--s1); border-top: 1px solid var(--line); min-height: 0; }
+.now { flex: none; margin-top: var(--s1); padding-top: var(--s1); border-top: 1px solid var(--line); min-height: 0; }
+/* As tall as the card gets with a theme picked (label, name, two lines, clips), so picking one does not move the card's bottom edge. */
+@media (min-width: 900px) { .now { min-height: 112px; } }
+/* The column is 380px wide up to a 1460px window: the two columns of theme titles (379px at full size) get a smaller number badge and less padding. */
+@media (min-width: 900px) and (max-width: 1499px) {
+  .pane { padding-left: 6px; padding-right: 6px; }
+  .idx { gap: 2px; }
+  .idx .k { width: 16px; }
+}
 .now h2 { font: 500 var(--t-head)/24px var(--serif); margin: 0; }
 .now p {
   font: 400 var(--t-body)/20px var(--sans); margin: 0; color: #3f3830;

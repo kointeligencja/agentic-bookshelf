@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { computeLayout } from './scene/layout.ts';
 import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
 import { stageHeight } from './lib/framing.ts';
 import { isNarrow, isReading, panelWidth, readingPanel } from './lib/panel.ts';
-import { FOV, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/CameraRig.tsx';
+import { FOV, groupFor, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/CameraRig.tsx';
+import { homeGroup } from './lib/homeGroup.ts';
 import { caseHeight, caseWidth } from './scene/layout.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import { CategoryNav } from './ui/CategoryNav.tsx';
@@ -18,6 +19,17 @@ import { ViewToggle } from './ui/ViewToggle.tsx';
 const STAGE_MIN = 300;
 const STAGE_MAX = 760;
 const STAGE_MAX_LANDSCAPE = 420;
+
+/** The shape of the case in the opening view (Covers), mm, used to place the page's blocks before the library is in. Replaced by the real case once it is. */
+const FIRST_CASE = { width: 2192, height: 2314, z: 180 };
+
+/** Writes the desktop home group's edges as CSS variables: the column's left edge and width, and the group's right edge as a distance from the window's right. */
+function setGroupVars(g: { columnLeft: number; columnWidth: number; groupRight: number }, vw: number) {
+  const root = document.documentElement.style;
+  root.setProperty('--col-w', `${g.columnWidth}px`);
+  root.setProperty('--group-l', `${Math.round(g.columnLeft * 10) / 10}px`);
+  root.setProperty('--group-r', `${Math.round((vw - g.groupRight) * 10) / 10}px`);
+}
 
 /** `#book/{id}` opens a book pulled out, `#book/{id}/{conceptId}` with one of its cards; `#category/{slug}` lights a category's books. */
 function applyHash(library: Library) {
@@ -98,7 +110,10 @@ export function App() {
     const root = document.documentElement.style;
     const set = () => {
       const width = document.documentElement.clientWidth;
-      if (!isNarrow(width)) return root.removeProperty('--stage-h');
+      if (!isNarrow(width)) {
+        root.removeProperty('--stage-h');
+        return setGroupVars(groupFor(layout, width, window.innerHeight), width);
+      }
       const c = layout.bookcase;
       // A phone on its side is not tall enough for a block that high: it keeps the height the old rule gave it.
       const maxHeight = window.innerWidth > window.innerHeight ? STAGE_MAX_LANDSCAPE : STAGE_MAX;
@@ -124,6 +139,18 @@ export function App() {
       window.removeEventListener('orientationchange', set);
       root.removeProperty('--stage-h');
     };
+  }, [layout]);
+
+  // Before the library is in, the page's blocks stand where the group will put them (for a case of the usual shape), so they do not jump.
+  useLayoutEffect(() => {
+    if (layout) return;
+    const first = () => {
+      const w = document.documentElement.clientWidth;
+      if (!isNarrow(w)) setGroupVars(homeGroup(w, window.innerHeight, { ...FIRST_CASE, fovDeg: FOV, min: MIN_DISTANCE, max: MAX_DISTANCE }), w);
+    };
+    first();
+    window.addEventListener('resize', first);
+    return () => window.removeEventListener('resize', first);
   }, [layout]);
 
   const onReady = useCallback(() => setReady(true), []);

@@ -159,7 +159,7 @@ export function ThemePanel({ data }: { data: Agentic }) {
         </div>
       </figure>
       <Timeline data={data} theme={theme} getTime={getTime} onPlay={playClip} />
-      <section className="plaque" aria-label="Themes">
+      <section className={`plaque${inCard ? ' with-results' : ''}`} aria-label="Themes">
         <div className={`pane${inCard ? ' off' : ''}`} aria-hidden={inCard} inert={inCard}>
           <div className="index" role="group" aria-label="Themes">
             {numbered.map((t) => (
