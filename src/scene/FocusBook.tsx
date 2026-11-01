@@ -217,8 +217,10 @@ function Focused({
     const fovTan = Math.tan(THREE.MathUtils.degToRad(((camera as THREE.PerspectiveCamera).fov ?? 35) / 2));
     const fit = (book.dims.w * size.height) / (2 * fovTan * readingPanel(size.width).book);
     const hold = THREE.MathUtils.lerp(HOLD, THREE.MathUtils.clamp(fit, HOLD * 0.8, MAX_HOLD), st.read);
-    spring(st.p, f && !f.closing ? 1 : 0, dt);
-    spring(st.o, opening ? 1 : 0, dt, 120, 21);
+    const pTarget = f && !f.closing ? 1 : 0;
+    const oTarget = opening ? 1 : 0;
+    spring(st.p, pTarget, dt);
+    spring(st.o, oTarget, dt, 120, 21);
     const p = THREE.MathUtils.clamp(st.p.x, 0, 1.05);
     const o = THREE.MathUtils.clamp(st.o.x, -0.02, 1.02);
 
@@ -270,7 +272,10 @@ function Focused({
       focusFx.read = 0;
       useStore.getState().settle();
     }
-    invalidate();
+    // Keep drawing only while something here is still moving, so a book held still (reading mode) lets the canvas go idle.
+    const unsettled =
+      Math.abs(st.p.x - pTarget) > 1e-3 || Math.abs(st.p.v) > 1e-3 || Math.abs(st.o.x - oTarget) > 1e-3 || Math.abs(st.o.v) > 1e-3 || Math.abs(st.read - (reading ? 1 : 0)) > 1e-3;
+    if (unsettled) invalidate();
   });
 
   // The book panel covers the right of the screen, so there is no room to open the book: a click on it does nothing.
