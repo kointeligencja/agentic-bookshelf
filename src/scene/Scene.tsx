@@ -1,5 +1,5 @@
 import { Canvas, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useStore } from '../store.ts';
 import type { Library } from '../types.ts';
@@ -14,14 +14,18 @@ import { Loose } from './Loose.tsx';
 import { Room } from './Room.tsx';
 import { StarLightDriver } from './starLight.ts';
 
+/** Until the governor has chosen a ratio: the screen's own, up to 2. */
+const DPR_RANGE: [number, number] = [1, 2];
+
 export function Scene({ library, layout, onReady }: { library: Library; layout: Layout; onReady: () => void }) {
   const setHovered = useStore((s) => s.setHovered);
   const right = caseWidth(layout.bookcase);
+  const [dpr, setDpr] = useState<number | [number, number]>(DPR_RANGE);
 
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 2]}
+      dpr={dpr}
       shadows={{ type: THREE.PCFShadowMap }}
       camera={{ fov: FOV, near: 60, far: 30000, position: [0, EYE_HEIGHT, 3500] }}
       gl={{ antialias: false, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 1.05 }}
@@ -41,7 +45,7 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
         <Loose layout={layout} atlas={library.atlas} />
         <FocusBook layout={layout} atlas={library.atlas} categories={library.categories} />
         <ShadowRefresh layout={layout} />
-        <DprGovernor />
+        <DprGovernor onRatio={setDpr} />
         <Ready onReady={onReady} />
       </Suspense>
       <StarLightDriver />

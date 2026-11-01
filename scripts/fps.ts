@@ -1,5 +1,5 @@
 // Frame rate of the home page: rAF frame times while the mouse moves over the shelf (camera parallax renders every frame).
-// Headful Chrome (the GPU path matters), `load` + 9 s of settling (the YouTube embed never reaches networkidle).
+// Headless Chrome on the real GPU (--use-angle=metal; the renderer name is printed at the end, it must not be SwiftShader), `load` + 9 s of settling (the YouTube embed never reaches networkidle).
 // Scenarios: dpr 2 and dpr 1 with the mouse over the shelf; at dpr 2 also (b) a theme on, (c) a book pulled out. Each run twice.
 // Usage: npx tsx scripts/fps.ts [baseUrl] [WxH]      (use a production build: `npm run build && npx vite preview --port 5181`)
 // Env: CHROME_BIN = Chrome executable. SHOTS=<dir> also writes a dpr 2 screenshot of home, theme and pulled-out book as <dir>/<SHOT_PREFIX>-{home,theme,book}.png.
@@ -55,7 +55,7 @@ const SCENARIOS: Scenario[] = [
   { name: 'c-book dpr2', dpr: 2, setup: pullOut },
 ];
 
-const browser = await chromium.launch({ headless: false, executablePath: process.env.CHROME_BIN || undefined, args: ['--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--headless=new', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-gpu', ...(process.env.NOVSYNC ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])] });
 if (shots) await mkdir(shots, { recursive: true });
 let gpuName = '?';
 
@@ -130,18 +130,10 @@ for (const sc of SCENARIOS) {
     if (sc.setup) await sc.setup(page);
     if (shots && run === 1 && sc.dpr === 2) {
       await page.mouse.move(W * 0.65, H * 0.52);
-      // Wait for the resting picture: the canvas back at its full ratio (reported, with how long that took).
-      await page.waitForTimeout(1500);
-      const ts = Date.now();
-      let r0 = 0;
-      while (Date.now() - ts < 6000) {
-        await page.waitForTimeout(100);
-        r0 = (await page.evaluate(`document.querySelector('canvas').width / document.querySelector('canvas').clientWidth`)) as number;
-        if (r0 > 1.99) break;
-      }
-      const took = Date.now() - ts;
-      await page.waitForTimeout(500);
-      console.log(`screenshot ${sc.name}: canvas ratio at rest ${r0.toFixed(2)} after ${took} ms`);
+      // Wait for the picture to be at rest, and report the canvas ratio it is drawn at.
+      await page.waitForTimeout(2500);
+      const r0 = (await page.evaluate(`document.querySelector('canvas').width / document.querySelector('canvas').clientWidth`)) as number;
+      console.log(`screenshot ${sc.name}: canvas ratio at rest ${r0.toFixed(2)}`);
       await page.screenshot({ path: `${shots}/${prefix}-${sc.name.startsWith('a') ? 'home' : sc.name.startsWith('b') ? 'theme' : 'book'}.png` });
     }
     await page.evaluate(`(() => { window.__ft = []; let last = performance.now(); const f = (t) => { window.__ft.push(t - last); last = t; if (window.__ft.length < 2000) requestAnimationFrame(f); }; requestAnimationFrame(f); })()`);

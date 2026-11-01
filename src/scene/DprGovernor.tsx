@@ -12,12 +12,12 @@ const SAFETY_SAMPLE = 30;
 const START_SKIP = 2;
 const SETTLE_FRAMES = 3;
 const GAP_MS = 130;
-/** The ratio is the highest step expected to keep this frame time (about 45 fps). */
-const TARGET_MS = 22;
+/** The ratio is the highest step expected to keep this frame time (about 38 fps: 1.25 on the test Mac, where a frame costs 23 ms at 1.25, 33 at 1.5). */
+const TARGET_MS = 26.5;
 /** Median frame time that is slow enough to step down once more, later in the session (about 30 fps). */
-const SAFETY_MS = 33;
-/** Share of the frame that does not scale with the pixel count (geometry, shadow map, JS). */
-const FIXED = 0.1;
+const SAFETY_MS = 36;
+/** Share of the frame that does not scale with the pixel count. Measured on the Intel HD 630 test Mac: 59, 33 and 23 ms at ratio 2, 1.5 and 1.25, i.e. proportional to the pixel count. */
+const FIXED = 0;
 
 /**
  * One canvas pixel ratio per session, so nothing visibly re-renders while you move around.
@@ -25,10 +25,11 @@ const FIXED = 0.1;
  * the scene has loaded, so the first frames it sees are the books sliding in; that run is measured, and from its median frame time at the current ratio the ratio is chosen once: the highest 0.25 step (cap
  * min(devicePixelRatio, 2), floor 1) expected to hold TARGET_MS. A machine that is fast enough stays at the cap and never resizes.
  * Safety net: if a later run of 30 timed frames has a median over SAFETY_MS, it steps down once more, then stays.
+ * The ratio is handed to the owner of the Canvas (`onRatio`) to pass as its `dpr` prop: react-three-fiber resets the ratio to the
+ * prop on every render of the Canvas, so setting it on the store alone would be undone by the next re-render of the scene.
  * `?dpr=1.5` forces a ratio (for measuring).
  */
-export function DprGovernor() {
-  const setDpr = useThree((s) => s.setDpr);
+export function DprGovernor({ onRatio }: { onRatio: (ratio: number) => void }) {
   const invalidate = useThree((s) => s.invalidate);
   const current = useRef(Math.min(MAX_DPR, window.devicePixelRatio));
   const decided = useRef(false);
@@ -42,9 +43,9 @@ export function DprGovernor() {
     if (!forced) return;
     decided.current = safetyUsed.current = true;
     current.current = forced;
-    setDpr(forced);
+    onRatio(forced);
     invalidate();
-  }, [setDpr, invalidate]);
+  }, [onRatio, invalidate]);
 
   useFrame(() => {
     const now = performance.now();
@@ -79,7 +80,7 @@ export function DprGovernor() {
     }
     current.current = next;
     skip.current = SETTLE_FRAMES;
-    setDpr(next);
+    onRatio(next);
     invalidate();
   });
   return null;
