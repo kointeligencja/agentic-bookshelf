@@ -5,6 +5,7 @@ import { useStore } from './store.ts';
 import { stageHeight } from './lib/framing.ts';
 import { isNarrow, isReading, panelWidth, readingPanel } from './lib/panel.ts';
 import { FOV, groupFor, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/CameraRig.tsx';
+import { mark } from './lib/marks.ts';
 import { homeGroup } from './lib/homeGroup.ts';
 import { caseHeight, caseWidth } from './scene/layout.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
@@ -67,7 +68,10 @@ export function App() {
   useEffect(() => {
     fetch('/data/books.json')
       .then((r) => r.json() as Promise<Library>)
-      .then(setLibrary)
+      .then((lib) => {
+        mark('library');
+        setLibrary(lib);
+      })
       .catch((err: unknown) => console.error('Failed to load library', err));
   }, [setLibrary]);
 
@@ -77,6 +81,7 @@ export function App() {
       .then((r) => r.json() as Promise<Agentic>)
       .then((data) => {
         const s = useStore.getState();
+        mark('agentic');
         s.setAgentic(data);
         const key = new URLSearchParams(location.search).get('t');
         if (key && data.theses.some((t) => t.key === key)) s.setTheme(key);
@@ -153,7 +158,17 @@ export function App() {
     return () => window.removeEventListener('resize', first);
   }, [layout]);
 
-  const onReady = useCallback(() => setReady(true), []);
+  const onReady = useCallback(() => {
+    mark('scene-ready');
+    setReady(true);
+  }, []);
+
+  // The page's own blocks have been painted (two frames after they were first in the DOM).
+  const uiUp = !!agentic;
+  useEffect(() => {
+    if (!uiUp) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => mark('ui-painted')));
+  }, [uiUp]);
 
   // Deep links in, once the scene is up; and keep the hash in step with the focused book.
   useEffect(() => {

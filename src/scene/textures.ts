@@ -1,5 +1,6 @@
 // Procedural canvas textures for the room. Generated once on load; all seeded, so stable between visits.
 import * as THREE from 'three';
+import { timed } from '../lib/marks.ts';
 import { rng } from '../lib/random.ts';
 
 function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -41,7 +42,7 @@ function grain(ctx: CanvasRenderingContext2D, w: number, h: number, seed: string
 }
 
 /** Light white-oiled oak, grain along u. */
-export function oakTexture(seed = 'oak'): THREE.CanvasTexture {
+function oakTexture_(seed = 'oak'): THREE.CanvasTexture {
   const [c, ctx] = canvas(2048, 256);
   const g = ctx.createLinearGradient(0, 0, 0, 256);
   g.addColorStop(0, '#e2cba6');
@@ -60,7 +61,7 @@ export function oakTexture(seed = 'oak'): THREE.CanvasTexture {
 }
 
 /** Oak floor: 180 mm planks of varying tone. One texture tile = 1440 × 1440 mm. */
-export function floorTexture(): THREE.CanvasTexture {
+function floorTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(2048, 2048);
   const r = rng('floor');
   const planks = 8;
@@ -90,7 +91,7 @@ export function floorTexture(): THREE.CanvasTexture {
 }
 
 /** Warm off-white plaster: very low-contrast mottling, so the wall isn't a flat colour. */
-export function plasterTexture(): THREE.CanvasTexture {
+function plasterTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(1024, 1024);
   ctx.fillStyle = '#f5f2ed';
   ctx.fillRect(0, 0, 1024, 1024);
@@ -120,7 +121,7 @@ export function plasterTexture(): THREE.CanvasTexture {
 }
 
 /** Honed travertine: cream with soft horizontal veining and small pores. */
-export function travertineTexture(): THREE.CanvasTexture {
+function travertineTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(1024, 512);
   ctx.fillStyle = '#ece4d6';
   ctx.fillRect(0, 0, 1024, 512);
@@ -147,7 +148,7 @@ export function travertineTexture(): THREE.CanvasTexture {
 }
 
 /** 606 track face: brushed aluminium with the central slotted channel, tiled vertically every 32 mm. */
-export function trackTexture(): THREE.CanvasTexture {
+function trackTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(64, 128);
   const g = ctx.createLinearGradient(0, 0, 64, 0);
   g.addColorStop(0, '#b9bcbe');
@@ -170,7 +171,7 @@ export function trackTexture(): THREE.CanvasTexture {
  * The edge of a page block `mm` thick, across its whole thickness (u = 0..1 from board to board):
  * fine page lines, a slightly darker seam between signatures, and shading where the boards meet.
  */
-export function paperEdgeTexture(mm: number): THREE.CanvasTexture {
+function paperEdgeTexture_(mm: number): THREE.CanvasTexture {
   const W = 512;
   const [c, ctx] = canvas(W, 16);
   ctx.fillStyle = '#f1eadb';
@@ -198,7 +199,7 @@ export function paperEdgeTexture(mm: number): THREE.CanvasTexture {
 }
 
 /** Soft rectangular shadow (white = shadow), for baked contact AO under shelves and objects. */
-export function softShadowTexture(): THREE.CanvasTexture {
+function softShadowTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(256, 256);
   const img = ctx.createImageData(256, 256);
   for (let y = 0; y < 256; y++)
@@ -221,7 +222,7 @@ export function softShadowTexture(): THREE.CanvasTexture {
  * Oiled American walnut, 2000 × 500 mm per tile, grain along u. Returns the colour map and a
  * matching height map (pores and grain lines sunk) for bump. Seeded, so boards can differ.
  */
-export function walnutTextures(seed = 'walnut'): { map: THREE.CanvasTexture; bump: THREE.CanvasTexture } {
+function walnutTextures_(seed = 'walnut'): { map: THREE.CanvasTexture; bump: THREE.CanvasTexture } {
   const W = 2048;
   const H = 512;
   const [c, ctx] = canvas(W, H);
@@ -294,7 +295,7 @@ export function walnutTextures(seed = 'walnut'): { map: THREE.CanvasTexture; bum
 }
 
 /** Ambient occlusion for the inside of a compartment: dark into the corners, clear in the middle. */
-export function compartmentAOTexture(): THREE.CanvasTexture {
+function compartmentAOTexture_(): THREE.CanvasTexture {
   const [c, ctx] = canvas(256, 128);
   const img = ctx.createImageData(256, 128);
   for (let y = 0; y < 128; y++)
@@ -315,7 +316,7 @@ export function compartmentAOTexture(): THREE.CanvasTexture {
 }
 
 /** The wash an LED strip throws on a compartment's back panel (white = light, in alpha): even across, fading down. */
-export function lightWashTexture(): THREE.CanvasTexture {
+function lightWashTexture_(): THREE.CanvasTexture {
   const W = 128;
   const H = 128;
   const [c, ctx] = canvas(W, H);
@@ -335,3 +336,15 @@ export function lightWashTexture(): THREE.CanvasTexture {
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
   return t;
 }
+
+// Each builder's time is added to the load timeline's cost for textures (see lib/marks.ts).
+export const oakTexture = (...a: Parameters<typeof oakTexture_>): ReturnType<typeof oakTexture_> => timed('texture', () => oakTexture_(...a));
+export const floorTexture = (...a: Parameters<typeof floorTexture_>): ReturnType<typeof floorTexture_> => timed('texture', () => floorTexture_(...a));
+export const plasterTexture = (...a: Parameters<typeof plasterTexture_>): ReturnType<typeof plasterTexture_> => timed('texture', () => plasterTexture_(...a));
+export const travertineTexture = (...a: Parameters<typeof travertineTexture_>): ReturnType<typeof travertineTexture_> => timed('texture', () => travertineTexture_(...a));
+export const trackTexture = (...a: Parameters<typeof trackTexture_>): ReturnType<typeof trackTexture_> => timed('texture', () => trackTexture_(...a));
+export const paperEdgeTexture = (...a: Parameters<typeof paperEdgeTexture_>): ReturnType<typeof paperEdgeTexture_> => timed('texture', () => paperEdgeTexture_(...a));
+export const softShadowTexture = (...a: Parameters<typeof softShadowTexture_>): ReturnType<typeof softShadowTexture_> => timed('texture', () => softShadowTexture_(...a));
+export const walnutTextures = (...a: Parameters<typeof walnutTextures_>): ReturnType<typeof walnutTextures_> => timed('texture', () => walnutTextures_(...a));
+export const compartmentAOTexture = (...a: Parameters<typeof compartmentAOTexture_>): ReturnType<typeof compartmentAOTexture_> => timed('texture', () => compartmentAOTexture_(...a));
+export const lightWashTexture = (...a: Parameters<typeof lightWashTexture_>): ReturnType<typeof lightWashTexture_> => timed('texture', () => lightWashTexture_(...a));

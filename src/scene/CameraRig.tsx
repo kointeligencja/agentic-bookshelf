@@ -5,6 +5,7 @@ import { setCaseCx } from '../lib/caseAxis.ts';
 import { EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameWhole } from '../lib/framing.ts';
 import { homeGroup, type HomeGroup } from '../lib/homeGroup.ts';
 import { isNarrow, isReading, readingPanel } from '../lib/panel.ts';
+import { mark } from '../lib/marks.ts';
 import { useStore } from '../store.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
 
@@ -89,6 +90,8 @@ export function CameraRig({ layout }: { layout: Layout }) {
   );
 
   useFrame((_, dt) => {
+    // The first frame: the mark after the render that follows this callback (the shaders compile inside it).
+    requestAnimationFrame(() => mark('first-frame-drawn'));
     const s = useStore.getState();
     const { width, height } = size;
     // A book held out sets the target (a fixed reading distance in front of it); otherwise the camera is at home.

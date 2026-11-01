@@ -1,7 +1,8 @@
 import { Environment, Lightformer } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { mark } from '../lib/marks.ts';
 import { roomLight } from './starLight.ts';
 import { floorTexture, plasterTexture } from './textures.ts';
 
@@ -10,6 +11,7 @@ const FLOOR_DEPTH = 6000;
 
 /** Plaster wall, oak floor, skirting, and the light: a soft window from the left plus a warm key. */
 export function Room({ x0, x1, focusX0, focusX1 }: { x0: number; x1: number; focusX0: number; focusX1: number }) {
+  useEffect(() => mark('room-mounted'), []);
   const width = x1 - x0;
   const cx = (x0 + x1) / 2;
   // The shadow frustum covers the furniture, not the whole wall, to keep shadows crisp.

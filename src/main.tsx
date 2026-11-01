@@ -7,6 +7,9 @@ import '@fontsource/eb-garamond/500.css';
 import '@fontsource/eb-garamond/400-italic.css';
 import './styles.css';
 import { App } from './App.tsx';
+import { mark } from './lib/marks.ts';
+
+mark('js-evaluated');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

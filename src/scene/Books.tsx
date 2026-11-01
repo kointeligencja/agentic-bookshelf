@@ -1,3 +1,4 @@
+import { mark } from '../lib/marks.ts';
 import { useKTX2 } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
@@ -203,6 +204,7 @@ function SheetBooks({
     // Raycasting uses a bounding sphere over all instances; refresh it once everything has landed.
     if (!introDone.current && now > INTRO_MS + Math.max(...placements.map(introDelay))) {
       introDone.current = true;
+      mark('intro-done');
       mesh.computeBoundingSphere();
     }
     if (moving) invalidate();
@@ -256,6 +258,7 @@ function useSheets(sheets: AtlasSheet[]): THREE.Texture[] {
       t.needsUpdate = true;
     }
   }, [textures]);
+  useEffect(() => mark('atlas-ready'), []);
   return textures;
 }
 
