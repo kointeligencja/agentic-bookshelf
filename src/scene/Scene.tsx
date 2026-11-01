@@ -7,7 +7,6 @@ import { Bookcase } from './Bookcase.tsx';
 import { Books } from './Books.tsx';
 import { CameraRig, EYE_HEIGHT, FOV } from './CameraRig.tsx';
 import { DprGovernor } from './DprGovernor.tsx';
-import { Effects } from './Effects.tsx';
 import { FocusBook } from './FocusBook.tsx';
 import { caseHeight, caseWidth, type Layout, type Placement } from './layout.ts';
 import { Loose } from './Loose.tsx';
@@ -28,7 +27,7 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
       dpr={dpr}
       shadows={{ type: THREE.PCFShadowMap }}
       camera={{ fov: FOV, near: 60, far: 30000, position: [0, EYE_HEIGHT, 3500] }}
-      gl={{ antialias: false, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 1.05 }}
+      gl={{ antialias: true, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 1.05 }}
       onPointerMissed={() => setHovered(null)}
       onCreated={({ gl }) => {
         gl.setClearColor('#eeeae3');
@@ -51,7 +50,6 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
       <StarLightDriver />
       <CameraRig layout={layout} />
       <DevProbe layout={layout} />
-      <Effects />
     </Canvas>
   );
 }

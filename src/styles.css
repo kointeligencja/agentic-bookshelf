@@ -44,6 +44,13 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .app { position: fixed; inset: 0; }
 .stage { position: absolute; inset: 0; }
 .app canvas { touch-action: pan-y; }
+/* The vignette: the old post-processing pass multiplied the picture by smoothstep(0.8, 0.256, 0.74 d), d being the distance from the middle
+   in view units (0.71 at a corner). As an overlay it costs the canvas nothing; the alpha is 1 - factor^(1/2.2), the multiply moved to sRGB.
+   Pointer events pass through. */
+.stage::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse farthest-corner at 50% 50%, rgba(0, 0, 0, 0.000) 0%, rgba(0, 0, 0, 0.000) 8%, rgba(0, 0, 0, 0.000) 17%, rgba(0, 0, 0, 0.000) 25%, rgba(0, 0, 0, 0.000) 33%, rgba(0, 0, 0, 0.000) 42%, rgba(0, 0, 0, 0.000) 50%, rgba(0, 0, 0, 0.011) 58%, rgba(0, 0, 0, 0.036) 67%, rgba(0, 0, 0, 0.075) 75%, rgba(0, 0, 0, 0.126) 83%, rgba(0, 0, 0, 0.189) 92%, rgba(0, 0, 0, 0.262) 100%);
+}
 
 /* The category nav and the board button are the same pill: same height, radius, background, border and type. The nav's
    left edge is set in CategoryNav.tsx so that it is centred on the bookcase, clamped between the left column and the board button. */

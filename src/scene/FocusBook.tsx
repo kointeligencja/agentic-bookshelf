@@ -10,9 +10,6 @@ import { FullBook } from './FullBook.tsx';
 import type { Layout, Placement } from './layout.ts';
 import { fontsReady, infoPage, titlePage } from './pageTextures.ts';
 
-/** Shared with the post-processing: how far a book is pulled out (0..1), how far reading mode's backdrop is in (0..1) and where the book is. */
-export const focusFx = { amount: 0, read: 0, position: new THREE.Vector3() };
-
 const FOCUS_DISTANCE = 2300;
 const HOLD = 880; // mm in front of the camera
 /** In reading mode the book is held this far away at most, so it fits the strip at the left edge. */
@@ -254,13 +251,7 @@ function Focused({
     u.uCentre.value.set(readingPanel(size.width).bookCentre * px, buffer.y / 2);
     u.uRadius.value = readingPanel(size.width).strip * px * 1.1;
 
-    focusFx.amount = THREE.MathUtils.clamp(p, 0, 1);
-    focusFx.read = THREE.MathUtils.clamp(st.read, 0, 1);
-    focusFx.position.copy(g.position);
-
     if (f?.closing && p < 0.004 && Math.abs(st.p.v) < 0.05) {
-      focusFx.amount = 0;
-      focusFx.read = 0;
       useStore.getState().settle();
     }
     // Keep drawing only while something here is still moving, so a book held still (reading mode) lets the canvas go idle.
