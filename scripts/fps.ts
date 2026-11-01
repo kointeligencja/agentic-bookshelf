@@ -71,10 +71,14 @@ for (const sc of SCENARIOS) {
       await page.screenshot({ path: `${shots}/${prefix}-${sc.name.startsWith('a') ? 'home' : sc.name.startsWith('b') ? 'theme' : 'book'}.png` });
     }
     await page.evaluate(`(() => { window.__ft = []; let last = performance.now(); const f = (t) => { window.__ft.push(t - last); last = t; if (window.__ft.length < 2000) requestAnimationFrame(f); }; requestAnimationFrame(f); })()`);
+    // Warm-up: a resolution governor needs a moment of motion to act (the numbers are for after it has settled).
+    await wiggle(page, 3000);
+    await page.evaluate(`window.__ft.length = 0`);
     await wiggle(page, 4000);
+    const ratio = (await page.evaluate(`document.querySelector('canvas').width / document.querySelector('canvas').clientWidth`)) as number;
     const ft = ((await page.evaluate('window.__ft.slice(5)')) as number[]).sort((a, b) => a - b);
     const avg = ft.reduce((a, b) => a + b, 0) / ft.length;
-    console.log(`${sc.name} run${run} | frames ${ft.length} | avg ${(1000 / avg).toFixed(1)} fps | median ${ft[ft.length >> 1]!.toFixed(1)} ms | p95 ${ft[Math.floor(ft.length * 0.95)]!.toFixed(1)} ms`);
+    console.log(`${sc.name} run${run} | canvas ratio ${ratio.toFixed(2)} | frames ${ft.length} | avg ${(1000 / avg).toFixed(1)} fps | median ${ft[ft.length >> 1]!.toFixed(1)} ms | p95 ${ft[Math.floor(ft.length * 0.95)]!.toFixed(1)} ms`);
     await ctx.close();
   }
 }

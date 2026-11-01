@@ -6,6 +6,7 @@ import type { Library } from '../types.ts';
 import { Bookcase } from './Bookcase.tsx';
 import { Books } from './Books.tsx';
 import { CameraRig, EYE_HEIGHT, FOV } from './CameraRig.tsx';
+import { DprGovernor } from './DprGovernor.tsx';
 import { Effects } from './Effects.tsx';
 import { FocusBook } from './FocusBook.tsx';
 import { caseHeight, caseWidth, type Layout, type Placement } from './layout.ts';
@@ -42,6 +43,7 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
         <ShadowRefresh layout={layout} />
         <Ready onReady={onReady} />
       </Suspense>
+      <DprGovernor />
       <StarLightDriver />
       <CameraRig layout={layout} />
       <DevProbe layout={layout} />
