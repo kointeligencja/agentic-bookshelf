@@ -42,7 +42,7 @@ async function once(net: string) {
   await page.addInitScript(`window.__long = [];
     new PerformanceObserver((l) => window.__long.push(...l.getEntries().map((e) => [Math.round(e.startTime), Math.round(e.duration)]))).observe({ type: 'longtask', buffered: true });`);
   await page.goto(base + '/', { waitUntil: 'commit' });
-  await page.waitForFunction(`performance.getEntriesByName('bs:intro-done').length > 0`, null, { timeout: 120000 });
+  await page.waitForFunction(`performance.getEntriesByName('bs:intro-done').length > 0 || document.querySelector('.app.ready') && performance.now() > 40000`, null, { timeout: 120000 });
   await page.waitForTimeout(500);
   const data = (await page.evaluate(`(() => {
     const marks = {};
@@ -69,7 +69,7 @@ for (const net of Object.keys(NETS)) {
     const m = r.marks;
     const f = (k: string) => (r.files[k] ? r.files[k]!.end : '-');
     console.log(net, i, 'fcp', Math.round(r.fcp ?? 0), 'ui', Math.round(m['ui-painted'] ?? 0), 'js', f('js'), 'jsEval', Math.round(m['js-evaluated'] ?? 0), 'books', f('books.json'), 'spAtlas', f('spines atlas'), 'cvAtlas', f('covers atlas'), 'wasm', f('transcoder wasm'),
-      'atlasReady', Math.round(m['atlas-ready'] ?? 0), 'room', Math.round(m['room-mounted'] ?? 0), 'sceneReady', Math.round(m['scene-ready'] ?? 0), 'frame1', Math.round(m['first-frame-drawn'] ?? 0), 'intro', Math.round(m['intro-done'] ?? 0), 'tex', Math.round(r.costs['texture'] ?? 0), 'long', JSON.stringify(r.long));
+      'atlasReady', Math.round(m['atlas-ready'] ?? 0), 'shaders', Math.round(m['shaders-compiled'] ?? 0), 'books', Math.round(m['books-mounted'] ?? 0), 'room', Math.round(m['room-mounted'] ?? 0), 'sceneReady', Math.round(m['scene-ready'] ?? 0), 'frame1', Math.round(m['first-frame-drawn'] ?? 0), 'intro', Math.round(m['intro-done'] ?? 0), 'tex', Math.round(r.costs['texture'] ?? 0), 'long', JSON.stringify(r.long));
   }
 }
 await writeFile(out, JSON.stringify(result, null, 1));

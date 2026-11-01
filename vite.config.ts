@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { defineConfig, type Connect, type Plugin } from 'vite';
@@ -43,7 +44,23 @@ function searchApi(): Plugin {
   };
 }
 
+/**
+ * Preload hints for what the first screen needs, written into index.html: the library and the conversation, the KTX2 transcoder (js and wasm) and the two
+ * atlases (their names carry a hash and come from public/data/books.json). The browser starts these fetches with the HTML, not after the scripts have run
+ * and the scene has asked for them, and the transcoder no longer waits for the first atlas to arrive.
+ */
+function preloadHints(): Plugin {
+  return {
+    name: 'preload-hints',
+    transformIndexHtml() {
+      const lib = JSON.parse(readFileSync(new URL('./public/data/books.json', import.meta.url), 'utf8')) as { atlas: { url: string }[]; coverAtlas: { url: string }[] };
+      const urls = ['/data/books.json', '/data/agentic.json', '/basis/basis_transcoder.js', '/basis/basis_transcoder.wasm', ...lib.atlas.map((a) => a.url), ...lib.coverAtlas.map((a) => a.url)];
+      return urls.map((href) => ({ tag: 'link', attrs: { rel: 'preload', as: 'fetch', href, crossorigin: '' }, injectTo: 'head' as const }));
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), searchApi()],
+  plugins: [react(), searchApi(), preloadHints()],
   build: { target: 'es2022', chunkSizeWarningLimit: 1500 },
 });

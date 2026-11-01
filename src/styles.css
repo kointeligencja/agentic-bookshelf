@@ -87,15 +87,18 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .credit a { color: inherit; pointer-events: auto; text-underline-offset: 2px; }
 .app.dim .credit { color: rgba(246, 239, 227, 0.86); }
 
-/* Loading: a quiet wordmark, then the room fades in. */
-.app canvas { opacity: 0; transition: opacity 900ms ease 150ms; }
+/* Loading: the page's blocks are there at once; the shelf's block holds a quiet, slowly breathing patch where the case will stand (--case-* are set in App.tsx,
+   the same slot the camera uses), and the room fades in over it once its first frame is drawn. The block has its size from the start: nothing moves. */
+.app canvas { opacity: 0; transition: opacity 500ms ease; }
 .app.ready canvas { opacity: 1; }
-.loading {
-  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
-  font: italic 400 var(--t-title)/1 var(--serif); color: var(--muted); letter-spacing: 0.02em;
-  transition: opacity 600ms ease;
+.stage-hold {
+  position: absolute; left: var(--case-l, 50%); top: var(--case-t, 80px); width: var(--case-w, 0); height: var(--case-h, 0); border-radius: 3px; pointer-events: none;
+  background: rgba(93, 60, 39, 0.07); box-shadow: inset 0 0 0 1px rgba(93, 60, 39, 0.07);
+  animation: hold-breathe 1.8s ease-in-out infinite alternate; transition: opacity 500ms ease;
 }
-.app.ready .loading { opacity: 0; }
+.app.ready .stage-hold { opacity: 0; animation: none; }
+@keyframes hold-breathe { from { opacity: 0.5; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .stage-hold { animation: none; } }
 .chips { transition: opacity 300ms ease, transform 300ms ease; }
 /* A small desktop window: the group is only about 1080px wide, so the nav (beside the board button on the same row) and the view toggle (beside the footer line)
    get a little less padding to fit. */
@@ -548,7 +551,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
     font: 400 var(--t-read)/var(--lh-read) var(--sans); color: var(--muted);
   }
   .app.dim .credit { color: var(--muted); }
-  .loading { position: fixed; }
+  .stage-hold { left: 8px; top: 8px; width: auto; right: 8px; height: auto; bottom: 8px; }
 }
 /* Tablets: the card is a column of its own width, with the page's side margins. */
 @media (min-width: 600px) and (max-width: 899px) {

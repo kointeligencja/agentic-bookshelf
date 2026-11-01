@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { computeLayout } from './scene/layout.ts';
-import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
 import { stageHeight } from './lib/framing.ts';
 import { isNarrow, isReading, panelWidth, readingPanel } from './lib/panel.ts';
-import { FOV, groupFor, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/CameraRig.tsx';
+import { FOV, groupFor, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './scene/camera.ts';
 import { mark } from './lib/marks.ts';
 import { homeGroup } from './lib/homeGroup.ts';
 import { caseHeight, caseWidth } from './scene/layout.ts';
@@ -16,6 +15,11 @@ import { ThemePanel } from './ui/ThemePanel.tsx';
 import { Tooltip } from './ui/Tooltip.tsx';
 import { ViewToggle } from './ui/ViewToggle.tsx';
 
+/** The 3D scene (three.js, drei) is its own chunk: the page's blocks are painted before it has been fetched and parsed. */
+// The import starts as soon as this module runs, in parallel with the library, not when the scene is first drawn.
+const sceneChunk = import('./scene/Scene.tsx').then((m) => ({ default: m.Scene }));
+const Scene = lazy(() => sceneChunk);
+
 /** Limits of the shelf block's height on a narrow screen, px: the least, the most, and the most on a phone held sideways. */
 const STAGE_MIN = 300;
 const STAGE_MAX = 760;
@@ -25,10 +29,14 @@ const STAGE_MAX_LANDSCAPE = 420;
 const FIRST_CASE = { width: 2192, height: 2314, z: 180 };
 
 /** Writes the desktop home group's edges as CSS variables: the column's left edge and width, and the group's right edge as a distance from the window's right. */
-function setGroupVars(g: { columnLeft: number; columnWidth: number; groupRight: number }, vw: number) {
+function setGroupVars(g: { columnLeft: number; columnWidth: number; groupRight: number; caseLeft: number; caseWidth: number; caseTop: number; caseBottom: number }, vw: number) {
   const root = document.documentElement.style;
   root.setProperty('--col-w', `${g.columnWidth}px`);
   root.setProperty('--group-l', `${Math.round(g.columnLeft * 10) / 10}px`);
+  root.setProperty('--case-l', `${Math.round(g.caseLeft)}px`);
+  root.setProperty('--case-t', `${Math.round(g.caseTop)}px`);
+  root.setProperty('--case-w', `${Math.round(g.caseWidth)}px`);
+  root.setProperty('--case-h', `${Math.round(g.caseBottom - g.caseTop)}px`);
   root.setProperty('--group-r', `${Math.round((vw - g.groupRight) * 10) / 10}px`);
 }
 
@@ -60,6 +68,7 @@ export function App() {
   // A book is pulled out (or going back): on a narrow screen its card covers the page, which then must not scroll behind it.
   const held = useStore((s) => !!s.focused);
   const [ready, setReady] = useState(false);
+  const [booksReady, setBooksReady] = useState(false);
   const layout = useMemo(
     () => (library ? computeLayout(library.books, library.categories, sort, view) : null),
     [library, sort, view],
@@ -87,7 +96,8 @@ export function App() {
         if (key && data.theses.some((t) => t.key === key)) s.setTheme(key);
       })
       .catch((err: unknown) => console.error('Failed to load the conversation', err));
-    fetch('/data/agentic-cards.json')
+    // The cards are only needed once a book is opened: let them wait behind the shelf's atlases.
+    fetch('/data/agentic-cards.json', { priority: 'low' } as RequestInit)
       .then((r) => r.json() as Promise<Record<string, AgenticCard>>)
       .then((cards) => useStore.getState().setCards(cards))
       .catch((err: unknown) => console.error('Failed to load the concept cards', err));
@@ -158,6 +168,7 @@ export function App() {
     return () => window.removeEventListener('resize', first);
   }, [layout]);
 
+  const onBooksReady = useCallback(() => setBooksReady(true), []);
   const onReady = useCallback(() => {
     mark('scene-ready');
     setReady(true);
@@ -172,7 +183,7 @@ export function App() {
 
   // Deep links in, once the scene is up; and keep the hash in step with the focused book.
   useEffect(() => {
-    if (!ready || !library || !layout) return;
+    if (!booksReady || !library || !layout) return;
     const apply = () => applyHash(library);
     // Let the shelf settle in before pulling a book out.
     const t = setTimeout(apply, 900);
@@ -192,13 +203,18 @@ export function App() {
       window.removeEventListener('hashchange', apply);
       unsub();
     };
-  }, [ready, library, layout]);
+  }, [booksReady, library, layout]);
 
   return (
     <main className={`app${ready ? ' ready' : ''}${reading ? ' reading' : ''}${dim ? ' dim' : ''}${held ? ' held' : ''}`}>
       {/* The shelf's block: the whole window beside and under the other parts on a desktop screen, a block of the page on a narrow one. */}
       <div className="stage" data-stage>
-        {library && layout && <Scene library={library} layout={layout} onReady={onReady} />}
+        <div className="stage-hold" aria-hidden="true" />
+        {library && layout && (
+          <Suspense fallback={null}>
+            <Scene library={library} layout={layout} onReady={onReady} onBooksReady={onBooksReady} />
+          </Suspense>
+        )}
       </div>
       {library && layout && <CategoryNav layout={layout} library={library} />}
       {agentic && <ThemePanel data={agentic} />}
@@ -207,9 +223,6 @@ export function App() {
       {library && agentic && <BookPanel library={library} data={agentic} />}
       {agentic && <BoardButton data={agentic} />}
       {agentic && <Board data={agentic} />}
-      <div className="loading" aria-hidden={ready}>
-        <span>The Agentic Bookshelf</span>
-      </div>
       <footer className="credit">
         Work in progress: {agentic?.books.length ?? 48} books we think apply. Conversation:{' '}
         <a href="https://www.youtube.com/watch?v=MN9dGgmLyso" target="_blank" rel="noreferrer noopener">

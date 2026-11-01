@@ -252,6 +252,10 @@ function walnutTextures_(seed = 'walnut'): { map: THREE.CanvasTexture; bump: THR
   const arches = r() < 0.6;
   const archX = W * (0.25 + r() * 0.5);
   const lineCount = 520;
+  // Drawing 520 strokes and 9000 pores one call each took 4 s on a slow machine (two boards). Lines and pores that look alike (alpha and width rounded to a
+  // few steps) go into one path and one stroke or fill each: about 40 calls instead of 9500, the same picture to within the rounding.
+  type Bucket = { dark: boolean; alpha: number; lw: number; n: number; segs: [number, number][][] };
+  const buckets = new Map<string, Bucket>();
   for (let i = 0; i < lineCount; i++) {
     const y0 = r() * H;
     const amp = 0.6 + r() * 3.5;
@@ -261,32 +265,63 @@ function walnutTextures_(seed = 'walnut'): { map: THREE.CanvasTexture; bump: THR
     const dark = r() < 0.8;
     const alpha = dark ? 0.05 + r() * 0.16 : 0.04 + r() * 0.07;
     const lw = 0.5 + r() * 1.4;
-    ctx.strokeStyle = dark ? `rgba(36,20,12,${alpha})` : `rgba(190,140,92,${alpha})`;
-    ctx.lineWidth = lw;
-    bctx.strokeStyle = `rgba(0,0,0,${alpha * 1.2})`;
-    bctx.lineWidth = lw;
-    for (const k of [ctx, bctx]) {
+    const key = `${dark ? 'd' : 'l'}${Math.round(alpha / 0.025)}:${Math.round(lw / 0.5)}`;
+    let bk = buckets.get(key);
+    if (!bk) buckets.set(key, (bk = { dark, alpha: 0, lw: 0, n: 0, segs: [] }));
+    bk.alpha += alpha;
+    bk.lw += lw;
+    bk.n++;
+    const pts: [number, number][] = [];
+    for (let x = 0; x <= W; x += 16) {
+      const arch = bow * Math.exp(-Math.pow((x - archX) / (W * 0.28), 2));
+      pts.push([x, y0 + Math.sin(x * f1 + ph) * amp + Math.sin(x * f1 * 3.3 + ph * 2) * amp * 0.25 - arch]);
+    }
+    bk.segs.push(pts);
+  }
+  for (const bk of buckets.values()) {
+    const alpha = bk.alpha / bk.n;
+    const lw = bk.lw / bk.n;
+    for (const [k, style] of [
+      [ctx, bk.dark ? `rgba(36,20,12,${alpha})` : `rgba(190,140,92,${alpha})`],
+      [bctx, `rgba(0,0,0,${alpha * 1.2})`],
+    ] as const) {
+      k.strokeStyle = style;
+      k.lineWidth = lw;
       k.beginPath();
-      for (let x = 0; x <= W; x += 8) {
-        const arch = bow * Math.exp(-Math.pow((x - archX) / (W * 0.28), 2));
-        const y = y0 + Math.sin(x * f1 + ph) * amp + Math.sin(x * f1 * 3.3 + ph * 2) * amp * 0.25 - arch;
-        if (x === 0) k.moveTo(x, y);
-        else k.lineTo(x, y);
+      for (const pts of bk.segs) {
+        k.moveTo(pts[0]![0], pts[0]![1]);
+        for (let j = 1; j < pts.length; j++) k.lineTo(pts[j]![0], pts[j]![1]);
       }
       k.stroke();
     }
   }
 
-  // Open pores: short dark dashes along the grain.
+  // Open pores: short dark dashes along the grain, in eight alpha steps, one fill each.
+  const pores = new Map<number, { a: number; n: number; rects: [number, number, number][] }>();
   for (let i = 0; i < 9000; i++) {
     const x = r() * W;
     const y = r() * H;
     const len = 2 + r() * 9;
     const a = 0.12 + r() * 0.28;
+    const step = Math.round(a / 0.05);
+    let g = pores.get(step);
+    if (!g) pores.set(step, (g = { a: 0, n: 0, rects: [] }));
+    g.a += a;
+    g.n++;
+    g.rects.push([x, y, len]);
+  }
+  for (const g of pores.values()) {
+    const a = g.a / g.n;
     ctx.fillStyle = `rgba(30,16,9,${a})`;
-    ctx.fillRect(x, y, len, 0.9);
     bctx.fillStyle = `rgba(0,0,0,${a * 1.6})`;
-    bctx.fillRect(x, y, len, 1);
+    ctx.beginPath();
+    bctx.beginPath();
+    for (const [x, y, len] of g.rects) {
+      ctx.rect(x, y, len, 0.9);
+      bctx.rect(x, y, len, 1);
+    }
+    ctx.fill();
+    bctx.fill();
   }
 
   const map = finish(c);
@@ -338,13 +373,13 @@ function lightWashTexture_(): THREE.CanvasTexture {
 }
 
 // Each builder's time is added to the load timeline's cost for textures (see lib/marks.ts).
-export const oakTexture = (...a: Parameters<typeof oakTexture_>): ReturnType<typeof oakTexture_> => timed('texture', () => oakTexture_(...a));
-export const floorTexture = (...a: Parameters<typeof floorTexture_>): ReturnType<typeof floorTexture_> => timed('texture', () => floorTexture_(...a));
-export const plasterTexture = (...a: Parameters<typeof plasterTexture_>): ReturnType<typeof plasterTexture_> => timed('texture', () => plasterTexture_(...a));
-export const travertineTexture = (...a: Parameters<typeof travertineTexture_>): ReturnType<typeof travertineTexture_> => timed('texture', () => travertineTexture_(...a));
-export const trackTexture = (...a: Parameters<typeof trackTexture_>): ReturnType<typeof trackTexture_> => timed('texture', () => trackTexture_(...a));
-export const paperEdgeTexture = (...a: Parameters<typeof paperEdgeTexture_>): ReturnType<typeof paperEdgeTexture_> => timed('texture', () => paperEdgeTexture_(...a));
-export const softShadowTexture = (...a: Parameters<typeof softShadowTexture_>): ReturnType<typeof softShadowTexture_> => timed('texture', () => softShadowTexture_(...a));
-export const walnutTextures = (...a: Parameters<typeof walnutTextures_>): ReturnType<typeof walnutTextures_> => timed('texture', () => walnutTextures_(...a));
-export const compartmentAOTexture = (...a: Parameters<typeof compartmentAOTexture_>): ReturnType<typeof compartmentAOTexture_> => timed('texture', () => compartmentAOTexture_(...a));
-export const lightWashTexture = (...a: Parameters<typeof lightWashTexture_>): ReturnType<typeof lightWashTexture_> => timed('texture', () => lightWashTexture_(...a));
+export const oakTexture = (...a: Parameters<typeof oakTexture_>): ReturnType<typeof oakTexture_> => timed('texture:oakTexture', () => oakTexture_(...a));
+export const floorTexture = (...a: Parameters<typeof floorTexture_>): ReturnType<typeof floorTexture_> => timed('texture:floorTexture', () => floorTexture_(...a));
+export const plasterTexture = (...a: Parameters<typeof plasterTexture_>): ReturnType<typeof plasterTexture_> => timed('texture:plasterTexture', () => plasterTexture_(...a));
+export const travertineTexture = (...a: Parameters<typeof travertineTexture_>): ReturnType<typeof travertineTexture_> => timed('texture:travertineTexture', () => travertineTexture_(...a));
+export const trackTexture = (...a: Parameters<typeof trackTexture_>): ReturnType<typeof trackTexture_> => timed('texture:trackTexture', () => trackTexture_(...a));
+export const paperEdgeTexture = (...a: Parameters<typeof paperEdgeTexture_>): ReturnType<typeof paperEdgeTexture_> => timed('texture:paperEdgeTexture', () => paperEdgeTexture_(...a));
+export const softShadowTexture = (...a: Parameters<typeof softShadowTexture_>): ReturnType<typeof softShadowTexture_> => timed('texture:softShadowTexture', () => softShadowTexture_(...a));
+export const walnutTextures = (...a: Parameters<typeof walnutTextures_>): ReturnType<typeof walnutTextures_> => timed('texture:walnutTextures', () => walnutTextures_(...a));
+export const compartmentAOTexture = (...a: Parameters<typeof compartmentAOTexture_>): ReturnType<typeof compartmentAOTexture_> => timed('texture:compartmentAOTexture', () => compartmentAOTexture_(...a));
+export const lightWashTexture = (...a: Parameters<typeof lightWashTexture_>): ReturnType<typeof lightWashTexture_> => timed('texture:lightWashTexture', () => lightWashTexture_(...a));

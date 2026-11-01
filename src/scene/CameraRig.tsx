@@ -3,18 +3,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { setCaseCx } from '../lib/caseAxis.ts';
 import { EYE_LIFT, EYE_REF_DISTANCE, EYE_SLOPE, frameWhole } from '../lib/framing.ts';
-import { homeGroup, type HomeGroup } from '../lib/homeGroup.ts';
 import { isNarrow, isReading, readingPanel } from '../lib/panel.ts';
 import { mark } from '../lib/marks.ts';
 import { useStore } from '../store.ts';
+import { EYE_HEIGHT, FOV, groupFor, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN } from './camera.ts';
 import { caseHeight, caseWidth, type Layout } from './layout.ts';
 
-export const EYE_HEIGHT = 1250;
-export const MIN_DISTANCE = 1100;
-export const MAX_DISTANCE = 6000;
-export const FOV = 35;
-/** On a phone the case is framed with this much space between it and the edges of the shelf's block, px. */
-export const PHONE_MARGIN = 8;
+export { EYE_HEIGHT, FOV, MAX_DISTANCE, MIN_DISTANCE, PHONE_MARGIN };
 
 /** Camera position and look-at point for a dolly position x and wall distance d. */
 export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Vector3; look: THREE.Vector3 }) {
@@ -22,12 +17,6 @@ export function cameraPose(x: number, d: number, y: number, out: { eye: THREE.Ve
   out.eye.set(x, y + EYE_LIFT + (d - EYE_REF_DISTANCE) * EYE_SLOPE, d);
   out.look.set(x, y, 0);
   return out;
-}
-
-/** The desktop group (column, gap, case) for this layout in a window `vw` x `vh`; the page's CSS and the camera both read it. */
-export function groupFor(layout: Layout, vw: number, vh: number): HomeGroup {
-  const c = layout.bookcase;
-  return homeGroup(vw, vh, { width: caseWidth(c), height: caseHeight(c), z: c.depth, fovDeg: FOV, min: MIN_DISTANCE, max: MAX_DISTANCE });
 }
 
 /**

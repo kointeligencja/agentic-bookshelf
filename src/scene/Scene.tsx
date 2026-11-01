@@ -1,6 +1,7 @@
 import { Canvas, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import * as THREE from 'three';
+import { mark } from '../lib/marks.ts';
 import { useStore } from '../store.ts';
 import type { Library } from '../types.ts';
 import { Bookcase } from './Bookcase.tsx';
@@ -13,7 +14,7 @@ import { Loose } from './Loose.tsx';
 import { Room } from './Room.tsx';
 import { StarLightDriver } from './starLight.ts';
 
-export function Scene({ library, layout, onReady }: { library: Library; layout: Layout; onReady: () => void }) {
+export function Scene({ library, layout, onReady, onBooksReady }: { library: Library; layout: Layout; onReady: () => void; onBooksReady: () => void }) {
   const setHovered = useStore((s) => s.setHovered);
   const right = caseWidth(layout.bookcase);
   const [dpr, setDpr] = useState(initialDpr);
@@ -35,14 +36,16 @@ export function Scene({ library, layout, onReady }: { library: Library; layout: 
       }}
     >
       <Room x0={layout.minX - 4000} x1={right + 4000} focusX0={layout.minX} focusX1={right} />
+      {/* The room and the case are drawn as soon as the page has them; the books come in (and slide in) when the atlases have arrived and been transcoded. */}
+      <Bookcase layout={layout} />
+      <FirstFrame onReady={onReady} />
       <Suspense fallback={null}>
-        <Bookcase layout={layout} />
         <Books atlas={library.atlas} coverAtlas={library.coverAtlas} placements={layout.placements} bookcase={layout.bookcase} />
         <Loose layout={layout} atlas={library.atlas} />
         <FocusBook layout={layout} atlas={library.atlas} categories={library.categories} />
         <ShadowRefresh layout={layout} />
         <DprGovernor onRatio={setDpr} />
-        <Ready onReady={onReady} />
+        <BooksReady onBooksReady={onBooksReady} />
       </Suspense>
       <StarLightDriver />
       <CameraRig layout={layout} />
@@ -106,8 +109,34 @@ function ShadowRefresh({ layout }: { layout: Layout }) {
   return null;
 }
 
-/** Rendered once everything inside the Suspense boundary has loaded. */
-function Ready({ onReady }: { onReady: () => void }) {
-  useMemo(() => queueMicrotask(onReady), [onReady]);
+/**
+ * Rendered once the room and the case are in: compiles their shaders (in parallel, off the main thread where the browser can) so that the first
+ * frame does not stall, then tells the page, which fades the canvas in.
+ */
+function FirstFrame({ onReady }: { onReady: () => void }) {
+  const { gl, scene, camera, invalidate } = useThree();
+  useEffect(() => {
+    let gone = false;
+    const done = () => {
+      if (gone) return;
+      mark('shaders-compiled');
+      invalidate();
+      // The canvas is drawn once more with the compiled programs before it is shown.
+      requestAnimationFrame(() => requestAnimationFrame(() => !gone && onReady()));
+    };
+    gl.compileAsync(scene, camera).then(done, done);
+    return () => {
+      gone = true;
+    };
+  }, [gl, scene, camera, invalidate, onReady]);
+  return null;
+}
+
+/** Mounted when the atlases are in and the books are on the shelf (inside the Suspense with them): deep links wait for this. */
+function BooksReady({ onBooksReady }: { onBooksReady: () => void }) {
+  useEffect(() => {
+    mark('books-mounted');
+    onBooksReady();
+  }, [onBooksReady]);
   return null;
 }
