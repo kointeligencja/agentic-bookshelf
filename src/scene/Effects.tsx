@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { DepthOfField, EffectComposer, SSAO, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { ToneMappingMode, type DepthOfFieldEffect } from 'postprocessing';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { focusFx } from './FocusBook.tsx';
 
 /**
@@ -12,14 +12,19 @@ import { focusFx } from './FocusBook.tsx';
  */
 export function Effects() {
   const dof = useRef<DepthOfFieldEffect>(null);
+  // The depth of field effect renders its seven internal passes (circle of confusion, blur, mask, near and far bokeh) every frame
+  // whether or not bokehScale is 0, so it is only mounted while it has something to blur: a book pulled out and not yet in reading mode.
+  const [dofOn, setDofOn] = useState(false);
   useFrame(() => {
+    const want = focusFx.amount > 0.001 && focusFx.read < 0.999;
+    if (want !== dofOn) setDofOn(want);
     const d = dof.current;
     if (!d) return;
     d.bokehScale = 5 * focusFx.amount * (1 - focusFx.read);
     d.target = d.bokehScale > 0.001 ? focusFx.position : null;
   });
   return (
-    <EffectComposer multisampling={4} enableNormalPass>
+    <EffectComposer multisampling={2} enableNormalPass>
       <SSAO
         samples={16}
         rings={5}
@@ -32,8 +37,9 @@ export function Effects() {
         worldProximityThreshold={20}
         worldProximityFalloff={12}
         color="#2a2016"
+        resolutionScale={0.5}
       />
-      <DepthOfField ref={dof} focusRange={260} bokehScale={0} resolutionScale={0.5} />
+      {dofOn && <DepthOfField ref={dof} focusRange={260} bokehScale={0} resolutionScale={0.5} />}
       <Vignette offset={0.32} darkness={0.42} />
       <ToneMapping mode={ToneMappingMode.NEUTRAL} />
     </EffectComposer>
