@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { bookCounts, clock, litBooks, mapIds, themeAtTime, themeStart, timelineSegments } from '../src/lib/agentic.ts';
+import { bookCounts, categoryLit, clock, litBooks, mapIds, themeAtTime, themeStart, timelineSegments } from '../src/lib/agentic.ts';
 import { cardWidth, isReading, panelWidth, readingPanel, stripWidth } from '../src/lib/panel.ts';
 import type { Agentic, AgenticThesis } from '../src/types.ts';
 
@@ -156,5 +156,21 @@ describe('timelineSegments', () => {
   });
   it('has no marks without a duration', () => {
     expect(timelineSegments(theses, 0)).toEqual([]);
+  });
+});
+
+describe('categoryLit', () => {
+  const books = [
+    { id: 'b1', category: 'ai' },
+    { id: 'b2', category: 'ai' },
+    { id: 'b3', category: 'mind' },
+  ];
+  it('lights the books of the category at full intensity, as a theme does', () => {
+    expect(categoryLit(books, 'ai')).toEqual({ b1: 1, b2: 1 });
+    expect(categoryLit(books, 'ai')).toEqual(litBooks({ concepts: [{ ...concepts[0]!, theses: ['x'], bookIds: ['b1', 'b2'] }] }, 'x'));
+  });
+  it('lights nothing for no category or an unknown one', () => {
+    expect(categoryLit(books, null)).toEqual({});
+    expect(categoryLit(books, 'nope')).toEqual({});
   });
 });

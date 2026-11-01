@@ -1,4 +1,4 @@
-import type { Agentic, AgenticThesis } from '../types.ts';
+import type { Agentic, AgenticThesis, Book } from '../types.ts';
 
 /** Book id → how strongly the active theme lights it, 0..1. Absent means dark. */
 export type Lit = Record<string, number>;
@@ -27,6 +27,12 @@ export function bookCounts(data: Pick<Agentic, 'concepts'>, key: string | null):
 /** The books a theme lights: those with at least one concept that extends it, at full intensity. */
 export function litBooks(data: Pick<Agentic, 'concepts'>, key: string | null): Lit {
   return Object.fromEntries(Object.keys(bookCounts(data, key)).map((id) => [id, 1]));
+}
+
+/** The books on a category's shelves, lit at full intensity, the same way a theme lights its books. */
+export function categoryLit(books: Pick<Book, 'id' | 'category'>[], slug: string | null): Lit {
+  if (!slug) return {};
+  return Object.fromEntries(books.filter((b) => b.category === slug).map((b) => [b.id, 1]));
 }
 
 /** How many concepts extend a theme. */

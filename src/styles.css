@@ -43,8 +43,7 @@ html, body, #root { margin: 0; height: 100%; background: var(--bg); color: var(-
 body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 .app { position: fixed; inset: 0; }
 .stage { position: absolute; inset: 0; }
-.app canvas { touch-action: none; cursor: grab; }
-.app canvas:active { cursor: grabbing; }
+.app canvas { touch-action: pan-y; }
 
 /* The category nav and the board button are the same pill: same height, radius, background, border and type. The nav's
    left edge is set in CategoryNav.tsx so that it is centred on the bookcase, clamped between the left column and the board button. */
@@ -63,6 +62,7 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
   transition: background 200ms ease;
 }
 .chip:hover { background: rgba(43, 38, 32, 0.07); }
+.chip.on, .chip.on:hover { background: var(--ink); color: #fbf9f5; }
 .chip:focus-visible, .board-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .board-btn { position: absolute; top: var(--s3); right: var(--s3); z-index: 6; padding: 0 var(--s2); cursor: pointer; transition: background 200ms ease; }
 .board-btn:hover { background: rgba(251, 249, 245, 0.92); }
@@ -456,7 +456,6 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
     grid-template-areas: 'head head' 'search search' 'video video' 'nav board' 'stage stage' 'themes themes' 'view view' 'credit credit';
   }
   .stage { grid-area: stage; position: relative; inset: auto; height: var(--stage-h, clamp(420px, 66svh, 760px)); min-width: 0; }
-  .app canvas { touch-action: pan-y; }
   /* The column's blocks are items of the page's grid, so that the shelf can sit between the video and the theme index. */
   .wall { display: contents; }
   .wall > .wall-head { grid-area: head; margin: var(--s3) var(--s2) 0; min-width: 0; }

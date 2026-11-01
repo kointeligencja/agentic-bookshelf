@@ -3,6 +3,8 @@ import { scrollFades } from '../lib/scrollFades.ts';
 import { clampedLeft, getCaseCx, subscribeCaseCx } from '../lib/caseAxis.ts';
 import { categorySpot, type Layout } from '../scene/layout.ts';
 import { useStore } from '../store.ts';
+import { scrollToShelf } from './scrollToShelf.ts';
+import { useNarrow } from './useNarrow.ts';
 import type { Library } from '../types.ts';
 
 /** Chips are narrow, so the nav spells "and" as "&". The shelf labels keep the full name. */
@@ -12,14 +14,14 @@ const short = (name: string) => name.replace(/\s+and\s+/gi, ' & ');
 const KEEP = 16;
 
 /**
- * Text chips that fly the camera to where a category starts. The pill is centred on the bookcase's middle line (as the camera
+ * Text chips that light a category's books, the way a theme does (a second click turns it off). The pill is centred on the bookcase's middle line (as the camera
  * has it on screen), but never over the left column or the board button.
  */
 export function CategoryNav({ layout, library }: { layout: Layout; library: Library }) {
-  const setTargetX = useStore((s) => s.setTargetX);
-  const setTargetY = useStore((s) => s.setTargetY);
-  const setDistance = useStore((s) => s.setDistance);
+  const category = useStore((s) => s.category);
+  const setCategory = useStore((s) => s.setCategory);
   const focused = useStore((s) => s.focused);
+  const narrow = useNarrow();
   const wallBox = useStore((s) => s.wallBox);
   const cx = useSyncExternalStore(subscribeCaseCx, getCaseCx);
   const nav = useRef<HTMLElement>(null);
@@ -64,22 +66,22 @@ export function CategoryNav({ layout, library }: { layout: Layout; library: Libr
       window.removeEventListener('resize', update);
     };
   }, [library]);
-  const fly = (x: number, y: number | null, d: number, hash: string) => {
-    setTargetX(Math.min(layout.maxX, Math.max(layout.minX, x)));
-    setTargetY(y);
-    setDistance(d);
-    history.replaceState(null, '', `${location.search}${hash}`);
+  const pick = (slug: string) => {
+    setCategory(category === slug ? null : slug);
+    // On a narrow screen the nav is above the shelf block: bring the shelf up so the books that light are in view.
+    if (category !== slug && narrow) scrollToShelf();
   };
   return (
     <nav ref={nav} className={`chips${focused ? ' hidden' : ''}${fade.start ? ' fade-l' : ''}${fade.end ? ' fade-r' : ''}`} aria-label="Categories" style={left === null ? undefined : { left }}>
       {library.categories
         .map((c) => ({ c, spot: categorySpot(layout, c.slug) }))
         .filter((e): e is { c: (typeof library.categories)[number]; spot: { x: number; y: number } } => e.spot !== null)
-        .map(({ c, spot }) => (
+        .map(({ c }) => (
           <button
             key={c.slug}
-            className="chip"
-            onClick={() => fly(spot.x + 350, spot.y + 170, 2300, `#category/${c.slug}`)}
+            className={`chip${category === c.slug ? ' on' : ''}`}
+            aria-pressed={category === c.slug}
+            onClick={() => pick(c.slug)}
             title={c.description}
           >
             {c.short ?? short(c.name)}

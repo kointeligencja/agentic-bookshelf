@@ -64,8 +64,6 @@ function DevProbe({ layout }: { layout: Layout }) {
     const w = window as unknown as {
       __bookPos?: (id: string) => { x: number; y: number } | null;
       __centreBook?: () => string | null;
-      __lookAt?: (id: string, dx?: number, distance?: number) => void;
-      __frame?: (x: number, y: number, d: number) => void;
       __project?: (x: number, y: number, z: number) => { x: number; y: number };
       __case?: { width: number; height: number; depth: number };
     };
@@ -73,12 +71,6 @@ function DevProbe({ layout }: { layout: Layout }) {
     w.__project = (x, y, z) => {
       const v = new THREE.Vector3(x, y, z).project(camera);
       return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height };
-    };
-    w.__frame = (x, y, d) => {
-      const st = useStore.getState();
-      st.setTargetX(x);
-      st.setTargetY(y);
-      st.setDistance(d);
     };
     // The centre of the visible face: the spine for shelved and stacked books, the cover for face-out and reading ones.
     const screen = (p: Placement) => {
@@ -93,15 +85,6 @@ function DevProbe({ layout }: { layout: Layout }) {
     w.__bookPos = (id) => {
       const p = layout.placements.find((pl) => pl.book.id === id);
       return p ? screen(p) : null;
-    };
-    // Move the camera so a book is in the middle of the screen.
-    w.__lookAt = (id, dx = 0, distance = 2300) => {
-      const p = layout.placements.find((pl) => pl.book.id === id);
-      if (!p) return;
-      const st = useStore.getState();
-      st.setDistance(distance);
-      st.setTargetX(p.position[0] + dx);
-      st.setTargetY(p.position[1]);
     };
     // The upright book nearest the middle of the screen.
     w.__centreBook = () => {

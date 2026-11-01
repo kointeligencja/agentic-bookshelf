@@ -161,22 +161,13 @@ function Focused({
     };
   }, [book, categories, invalidate]);
 
-  // Bring the camera to a fixed reading distance (in or out); put it back when the book goes home.
+  // Ask the camera for a fixed reading distance, in front of the book. The rig goes back to its home view by itself when the book goes home.
   // Fixed, so the book held in front of the camera is always well clear of the shelves.
   useEffect(() => {
     const s = useStore.getState();
-    const prev = { x: s.targetX, y: s.targetY, d: s.distance };
     s.setTargetX(home.position.x);
     s.setTargetY(home.position.y);
     s.setDistance(FOCUS_DISTANCE);
-    const unsub = useStore.subscribe((now, before) => {
-      if (now.focused?.closing && !before.focused?.closing) {
-        now.setTargetX(prev.x);
-        now.setTargetY(prev.y);
-        now.setDistance(prev.d);
-      }
-    });
-    return unsub;
   }, [home]);
 
   // Where the book has fully left its shelf: its back edge in front of the case.

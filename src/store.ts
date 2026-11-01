@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { litBooks, type Lit } from './lib/agentic.ts';
+import { categoryLit, litBooks, type Lit } from './lib/agentic.ts';
 import { loadPins, savePins, togglePin } from './lib/board.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import type { SortKey, View } from './scene/layout.ts';
@@ -33,8 +33,12 @@ interface AppState {
   setAgentic: (a: Agentic) => void;
   /** The active theme's key: a chip the visitor picked, or the one the video is on. */
   theme: string | null;
-  /** Picks a theme (null clears it) and lights the books that extend it. */
+  /** Picks a theme (null clears it) and lights the books that extend it. Turns any lit category off. */
   setTheme: (key: string | null) => void;
+  /** The category the nav has lit, by slug. Lights its books like a theme does; a theme and a category are never on together. */
+  category: string | null;
+  /** Lights a category's books (null clears it) and turns any theme off. */
+  setCategory: (slug: string | null) => void;
   /** The theme the video is playing right now, whether or not it is the active one. */
   playing: string | null;
   setPlaying: (key: string | null) => void;
@@ -75,13 +79,19 @@ interface AppState {
   settle: () => void;
 }
 
+/** `?view=spines` opens the spines view (no window in the tests: the covers). */
+function initialView(): View {
+  const loc = (globalThis as { location?: { search: string } }).location;
+  return loc && new URLSearchParams(loc.search).get('view') === 'spines' ? 'spines' : 'covers';
+}
+
 export const useStore = create<AppState>((set, get) => ({
   library: null,
   setLibrary: (library) => set({ library }),
   sort: 'dateRead',
   setSort: (sort) => set({ sort }),
-  view: new URLSearchParams(location.search).get('view') === 'spines' ? 'spines' : 'covers',
-  setView: (view) => set({ view, focused: null, hovered: null, targetX: 0, targetY: null }),
+  view: initialView(),
+  setView: (view) => set({ view, focused: null, hovered: null }),
   targetX: 0,
   setTargetX: (targetX) => set({ targetX }),
   targetY: null,
@@ -99,7 +109,12 @@ export const useStore = create<AppState>((set, get) => ({
   theme: null,
   setTheme: (theme) => {
     const a = get().agentic;
-    set(get().searching ? { theme } : { theme, lit: a ? litBooks(a, theme) : {} });
+    set(get().searching ? { theme, category: null } : { theme, category: null, lit: a ? litBooks(a, theme) : {} });
+  },
+  category: null,
+  setCategory: (category) => {
+    const { library: l } = get();
+    set(get().searching ? { category, theme: null } : { category, theme: null, lit: categoryLit(l?.books ?? [], category) });
   },
   playing: null,
   setPlaying: (playing) => set({ playing }),
@@ -108,8 +123,8 @@ export const useStore = create<AppState>((set, get) => ({
   searching: false,
   setSearchLit: (lit) => {
     if (lit) return set({ searching: true, lit });
-    const { agentic: a, theme } = get();
-    set({ searching: false, lit: a ? litBooks(a, theme) : {} });
+    const { agentic: a, theme, category, library: l } = get();
+    set({ searching: false, lit: category ? categoryLit(l?.books ?? [], category) : a ? litBooks(a, theme) : {} });
   },
   cards: null,
   setCards: (cards) => set({ cards }),

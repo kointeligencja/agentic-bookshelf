@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { categorySpot, computeLayout, type Layout } from './scene/layout.ts';
+import { computeLayout } from './scene/layout.ts';
 import { Scene } from './scene/Scene.tsx';
 import { useStore } from './store.ts';
 import { stageHeight } from './lib/framing.ts';
@@ -19,8 +19,8 @@ const STAGE_MIN = 300;
 const STAGE_MAX = 760;
 const STAGE_MAX_LANDSCAPE = 420;
 
-/** `#book/{id}` opens a book pulled out, `#book/{id}/{conceptId}` with one of its cards; `#category/{slug}` flies to a bay. */
-function applyHash(library: Library, layout: Layout) {
+/** `#book/{id}` opens a book pulled out, `#book/{id}/{conceptId}` with one of its cards; `#category/{slug}` lights a category's books. */
+function applyHash(library: Library) {
   const [kind, value, concept] = decodeURIComponent(location.hash.slice(1)).split('/');
   const s = useStore.getState();
   if (kind === 'book' && value && library.books.some((b) => b.id === value)) {
@@ -29,12 +29,7 @@ function applyHash(library: Library, layout: Layout) {
     if (s.focused?.id !== value) s.focus(value, c);
     else if (c && s.concept !== c) s.setConcept(c);
   } else if (kind === 'category' && value) {
-    const spot = categorySpot(layout, value);
-    if (spot) {
-      s.setTargetX(Math.min(layout.maxX, Math.max(layout.minX, spot.x + 350)));
-      s.setTargetY(spot.y + 170);
-      s.setDistance(2300);
-    }
+    if (library.categories.some((c) => c.slug === value)) s.setCategory(value);
   }
 }
 
@@ -136,11 +131,16 @@ export function App() {
   // Deep links in, once the scene is up; and keep the hash in step with the focused book.
   useEffect(() => {
     if (!ready || !library || !layout) return;
-    const apply = () => applyHash(library, layout);
+    const apply = () => applyHash(library);
     // Let the shelf settle in before pulling a book out.
     const t = setTimeout(apply, 900);
     window.addEventListener('hashchange', apply);
     const unsub = useStore.subscribe((now, before) => {
+      // The hash follows the lit category.
+      if (now.category !== before.category) {
+        if (now.category) history.replaceState(null, '', `${location.search}#category/${now.category}`);
+        else if (location.hash.startsWith('#category/')) history.replaceState(null, '', `${location.pathname}${location.search}`);
+      }
       if (now.focused?.id === before.focused?.id && now.concept === before.concept) return;
       if (now.focused) history.replaceState(null, '', `${location.search}#book/${now.focused.id}${now.concept ? `/${now.concept}` : ''}`);
       else if (location.hash.startsWith('#book/')) history.replaceState(null, '', `${location.pathname}${location.search}`);
