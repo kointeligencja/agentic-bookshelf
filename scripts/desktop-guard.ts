@@ -52,6 +52,8 @@ async function record(out: string, base: string) {
       const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
       await page.goto(`${base}/${hash}`, { waitUntil: 'load' });
       await page.waitForSelector('.app.ready', { timeout: 60000 });
+      // The first page of a run measured before the web fonts had come in (text widths 7 % off); wait for them.
+      await page.evaluate('document.fonts.ready');
       return page;
     };
     const home = await open('');
