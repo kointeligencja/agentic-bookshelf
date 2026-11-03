@@ -33,7 +33,8 @@ export function CategoryNav({ layout, library }: { layout: Layout; library: Libr
     if (!el) return;
     const place = () => {
       const wall = document.querySelector('.wall')?.getBoundingClientRect().right ?? 0;
-      const board = document.querySelector('.board-btn')?.getBoundingClientRect().left ?? window.innerWidth;
+      const rightEl = document.querySelector('.top-actions') ?? document.querySelector('.board-btn');
+      const board = rightEl?.getBoundingClientRect().left ?? window.innerWidth;
       const l = clampedLeft(cx, el.offsetWidth, wall + KEEP, board - KEEP);
       setLeft((prev) => (prev !== null && Math.abs(prev - l) < 0.25 ? prev : l));
     };

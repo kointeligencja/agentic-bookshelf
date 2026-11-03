@@ -505,6 +505,7 @@ export function CardView({
   pinned,
   controls,
   onPin,
+  onDownloadBook,
   onTheme,
   onSeek,
 }: {
@@ -516,6 +517,7 @@ export function CardView({
   pinned: boolean;
   controls: ReactNode;
   onPin: () => void;
+  onDownloadBook?: () => void;
   onTheme: (key: string) => void;
   onSeek: (seconds: number) => void;
 }) {
@@ -627,9 +629,22 @@ export function CardView({
         <span className="status">
           {concept.status} {STATUS[concept.status] ?? ''}
         </span>
-        <button className="pill pin" aria-pressed={pinned} onClick={onPin}>
-          {pinned ? 'Pinned' : 'Pin to board'}
-        </button>
+        <div className="c-foot-actions">
+          {onDownloadBook && (
+            <button
+              className="pill dl-book-btn"
+              type="button"
+              onClick={onDownloadBook}
+              title={`Download all cards from "${book.title}" in Markdown`}
+              aria-label={`Download cards from ${book.title} in Markdown`}
+            >
+              ↓ .md
+            </button>
+          )}
+          <button className="pill pin" aria-pressed={pinned} onClick={onPin}>
+            {pinned ? 'Pinned' : 'Pin to board'}
+          </button>
+        </div>
       </footer>
     </div>
   );

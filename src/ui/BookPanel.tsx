@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { exportBookMarkdown } from './download.ts';
 import { stepTo } from '../lib/board.ts';
 import { isNarrow } from '../lib/panel.ts';
 import { useStore } from '../store.ts';
@@ -144,6 +145,7 @@ export function BookPanel({ library, data }: { library: Library; data: Agentic }
             pinned={pins.includes(current.id)}
             controls={controls}
             onPin={() => togglePin(current.id)}
+            onDownloadBook={() => void exportBookMarkdown(book, data)}
             onTheme={setTheme}
             onSeek={(s) => {
               close();

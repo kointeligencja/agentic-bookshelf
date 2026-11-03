@@ -10,6 +10,7 @@ import { caseHeight, caseWidth } from './scene/layout.ts';
 import type { Agentic, AgenticCard, Library } from './types.ts';
 import { CategoryNav } from './ui/CategoryNav.tsx';
 import { Board, BoardButton } from './ui/Board.tsx';
+import { DownloadMenu } from './ui/DownloadMenu.tsx';
 import { BookPanel } from './ui/BookPanel.tsx';
 import { ThemePanel } from './ui/ThemePanel.tsx';
 import { Tooltip } from './ui/Tooltip.tsx';
@@ -221,7 +222,12 @@ export function App() {
       {library && <ViewToggle />}
       {library && <Tooltip library={library} />}
       {library && agentic && <BookPanel library={library} data={agentic} />}
-      {agentic && <BoardButton data={agentic} />}
+      {agentic && (
+        <div className="top-actions">
+          {library && <DownloadMenu data={agentic} library={library} />}
+          <BoardButton data={agentic} />
+        </div>
+      )}
       {agentic && <Board data={agentic} />}
       <footer className="credit">
         Work in progress: {agentic?.books.length ?? 48} books we think apply. Conversation:{' '}
